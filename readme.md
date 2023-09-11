@@ -155,8 +155,3 @@ To avoid all conflicts of path, the secure_id is shared between when you link a 
 - TODO : ajouter un id random pour chaque fichier ( le meme id sur chaque machines )
 - remplacer toutes les actions qui utilisent un chemin par l'utilisation d'un identifiant de ficher hormis si l'action modifie directement le système e fichier
 
-- creer : 		acces.IncrementFileVersion(event.FilePath) et UpdateCachedFile(event.FilePath)  pour incrémenter de version quand on reçoit un patch de fichier
-la maj du cache de fichier se fera après l'écriture du delta  dans le systeme de fichiers comme ça on peut tranquillement lire le fichier pour maj le cache.
-
-
-- finir : func (bdd *AccesBdd) NotifyDeviceUpdate(path string, devide_id string)

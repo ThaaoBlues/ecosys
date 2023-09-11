@@ -235,15 +235,9 @@ func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
 
 func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 
-	// get lastest version of file and increment it
 	new_version_id := bdd.GetFileLastVersionId(path) + 1
 
-	// update version number in db
-	_, err := bdd.db_handler.Exec("UPDATE filesystem SET version_id=? WHERE path=? AND secure_id=?", new_version_id, path, bdd.SecureId)
-
-	if err != nil {
-		log.Fatal("Error while updating file version_id")
-	}
+	bdd.IncrementFileVersion(path)
 
 	// convert detla to json
 	json_data, err := json.Marshal(delta)
@@ -276,6 +270,9 @@ func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 	if err != nil {
 		log.Fatal("Error while inserting new retard : ", err)
 	}
+
+	// update the cached file content to build the next delta
+	bdd.UpdateCachedFile(path)
 }
 
 func (bdd *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
@@ -775,4 +772,32 @@ func (bdd *AccesBdd) GetDeviceIP(device_id string) string {
 	}
 
 	return ip_addr
+}
+
+func (bdd *AccesBdd) IncrementFileVersion(path string) {
+	// get lastest version of file and increment it
+	new_version_id := bdd.GetFileLastVersionId(path) + 1
+
+	// update version number in db
+	_, err := bdd.db_handler.Exec("UPDATE filesystem SET version_id=? WHERE path=? AND secure_id=?", new_version_id, path, bdd.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while updating file version_id in IncrementFileVersion()")
+	}
+}
+
+func (bdd *AccesBdd) UpdateCachedFile(path string) {
+	// reads the current state of the given file and update it in the database
+
+	file_content, err := os.ReadFile(path)
+
+	if err != nil {
+		log.Fatal("Error in UpdateCachedFile() while reading file to cache its content : ", err)
+	}
+
+	_, err = bdd.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", file_content, path, bdd.SecureId)
+
+	if err != nil {
+		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
+	}
 }
