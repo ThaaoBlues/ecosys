@@ -54,7 +54,7 @@ func ConnectToDevice(conn net.Conn) {
 	_, err := conn.Read(header_buff)
 
 	if err != nil {
-		log.Println("Error in ConnectToDevice() while reading header")
+		log.Fatal("Error in ConnectToDevice() while reading header")
 	}
 
 	log.Println(header_buff)
@@ -76,12 +76,14 @@ func ConnectToDevice(conn net.Conn) {
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err != io.EOF {
-				log.Println("Error in ConnectToDevice() while reading body:", err)
+				log.Fatal("Error in ConnectToDevice() while reading body:", err)
 			}
 			break
 		}
 		body_buff = append(body_buff, buffer[:n]...)
 	}
+
+	log.Println(body_buff)
 
 	switch string(body_buff) {
 
@@ -115,7 +117,7 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 	err := json.Unmarshal(buffer, &event)
 	if err != nil {
-		log.Println("Error while decoding json data from request buffer in HandleEvent()", err)
+		log.Fatal("Error while decoding json data from request buffer in HandleEvent()", err)
 	}
 
 	// first, we lock the filesystem watcher so it don't notify the changes we are doing
@@ -327,7 +329,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Println("Error accessing path:", path, err)
+			log.Fatal("Error accessing path:", path, err)
 			return err
 		}
 

@@ -63,7 +63,7 @@ func main() {
 
 	path := "/home/h3x0/dev/projects/qsync/test_files"
 
-	acces.CreateSync(path)
+	//acces.CreateSync(path)
 
 	filesystem.StartWatcher(path)
 
