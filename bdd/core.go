@@ -278,8 +278,30 @@ func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 	}
 }
 
-func (bdd *AccesBdd) NotifyDeviceUpdate(path string, devide_id string) {
+func (bdd *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 	// remove all mentions of the given device_id in the retard table for a specific file
+
+	var devices_to_patch string
+	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE path=? AND secure_id=?", path, bdd.SecureId)
+
+	row.Scan(&devices_to_patch)
+
+	devices_split := strings.Split(devices_to_patch, ";")
+
+	var list_builder []string
+
+	for _, dev := range devices_split {
+		if !(dev == device_id) {
+			list_builder = append(list_builder, dev)
+		}
+	}
+
+	_, err := bdd.db_handler.Exec("UPDATE retard SET WHERE path=? AND secure_id=?", list_builder, path)
+
+	if err != nil {
+		log.Fatal("Error while inserting new retard : ", err)
+	}
+
 }
 
 func (bdd *AccesBdd) GetFileContent(path string) []byte {
