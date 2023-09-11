@@ -152,7 +152,7 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 		}
 
 	case "UPDATE":
-		//acces.IncrementFileVersion(event.FilePath)
+		acces.IncrementFileVersion(event.FilePath)
 		event.Delta.PatchFile()
 	default:
 		log.Fatal("Qsync network loop received an unknown event type : ", event)
