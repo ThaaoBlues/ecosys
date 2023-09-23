@@ -157,7 +157,6 @@ func GetNetworkDevices() []map[string]string {
 			devices_list = append(devices_list, device_metadata)
 
 		}
-		log.Println("No more entries.")
 	}(entries)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)

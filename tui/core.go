@@ -35,6 +35,7 @@ var PROMPT string = "\n>> "
 
 func Prompt() string {
 
+	fmt.Print(PROMPT)
 	var query string
 	_, err := fmt.Scanln(&query)
 
@@ -61,7 +62,7 @@ func HandleMenuQuery(query string) {
 
 	case "1":
 
-		fmt.Println("Enter below the path of the folder you want to synchronize : \n\n")
+		fmt.Println("Enter below the path of the folder you want to synchronize :")
 
 		var path string = Prompt()
 
@@ -69,7 +70,7 @@ func HandleMenuQuery(query string) {
 
 	case "2":
 
-		fmt.Println("Enter below the path of the folder you want to synchronize : \n\n")
+		fmt.Println("Enter below the path of the folder you want to synchronize :")
 
 		var path string = Prompt()
 
@@ -120,6 +121,5 @@ func HandleMenuQuery(query string) {
 func DisplayMenu() {
 	fmt.Print(LOGO)
 	fmt.Print(MENU)
-	fmt.Print(PROMPT)
 	HandleMenuQuery(Prompt())
 }
