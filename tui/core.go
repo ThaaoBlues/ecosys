@@ -1,15 +1,24 @@
 package tui
 
+import (
+	"fmt"
+	"log"
+	"qsync/bdd"
+	"qsync/filesystem"
+	"qsync/networking"
+	"strconv"
+)
+
 var LOGO string = `
 ________/\\\___________/\\\\\\\\\\\_____________________________________________        
 _____/\\\\/\\\\______/\\\/////////\\\___________________________________________       
  ___/\\\//\////\\\___\//\\\______\///_____/\\\__/\\\_____________________________      
   __/\\\______\//\\\___\////\\\___________\//\\\/\\\___/\\/\\\\\\_______/\\\\\\\\_     
    _\//\\\______/\\\_______\////\\\_________\//\\\\\___\/\\\////\\\____/\\\//////__    
-	__\///\\\\/\\\\/___________\////\\\_______\//\\\____\/\\\__\//\\\__/\\\_________   
-	 ____\////\\\//______/\\\______\//\\\___/\\_/\\\_____\/\\\___\/\\\_\//\\\________  
-	  _______\///\\\\\\__\///\\\\\\\\\\\/___\//\\\\/______\/\\\___\/\\\__\///\\\\\\\\_ 
-	   _________\//////_____\///////////______\////________\///____\///_____\////////__`
+    __\///\\\\/\\\\/___________\////\\\_______\//\\\____\/\\\__\//\\\__/\\\_________   
+     ____\////\\\//______/\\\______\//\\\___/\\_/\\\_____\/\\\___\/\\\_\//\\\________  
+      _______\///\\\\\\__\///\\\\\\\\\\\/___\//\\\\/______\/\\\___\/\\\__\///\\\\\\\\_ 
+       _________\//////_____\///////////______\////________\///____\///_____\////////__`
 
 var MENU string = `
 
@@ -21,3 +30,135 @@ var MENU string = `
 [5] - 
 
 `
+
+var PROMPT string = "\n>> "
+
+func Prompt() string {
+
+	var query string
+	_, err := fmt.Scanln(&query)
+
+	if err != nil {
+		log.Fatal("Error while reading user query in Prompt() : ", err)
+	}
+
+	return query
+}
+
+func HandleMenuQuery(query string) {
+
+	var acces bdd.AccesBdd
+
+	acces.InitConnection()
+
+	switch query {
+
+	case "0":
+
+		path := "/home/h3x0/dev/projects/qsync/test_files"
+
+		filesystem.StartWatcher(path)
+
+	case "1":
+
+		fmt.Println("Enter below the path of the folder you want to synchronize : \n\n")
+
+		var path string = Prompt()
+
+		acces.CreateSync(path)
+
+	case "2":
+
+		fmt.Println("Enter below the path of the folder you want to synchronize : \n\n")
+
+		var path string = Prompt()
+
+		acces.GetSecureId(path)
+
+		fmt.Println("Mapping available devices on your local network...")
+		// list qsync devices across the network
+		devices := networking.GetNetworkDevices()
+		for i := 0; i < len(devices); i++ {
+			fmt.Printf("[%d] ", i)
+			fmt.Println(devices[i])
+		}
+
+		// send a link device packet to the one the user choose
+
+		index, err := strconv.Atoi(Prompt())
+
+		if err != nil {
+			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
+		}
+
+		device_id := devices[index]["device_id"]
+
+		var event networking.QEvent
+		event.Flag = "[LINK_DEVICE]"
+		event.SecureId = acces.SecureId
+
+		queue := make([]networking.QEvent, 1)
+		queue = append(queue, event)
+
+		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, acces.SecureId, queue)
+
+		// link the device into this db
+		acces.LinkDevice(device_id)
+
+		// build a custom queue so this device can download all the data contained in your folder
+		networking.BuildSetupQueue(acces.SecureId, device_id)
+
+	case "3":
+
+		// list qsync devices across the network
+		var secure_id string
+
+		fmt.Println("Mapping available devices on your local network...")
+		// list qsync devices across the network
+		devices := networking.GetNetworkDevices()
+		for i := 0; i < len(devices); i++ {
+			fmt.Printf("[%d] ", i)
+			fmt.Println(devices[i])
+		}
+
+		index, err := strconv.Atoi(Prompt())
+
+		if err != nil {
+			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
+		}
+
+		// a SETUP queue will be built for us by the other end
+
+		// choose a sync task and recover its id
+
+		// send a link device packet to the one the user choose
+
+		index, err := strconv.Atoi(Prompt())
+
+		if err != nil {
+			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
+		}
+
+		device_id := devices[index]["device_id"]
+
+		var event networking.QEvent
+		event.Flag = "[SETUP_DL]"
+		event.SecureId = secure_id
+
+		queue := make([]networking.QEvent, 1)
+		queue = append(queue, event)
+
+		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, secure_id, queue)
+	default:
+		fmt.Println("This option does not exists :/")
+		HandleMenuQuery(Prompt())
+	}
+
+}
+
+func DisplayMenu() {
+	fmt.Print(LOGO)
+	fmt.Print(MENU)
+	fmt.Print(PROMPT)
+	HandleMenuQuery(Prompt())
+}

@@ -126,3 +126,48 @@ func (zcs *ZeroConfService) Register() {
 
 	log.Println("Shutting down.")
 }
+
+func GetNetworkDevices() []map[string]string {
+	var zcs ZeroConfService
+
+	devices_list := make([]map[string]string, 0)
+
+	// register this device
+	go zcs.Register()
+
+	// Discover all services on the network (e.g. _workstation._tcp)
+	var err error
+	zcs.Resolver, err = zeroconf.NewResolver(nil)
+
+	if err != nil {
+		log.Fatalln("Failed to initialize resolver:", err.Error())
+	}
+
+	entries := make(chan *zeroconf.ServiceEntry)
+
+	go func(results <-chan *zeroconf.ServiceEntry) {
+		for entry := range results {
+
+			device_metadata := map[string]string{
+				"version":  strings.Split(entry.Text[0], "=")[1],
+				"id":       strings.Split(entry.Text[1], "=")[1],
+				"hostname": entry.HostName[0 : len(entry.HostName)-1],
+			}
+
+			devices_list = append(devices_list, device_metadata)
+
+		}
+		log.Println("No more entries.")
+	}(entries)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	err = zcs.Resolver.Browse(ctx, "_qsync._tcp", "local.", entries)
+	if err != nil {
+		log.Fatalln("Failed to browse:", err.Error())
+	}
+
+	<-ctx.Done()
+
+	return devices_list
+}

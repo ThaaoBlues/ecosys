@@ -142,16 +142,12 @@ no newline between device_id and QEvent data
 
 
 [SETUP PACKED RECEIVED]
-- Download all files received and fill the filesystem table with them
-- start the monitoring loop on this folder
+- Loop through all required files and build a setup download queue for the target distant machine
 
 
 To avoid all conflicts of path, the secure_id is shared between when you link a device and will be used to identify the correct sync task
 
 ## /!\ we called the sync task id secure_id just because it should avoid collision a path problems, not because it is "secure"
 
-
-
-- TODO : ajouter un id random pour chaque fichier ( le meme id sur chaque machines )
-- remplacer toutes les actions qui utilisent un chemin par l'utilisation d'un identifiant de ficher hormis si l'action modifie directement le système e fichier
-
+TODO
+- finir l'option 3. Besoin d'une manière de créer une tache de syncronisation en plaçant le secure_id donné par l'autre machine.

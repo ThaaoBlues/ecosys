@@ -62,6 +62,8 @@ func ConnectToDevice(conn net.Conn) {
 	var device_id string = strings.Split(string(header_buff), ";")[0]
 	var secure_id string = strings.Split(string(header_buff), ";")[1]
 
+	acces.SecureId = secure_id
+
 	// makes sure it is marked as connected
 	if !acces.GetDeviceConnectionState(device_id) {
 
@@ -94,6 +96,9 @@ func ConnectToDevice(conn net.Conn) {
 		// init an event queue with all elements from the root sync directory
 		BuildSetupQueue(secure_id, device_id)
 
+	// this event is triggered when another device
+	// is trying to link to you with a new sync task that you may not have
+	// the device sending this is building a SETUP_DL queue to send at you
 	case "[LINK_DEVICE]":
 
 		acces.LinkDevice(device_id)
