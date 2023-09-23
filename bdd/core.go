@@ -474,6 +474,17 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 
 }
 
+func (bdd *AccesBdd) CreateSyncFromOtherEnd(rootPath string, secure_id string) {
+	bdd.SecureId = secure_id
+
+	// adding sync to database
+	_, err := bdd.db_handler.Exec("INSERT INTO sync (secure_id, root) VALUES(?,?)", secure_id, rootPath)
+
+	if err != nil {
+		log.Fatal("Error while inserting into database ", err)
+	}
+}
+
 func (bdd *AccesBdd) RmSync() {
 	_, err := bdd.db_handler.Exec("DELETE FROM sync WHERE secure_id=?", bdd.SecureId)
 

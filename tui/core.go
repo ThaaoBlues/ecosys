@@ -24,8 +24,8 @@ var MENU string = `
 
 [0] - Start QSync
 [1] - Create a sync task
-[2] - Link another device to a sync task
-[3] - Link this device to a distant sync task
+[2] - Link another machine to a sync task on yours
+[3] - 
 [4] - 
 [5] - 
 
@@ -108,47 +108,8 @@ func HandleMenuQuery(query string) {
 		// build a custom queue so this device can download all the data contained in your folder
 		networking.BuildSetupQueue(acces.SecureId, device_id)
 
-	case "3":
+		fmt.Println("The selected device has successfully been linked to a sync task. You may now want to link the other device ")
 
-		// list qsync devices across the network
-		var secure_id string
-
-		fmt.Println("Mapping available devices on your local network...")
-		// list qsync devices across the network
-		devices := networking.GetNetworkDevices()
-		for i := 0; i < len(devices); i++ {
-			fmt.Printf("[%d] ", i)
-			fmt.Println(devices[i])
-		}
-
-		index, err := strconv.Atoi(Prompt())
-
-		if err != nil {
-			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
-		}
-
-		// a SETUP queue will be built for us by the other end
-
-		// choose a sync task and recover its id
-
-		// send a link device packet to the one the user choose
-
-		index, err := strconv.Atoi(Prompt())
-
-		if err != nil {
-			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
-		}
-
-		device_id := devices[index]["device_id"]
-
-		var event networking.QEvent
-		event.Flag = "[SETUP_DL]"
-		event.SecureId = secure_id
-
-		queue := make([]networking.QEvent, 1)
-		queue = append(queue, event)
-
-		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, secure_id, queue)
 	default:
 		fmt.Println("This option does not exists :/")
 		HandleMenuQuery(Prompt())
