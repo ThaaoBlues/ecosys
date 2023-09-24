@@ -92,7 +92,7 @@ func HandleMenuQuery(query string) {
 			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
 		}
 
-		device_id := devices[index]["device_id"]
+		device_id := devices[index]["id"]
 
 		var event networking.QEvent
 		event.Flag = "[LINK_DEVICE]"

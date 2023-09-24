@@ -150,4 +150,3 @@ To avoid all conflicts of path, the secure_id is shared between when you link a 
 ## /!\ we called the sync task id secure_id just because it should avoid collision a path problems, not because it is "secure"
 
 TODO
-- finir l'option 3. Besoin d'une manière de créer une tache de syncronisation en plaçant le secure_id donné par l'autre machine.
