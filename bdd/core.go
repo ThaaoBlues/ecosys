@@ -16,17 +16,21 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// AccesBdd represents access to the database.
 type AccesBdd struct {
 	BddName    string
 	db_handler *sql.DB
 	SecureId   string
 }
 
+// SyncInfos represents synchronization information with a path and its secure ID.
 type SyncInfos struct {
 	Path     string
 	SecureId string
 }
 
+// InitConnection initializes the database connection and creates necessary tables if they don't exist.
+// This function is used everytime we create an AccesBdd object
 func (bdd *AccesBdd) InitConnection() {
 	var err error
 	bdd.db_handler, err = sql.Open("sqlite3", "qsync.db")
@@ -106,10 +110,12 @@ func (bdd *AccesBdd) InitConnection() {
 	}
 }
 
+// CloseConnection closes the database connection.
 func (bdd *AccesBdd) CloseConnection() {
 	bdd.db_handler.Close()
 }
 
+// CheckFileExists checks if a file with a given path exists in the database.
 func (bdd *AccesBdd) CheckFileExists(path string) bool {
 	rows, err := bdd.db_handler.Query("SELECT id FROM filesystem WHERE path=? AND secure_id=? VALUES=(?,?)", path, bdd.SecureId)
 
@@ -133,6 +139,8 @@ func (bdd *AccesBdd) CheckFileExists(path string) bool {
 
 }
 
+// WasFile checks if a file with a given path was present in the past.
+// This is made by checking the database as the filesystem may have been alterated
 func (bdd *AccesBdd) WasFile(path string) bool {
 
 	row := bdd.db_handler.QueryRow("SELECT type FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
@@ -156,6 +164,8 @@ func (bdd *AccesBdd) WasFile(path string) bool {
 
 }
 
+// IsFile checks if a given path represents a file (not a directory).
+// does not acces the db, it uses the client real filesystem
 func (bdd *AccesBdd) IsFile(path string) bool {
 
 	handler, err := os.Open(path)
@@ -173,6 +183,7 @@ func (bdd *AccesBdd) IsFile(path string) bool {
 	return !stat.IsDir()
 }
 
+// GetSecureId retrieves the secure ID associated with a given root path.
 func (bdd *AccesBdd) GetSecureId(rootpath string) {
 	row := bdd.db_handler.QueryRow("SELECT secure_id FROM sync WHERE root=?", rootpath)
 
@@ -188,6 +199,7 @@ func (bdd *AccesBdd) GetSecureId(rootpath string) {
 
 }
 
+// CreateFile adds a file to the database.
 func (bdd *AccesBdd) CreateFile(path string) {
 
 	file_handler, err := os.Open(path)
@@ -226,6 +238,7 @@ func (bdd *AccesBdd) CreateFile(path string) {
 	}
 }
 
+// GetFileLastVersionId retrieves the last version ID of a file.
 func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
 	row := bdd.db_handler.QueryRow("SELECT version_id FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
 
@@ -238,6 +251,8 @@ func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
 	return version_id
 }
 
+// UpdateFile updates a file in the database with a new version.
+// For that, a binary delta object is used.
 func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 
 	new_version_id := bdd.GetFileLastVersionId(path) + 1
@@ -306,6 +321,8 @@ func (bdd *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 
 }
 
+// GetFileContent retrieves the content of a file from the database.
+// returned as byte array
 func (bdd *AccesBdd) GetFileContent(path string) []byte {
 	row := bdd.db_handler.QueryRow("SELECT content FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
 
@@ -332,6 +349,7 @@ func (bdd *AccesBdd) GetFileContent(path string) []byte {
 	return decompressed_content
 }
 
+// RmFile deletes a file from the database and adds it in delete mode to the retard table.
 func (bdd *AccesBdd) RmFile(path string) {
 	_, err := bdd.db_handler.Exec("DELETE FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
 
@@ -363,6 +381,7 @@ func (bdd *AccesBdd) RmFile(path string) {
 
 }
 
+// CreateFolder adds a folder to the database.
 func (bdd *AccesBdd) CreateFolder(path string) {
 	_, err := bdd.db_handler.Exec("INSERT INTO filesystem (path, version_id, type, size, secure_id) VALUES (?, 0, 'folder', 0, ?)", path, bdd.SecureId)
 
@@ -371,6 +390,7 @@ func (bdd *AccesBdd) CreateFolder(path string) {
 	}
 }
 
+// RmFolder deletes a folder from the database and adds it in delete mode to the retard table.
 func (bdd *AccesBdd) RmFolder(path string) {
 
 	_, err := bdd.db_handler.Exec("DELETE FROM filesystem WHERE path LIKE ? AND secure_id=?", path+"%", bdd.SecureId)
@@ -410,6 +430,7 @@ func (bdd *AccesBdd) RmFolder(path string) {
 
 }
 
+// Move updates the path of a file or folder in the database and adds a move event to the retard table.
 func (bdd *AccesBdd) Move(path string, new_path string, file_type string) {
 	_, err := bdd.db_handler.Exec("UPDATE filesystem SET path=? WHERE path=? AND secure_id=?", new_path, path, bdd.SecureId)
 	if err != nil {
@@ -434,6 +455,7 @@ func (bdd *AccesBdd) Move(path string, new_path string, file_type string) {
 
 }
 
+// CreateSync initializes a new synchronization entry in the database.
 func (bdd *AccesBdd) CreateSync(rootPath string) {
 
 	// generating secure_id
@@ -479,6 +501,10 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 
 }
 
+// CreateSyncFromOtherEnd creates a synchronization entry in the database with the givens info.
+// Used to connect from an existing task from another device
+// Filesystem is not mapped by the function as a remote setup procedure
+// is made around this call
 func (bdd *AccesBdd) CreateSyncFromOtherEnd(rootPath string, secure_id string) {
 	bdd.SecureId = secure_id
 
@@ -490,6 +516,8 @@ func (bdd *AccesBdd) CreateSyncFromOtherEnd(rootPath string, secure_id string) {
 	}
 }
 
+// RmSync removes a synchronization entry from the database.
+
 func (bdd *AccesBdd) RmSync() {
 	_, err := bdd.db_handler.Exec("DELETE FROM sync WHERE secure_id=?", bdd.SecureId)
 
@@ -498,6 +526,7 @@ func (bdd *AccesBdd) RmSync() {
 	}
 }
 
+// LinkDevice links a device to the synchronization entry.
 func (bdd *AccesBdd) LinkDevice(device_id string) {
 	_, err := bdd.db_handler.Exec("UPDATE sync SET linked_devices_id=IFNULL(linked_devices_id, '') || ? WHERE secure_id=?", device_id+";", bdd.SecureId)
 
@@ -506,10 +535,12 @@ func (bdd *AccesBdd) LinkDevice(device_id string) {
 	}
 }
 
+// UnlinkDevice unlinks a device from a synchronization entry. (To be implemented)
 func (bdd *AccesBdd) UnlinkDevice(device_id string) {
 	// Implement the logic to unlink a device from a synchronization entry
 }
 
+// GetRootSyncPath retrieves the root path associated with the synchronization entry.
 func (bdd *AccesBdd) GetRootSyncPath() string {
 	var rootPath string
 	row := bdd.db_handler.QueryRow("SELECT root FROM sync WHERE secure_id=?", bdd.SecureId)
@@ -522,6 +553,7 @@ func (bdd *AccesBdd) GetRootSyncPath() string {
 	return rootPath
 }
 
+// SetDeviceConnectionState updates the connection state of a linked device.
 func (bdd *AccesBdd) SetDeviceConnectionState(device_id string, value bool) {
 	_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=? WHERE device_id=?", value, device_id)
 
