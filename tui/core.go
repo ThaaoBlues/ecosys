@@ -25,7 +25,7 @@ var MENU string = `
 [0] - Start QSync
 [1] - Create a sync task
 [2] - Link another machine to a sync task on yours
-[3] - 
+[3] - List current sync task and their id
 [4] - 
 [5] - 
 
@@ -110,6 +110,15 @@ func HandleMenuQuery(query string) {
 		networking.BuildSetupQueue(acces.SecureId, device_id)
 
 		fmt.Println("The selected device has successfully been linked to a sync task. You may now want to link the other device ")
+
+	case "3":
+
+		for _, task := range acces.ListSyncAllTasks() {
+			fmt.Println("{")
+			fmt.Println("Path : ", task.Path)
+			fmt.Println("Secure id : ", task.SecureId)
+			fmt.Println("}")
+		}
 
 	default:
 		fmt.Println("This option does not exists :/")

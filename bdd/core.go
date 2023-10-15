@@ -22,6 +22,11 @@ type AccesBdd struct {
 	SecureId   string
 }
 
+type SyncInfos struct {
+	Path     string
+	SecureId string
+}
+
 func (bdd *AccesBdd) InitConnection() {
 	var err error
 	bdd.db_handler, err = sql.Open("sqlite3", "qsync.db")
@@ -811,4 +816,28 @@ func (bdd *AccesBdd) UpdateCachedFile(path string) {
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
 	}
+}
+
+func (bdd *AccesBdd) ListSyncAllTasks() []SyncInfos {
+
+	// used to get all sync task secure_id and root path listed
+	// returns a custom type containing the two values as string
+
+	rows, err := bdd.db_handler.Query("SELECT secure_id,root FROM sync")
+
+	if err != nil {
+		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", err)
+	}
+	defer rows.Close()
+
+	var list []SyncInfos
+
+	for rows.Next() {
+		var info SyncInfos
+		rows.Scan(&info.SecureId, &info.Path)
+		list = append(list, info)
+	}
+
+	return list
+
 }
