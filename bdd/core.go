@@ -531,13 +531,26 @@ func (bdd *AccesBdd) LinkDevice(device_id string) {
 	_, err := bdd.db_handler.Exec("UPDATE sync SET linked_devices_id=IFNULL(linked_devices_id, '') || ? WHERE secure_id=?", device_id+";", bdd.SecureId)
 
 	if err != nil {
-		log.Fatal("Error while updating database ", err)
+		log.Fatal("Error while updating database in LinkDevice() : ", err)
 	}
 }
 
-// UnlinkDevice unlinks a device from a synchronization entry. (To be implemented)
+// UnlinkDevice unlinks a device from a synchronization entry.
 func (bdd *AccesBdd) UnlinkDevice(device_id string) {
-	// Implement the logic to unlink a device from a synchronization entry
+
+	// remove id from the list
+	_, err := bdd.db_handler.Exec("DELETE FROM linked_devices WHERE device_id=?", device_id)
+
+	if err != nil {
+		log.Fatal("Error while updating database in UnlinkDevice() : ", err)
+	}
+
+	// remove id from the list in sync table
+	_, err = bdd.db_handler.Exec("UPDATE sync SET linked_devices_id=REPLACE(linked_devices_id,?,'')", device_id+";", bdd.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while updating database in UnlinkDevice() : ", err)
+	}
 }
 
 // GetRootSyncPath retrieves the root path associated with the synchronization entry.

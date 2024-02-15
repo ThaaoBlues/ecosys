@@ -56,6 +56,7 @@ func HandleMenuQuery(query string) {
 
 	case "0":
 
+		fmt.Println(("Starting watcher ..."))
 		path := "/home/h3x0/dev/projects/qsync/test_files"
 
 		filesystem.StartWatcher(path)
