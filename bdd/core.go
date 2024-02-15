@@ -663,16 +663,23 @@ func (bdd *AccesBdd) GetFileSizeFromBdd(path string) int64 {
 }
 
 func (bdd *AccesBdd) GetSyncLinkedDevices() []string {
-	var devices string
+	var devices_str string
+	var devices_list []string
 
 	row := bdd.db_handler.QueryRow("SELECT linked_devices_id FROM sync WHERE secure_id=?", bdd.SecureId)
 
-	err := row.Scan(&devices)
+	err := row.Scan(&devices_str)
 	if err != nil {
 		log.Fatal("Error while querying database ", err)
 	}
 
-	return strings.Split(devices, ";")
+	devices_list = strings.Split(devices_str, ";")
+
+	// remove the last slot (empty space) in the array
+	// caused by the last semicolon of the string representation of the list
+	devices_list = devices_list[:len(devices_list)-1]
+
+	return devices_list
 }
 
 func (bdd *AccesBdd) GetFileDelta(version int64, path string) dtbin.Delta {

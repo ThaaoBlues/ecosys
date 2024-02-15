@@ -121,6 +121,15 @@ func HandleMenuQuery(query string) {
 			fmt.Println("}")
 		}
 
+	case "4":
+		fmt.Println("testing feature : Get linked devices")
+		acces.GetSecureId("/home/h3x0/dev/projects/qsync/test_files")
+		/*acces.LinkDevice("ah bah oui")
+		acces.LinkDevice("prout")
+		acces.LinkDevice("ahahaha")
+		acces.UnlinkDevice("prout")*/
+		fmt.Println(acces.GetSyncLinkedDevices())
+
 	default:
 		fmt.Println("This option does not exists :/")
 		HandleMenuQuery(Prompt())

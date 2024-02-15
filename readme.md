@@ -147,7 +147,7 @@ no newline between device_id and QEvent data
 
 To avoid all conflicts of path, the secure_id is shared between when you link a device and will be used to identify the correct sync task
 
-## /!\ we called the sync task id secure_id just because it should avoid collision a path problems, not because it is "secure"
+## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TODO
 - Tester avec un autre appareil
