@@ -151,4 +151,3 @@ To avoid all conflicts of path, the secure_id is shared between when you link a 
 
 TODO
 - Tester avec un autre appareil
-- Tester la fonction UnlinkDevice

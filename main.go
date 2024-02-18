@@ -1,6 +1,9 @@
 package main
 
-import "qsync/tui"
+import (
+	"qsync/networking"
+	"qsync/tui"
+)
 
 //import "qsync/bdd"
 
@@ -25,31 +28,30 @@ func main() {
 	//log.Print(acces.GetFileDelta(1, path))
 	//fsmon.StartWatcher(path)
 
-	/*
-		var zc networking.ZeroConfService
+	var zc networking.ZeroConfService
 
-		// register this device
-		go zc.Register()
+	// register this device
+	go zc.Register()
 
-		// listen endlessly for others devices
-		go func() {
-			for {
-				zc.Browse()
+	/*// listen endlessly for others devices
+	go func() {
+		for {
+			zc.Browse()
 
-				// Clean exit.
-				sig := make(chan os.Signal, 1)
-				signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-				select {
-				case <-sig:
-					// Exit by user
-					break
-				}
-
-				log.Println("Shutting down.")
+			// Clean exit.
+			sig := make(chan os.Signal, 1)
+			signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+			select {
+			case <-sig:
+				// Exit by user
+				break
 			}
-		}()
 
-		// start watching ouuuh
+			log.Println("Shutting down.")
+		}
+	}()
+
+	// start watching ouuuh
 	*/
 
 	tui.DisplayMenu()

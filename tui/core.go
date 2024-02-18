@@ -26,7 +26,7 @@ var MENU string = `
 [1] - Create a sync task
 [2] - Link another machine to a sync task on yours
 [3] - List current sync task and their id
-[4] - 
+[4] - List devices using qsync on your network
 [5] - 
 
 `
@@ -122,14 +122,12 @@ func HandleMenuQuery(query string) {
 		}
 
 	case "4":
-		fmt.Println("testing feature : Get linked devices")
-		acces.GetSecureId("/home/h3x0/dev/projects/qsync/test_files")
-		/*acces.LinkDevice("ah bah oui")
-		acces.LinkDevice("prout")
-		acces.LinkDevice("ahahaha")
-		acces.UnlinkDevice("prout")*/
-		fmt.Println(acces.GetSyncLinkedDevices())
-
+		// list qsync devices across the network
+		devices := networking.GetNetworkDevices()
+		for i := 0; i < len(devices); i++ {
+			fmt.Printf("[%d] ", i)
+			fmt.Println(devices[i])
+		}
 	default:
 		fmt.Println("This option does not exists :/")
 		HandleMenuQuery(Prompt())

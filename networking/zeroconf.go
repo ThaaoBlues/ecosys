@@ -33,8 +33,12 @@ func (zcs *ZeroConfService) Browse() {
 	acces.InitConnection()
 	defer acces.CloseConnection()
 
-	old_connected_devices := acces.GetOnlineDevices()
+	// check if we want to just browse the network or actually update a table
 	var new_connected_devices []string
+	var old_connected_devices []string
+	if acces.SecureId != "" {
+		old_connected_devices = acces.GetOnlineDevices()
+	}
 
 	go func(results <-chan *zeroconf.ServiceEntry) {
 		for entry := range results {
@@ -51,16 +55,19 @@ func (zcs *ZeroConfService) Browse() {
 			log.Println("\tID : ", device_metadata["id"])
 			log.Println("\tHOSTNAME : ", device_metadata["hostname"])
 
-			if acces.IsDeviceLinked(device_metadata["id"]) {
-				new_connected_devices = append(new_connected_devices, device_metadata["id"])
-				acces.SetDeviceConnectionState(device_metadata["id"], true)
-				acces.SetDeviceIP(device_metadata["id"], string(entry.AddrIPv4[0]))
-			} else {
-
-				if device_metadata["id"] == acces.GetMyDeviceId() {
-					log.Println("Hey !! That's your device right here !!")
+			// only if we are not just browsing the network
+			if acces.SecureId != "" {
+				if acces.IsDeviceLinked(device_metadata["id"]) {
+					new_connected_devices = append(new_connected_devices, device_metadata["id"])
+					acces.SetDeviceConnectionState(device_metadata["id"], true)
+					acces.SetDeviceIP(device_metadata["id"], string(entry.AddrIPv4[0]))
 				} else {
-					log.Println("This device is not linked.")
+
+					if device_metadata["id"] == acces.GetMyDeviceId() {
+						log.Println("Hey !! That's your device right here !!")
+					} else {
+						log.Println("This device is not linked.")
+					}
 				}
 			}
 
@@ -68,18 +75,21 @@ func (zcs *ZeroConfService) Browse() {
 		log.Println("No more entries.")
 	}(entries)
 
-	var found bool = false
-	for _, device := range old_connected_devices {
-		for _, new_device := range new_connected_devices {
-			if device == new_device {
-				found = true
-				break
+	// only if we are not just browsing the network
+	if acces.SecureId != "" {
+		var found bool = false
+		for _, device := range old_connected_devices {
+			for _, new_device := range new_connected_devices {
+				if device == new_device {
+					found = true
+					break
+				}
 			}
-		}
 
-		if !found {
-			log.Println("Device disconneted : ", device)
-			acces.SetDeviceConnectionState(device, false)
+			if !found {
+				log.Println("Device disconneted : ", device)
+				acces.SetDeviceConnectionState(device, false)
+			}
 		}
 	}
 
@@ -100,7 +110,6 @@ func (zcs *ZeroConfService) Register() {
 
 	var acces bdd.AccesBdd
 	acces.InitConnection()
-	defer acces.CloseConnection()
 
 	zcs.Server, err = zeroconf.Register("QSync", "_qsync._tcp", "local.", 8274, []string{
 		"version=0.0.1-PreAlpha",
@@ -110,7 +119,7 @@ func (zcs *ZeroConfService) Register() {
 	if err != nil {
 		panic(err)
 	}
-	defer zcs.Server.Shutdown()
+	//defer zcs.Server.Shutdown()
 
 	// Clean exit.
 	sig := make(chan os.Signal, 1)
@@ -119,9 +128,11 @@ func (zcs *ZeroConfService) Register() {
 	case <-sig:
 		// Exit by user
 		zcs.Server.Shutdown()
-	case <-time.After(time.Second * 120):
+		acces.CloseConnection()
+		/*case <-time.After(time.Second * 120):
 		// Exit by timeout
 		zcs.Server.Shutdown()
+		acces.CloseConnection()*/
 	}
 
 	log.Println("Shutting down.")
