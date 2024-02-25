@@ -1,3 +1,3 @@
 sudo mount /dev/sda /mnt
-cp main.exe /mnt/main.exe
+cp main /mnt/main
 sudo umount /mnt

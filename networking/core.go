@@ -38,10 +38,6 @@ func NetWorkLoop() {
 	}
 }
 
-func InitNetWorkProc() {
-
-}
-
 func ConnectToDevice(conn net.Conn) {
 
 	var acces bdd.AccesBdd
@@ -57,18 +53,22 @@ func ConnectToDevice(conn net.Conn) {
 		log.Fatal("Error in ConnectToDevice() while reading header")
 	}
 
-	log.Println(header_buff)
+	log.Println("Request header : ", string(header_buff))
 
 	var device_id string = strings.Split(string(header_buff), ";")[0]
 	var secure_id string = strings.Split(string(header_buff), ";")[1]
 
 	acces.SecureId = secure_id
 
-	// makes sure it is marked as connected
-	if !acces.GetDeviceConnectionState(device_id) {
+	// in case of a link packet, the device is not yet registered in the database
+	// so it can throw an error
+	if acces.IsDeviceLinked(device_id) {
+		// makes sure it is marked as connected
+		if !acces.GetDeviceConnectionState(device_id) {
 
-		acces.SetDeviceConnectionState(device_id, true)
+			acces.SetDeviceConnectionState(device_id, true)
 
+		}
 	}
 
 	// read the body of the request and store it in a buffer
@@ -85,8 +85,9 @@ func ConnectToDevice(conn net.Conn) {
 		body_buff = append(body_buff, buffer[:n]...)
 	}
 
-	log.Println(body_buff)
+	log.Println("Request body : ", string(body_buff))
 
+	// check if this is a regular file event of a special request
 	switch string(body_buff) {
 
 	case "[MODIFICATION_DONE]":
@@ -107,6 +108,8 @@ func ConnectToDevice(conn net.Conn) {
 		acces.UnlinkDevice(device_id)
 
 	default:
+
+		// regular file event
 		HandleEvent(secure_id, device_id, body_buff)
 		// send back a modification confirmation, so the other end can remove this machine device_id
 		// from concerned sync task retard entries
@@ -116,6 +119,7 @@ func ConnectToDevice(conn net.Conn) {
 
 }
 
+// used to process a request when it is a regular file event
 func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 	var event QEvent
@@ -169,7 +173,7 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 }
 
-func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id string, event_queue []QEvent) {
+func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id string, event_queue []QEvent, ip_addr ...string) {
 
 	// for all devices connected concerned by the sync task, send the data with the right event flag
 	// all others are handled in retard database table from the filesystem in a function call right before
@@ -185,20 +189,27 @@ func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id strin
 			}
 
 			var acces bdd.AccesBdd
+			acces.InitConnection()
+			acces.SecureId = secure_id
 
-			ip_addr := acces.GetDeviceIP(device_id)
+			// we let the possibility to specify the address in the function arguments
+			// as in the case of a [LINK_DEVICE] request, we don't have the IP address registered in the db
+			if len(ip_addr) == 0 {
+				ip_addr = append(ip_addr, acces.GetDeviceIP(device_id))
+			}
 
-			write_buff := []byte(device_id + ";" + secure_id + string(event_json))
+			// /!\ the device_id we send is our own so the other end can identify ourselves
+			write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + string(event_json))
 
-			conn, err := net.Dial("tcp", ip_addr+":8274")
+			conn, err := net.Dial("tcp", ip_addr[0]+":8274")
 
 			if err != nil {
-				log.Fatal("Error while dialing "+ip_addr+" from SendDeviceEventQueueOverNetwork() : ", err)
+				log.Fatal("Error while dialing "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
 			}
 			_, err = conn.Write(write_buff)
 
 			if err != nil {
-				log.Fatal("Error while writing to "+ip_addr+" from SendDeviceEventQueueOverNetwork() : ", err)
+				log.Fatal("Error while writing to "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
 			}
 
 			// wait for the network lock to be released for this device

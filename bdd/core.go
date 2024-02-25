@@ -486,6 +486,7 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 			log.Println("Error accessing path:", path, err)
 			return err
 		}
+		log.Println("Registering : ", path)
 		if info.IsDir() {
 			bdd.CreateFolder(path)
 		} else {
@@ -494,6 +495,8 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 
 		return nil
 	})
+
+	log.Println("finished to map the folder.")
 
 	if err != nil {
 		log.Fatal("Error while registering files and folders for the first time.")
@@ -823,6 +826,7 @@ func (bdd *AccesBdd) GetOnlineDevices() []string {
 	return offline_devices
 }
 func (bdd *AccesBdd) SetDeviceIP(device_id string, value string) {
+	log.Println("vars : ", bdd.SecureId, device_id, value)
 	_, err := bdd.db_handler.Exec("UPDATE linked_devices SET ip_addr=? WHERE secure_id=? AND device_id=?", value, bdd.SecureId, device_id)
 
 	if err != nil {

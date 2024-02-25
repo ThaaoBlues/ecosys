@@ -32,27 +32,7 @@ func main() {
 
 	// register this device
 	go zc.Register()
-
-	/*// listen endlessly for others devices
-	go func() {
-		for {
-			zc.Browse()
-
-			// Clean exit.
-			sig := make(chan os.Signal, 1)
-			signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-			select {
-			case <-sig:
-				// Exit by user
-				break
-			}
-
-			log.Println("Shutting down.")
-		}
-	}()
-
-	// start watching ouuuh
-	*/
+	go networking.NetWorkLoop()
 
 	tui.DisplayMenu()
 

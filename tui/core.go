@@ -3,10 +3,13 @@ package tui
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"qsync/bdd"
 	"qsync/filesystem"
 	"qsync/networking"
 	"strconv"
+	"syscall"
 )
 
 var LOGO string = `
@@ -46,6 +49,11 @@ func Prompt() string {
 	return query
 }
 
+func AskConfirmation(msg string, validation string) bool {
+	fmt.Println(msg)
+	return Prompt() == validation
+}
+
 func HandleMenuQuery(query string) {
 
 	var acces bdd.AccesBdd
@@ -69,6 +77,8 @@ func HandleMenuQuery(query string) {
 
 		acces.CreateSync(path)
 
+		fmt.Println("Sync task created. It can be started with the others from the menu.")
+
 	case "2":
 
 		fmt.Println("Enter below the path of the folder you want to synchronize :")
@@ -78,6 +88,7 @@ func HandleMenuQuery(query string) {
 		acces.GetSecureId(path)
 
 		fmt.Println("Mapping available devices on your local network...")
+
 		// list qsync devices across the network
 		devices := networking.GetNetworkDevices()
 		for i := 0; i < len(devices); i++ {
@@ -93,7 +104,7 @@ func HandleMenuQuery(query string) {
 			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
 		}
 
-		device_id := devices[index]["id"]
+		device_id := devices[index]["device_id"]
 
 		var event networking.QEvent
 		event.Flag = "[LINK_DEVICE]"
@@ -102,7 +113,7 @@ func HandleMenuQuery(query string) {
 		queue := make([]networking.QEvent, 1)
 		queue = append(queue, event)
 
-		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, acces.SecureId, queue, devices[index]["ip_addr"])
 
 		// link the device into this db
 		acces.LinkDevice(device_id)
@@ -123,11 +134,13 @@ func HandleMenuQuery(query string) {
 
 	case "4":
 		// list qsync devices across the network
+
 		devices := networking.GetNetworkDevices()
 		for i := 0; i < len(devices); i++ {
 			fmt.Printf("[%d] ", i)
 			fmt.Println(devices[i])
 		}
+
 	default:
 		fmt.Println("This option does not exists :/")
 		HandleMenuQuery(Prompt())
@@ -136,7 +149,19 @@ func HandleMenuQuery(query string) {
 }
 
 func DisplayMenu() {
+
 	fmt.Print(LOGO)
 	fmt.Print(MENU)
-	HandleMenuQuery(Prompt())
+	for {
+		HandleMenuQuery(Prompt())
+	}
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	intercept := <-sig
+	if intercept != nil {
+
+		os.Exit(0)
+	}
+
 }
