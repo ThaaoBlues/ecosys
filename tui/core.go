@@ -3,13 +3,10 @@ package tui
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
 	"qsync/bdd"
 	"qsync/filesystem"
 	"qsync/networking"
 	"strconv"
-	"syscall"
 )
 
 var LOGO string = `
@@ -109,14 +106,15 @@ func HandleMenuQuery(query string) {
 		var event networking.QEvent
 		event.Flag = "[LINK_DEVICE]"
 		event.SecureId = acces.SecureId
+		event.FilePath = path
 
-		queue := make([]networking.QEvent, 1)
-		queue = append(queue, event)
+		queue := []networking.QEvent{event}
 
 		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, acces.SecureId, queue, devices[index]["ip_addr"])
 
 		// link the device into this db
-		acces.LinkDevice(device_id)
+		acces.LinkDevice(device_id, devices[index]["ip_addr"])
+		log.Println("device linked")
 
 		// build a custom queue so this device can download all the data contained in your folder
 		networking.BuildSetupQueue(acces.SecureId, device_id)
@@ -154,14 +152,6 @@ func DisplayMenu() {
 	fmt.Print(MENU)
 	for {
 		HandleMenuQuery(Prompt())
-	}
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	intercept := <-sig
-	if intercept != nil {
-
-		os.Exit(0)
 	}
 
 }

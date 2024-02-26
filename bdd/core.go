@@ -29,6 +29,11 @@ type SyncInfos struct {
 	SecureId string
 }
 
+type LinkDevice struct {
+	SecureId    string
+	IsConnected bool
+}
+
 // InitConnection initializes the database connection and creates necessary tables if they don't exist.
 // This function is used everytime we create an AccesBdd object
 func (bdd *AccesBdd) InitConnection() {
@@ -125,6 +130,7 @@ func (bdd *AccesBdd) CheckFileExists(path string) bool {
 	defer rows.Close()
 
 	var i int = 0
+
 	for rows.Next() && i == 0 {
 		/*var id int
 
@@ -170,7 +176,9 @@ func (bdd *AccesBdd) IsFile(path string) bool {
 
 	handler, err := os.Open(path)
 
-	if err != nil {
+	if os.IsNotExist(err) {
+		return false
+	} else if err != nil {
 		log.Fatal("Error while checking if file is directory or regular file.", err)
 	}
 
@@ -530,8 +538,14 @@ func (bdd *AccesBdd) RmSync() {
 }
 
 // LinkDevice links a device to the synchronization entry.
-func (bdd *AccesBdd) LinkDevice(device_id string) {
+func (bdd *AccesBdd) LinkDevice(device_id string, ip_addr string) {
 	_, err := bdd.db_handler.Exec("UPDATE sync SET linked_devices_id=IFNULL(linked_devices_id, '') || ? WHERE secure_id=?", device_id+";", bdd.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while updating database in LinkDevice() : ", err)
+	}
+
+	_, err = bdd.db_handler.Exec("INSERT INTO linked_devices (device_id,is_connected,receiving_update,ip_addr) VALUES(?,TRUE,FALSE,?)", device_id, ip_addr)
 
 	if err != nil {
 		log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -570,12 +584,22 @@ func (bdd *AccesBdd) GetRootSyncPath() string {
 }
 
 // SetDeviceConnectionState updates the connection state of a linked device.
-func (bdd *AccesBdd) SetDeviceConnectionState(device_id string, value bool) {
-	_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=? WHERE device_id=?", value, device_id)
+func (bdd *AccesBdd) SetDeviceConnectionState(device_id string, value bool, ip_addr ...string) {
 
-	if err != nil {
-		log.Fatal("Error while updating database in SetDeviceConnectionState() : ", err)
+	if len(ip_addr) == 0 {
+		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=? WHERE device_id=?", value, device_id)
+
+		if err != nil {
+			log.Fatal("Error while updating database in SetDeviceConnectionState() : ", err)
+		}
+	} else {
+		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=?,ip_addr=? WHERE device_id=?", value, ip_addr, device_id)
+
+		if err != nil {
+			log.Fatal("Error while updating database in SetDeviceConnectionState() : ", err)
+		}
 	}
+
 }
 
 func (bdd *AccesBdd) GetDeviceConnectionState(device_id string) bool {
@@ -796,15 +820,20 @@ func (bdd *AccesBdd) GetMyDeviceId() string {
 
 func (bdd *AccesBdd) GetOfflineDevices() []string {
 
-	linked_devices := bdd.GetSyncLinkedDevices()
+	rows, err := bdd.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
+	if err != nil {
+		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", err)
+	}
+	defer rows.Close()
 	var offline_devices []string
-	for _, device := range linked_devices {
 
-		if !bdd.GetDeviceConnectionState(device) {
-			offline_devices = append(offline_devices, device)
+	for rows.Next() {
+		var device LinkDevice
+		rows.Scan(&device.SecureId, &device.IsConnected)
+		if !device.IsConnected {
+			offline_devices = append(offline_devices, device.SecureId)
 		}
-
 	}
 
 	return offline_devices
@@ -812,18 +841,25 @@ func (bdd *AccesBdd) GetOfflineDevices() []string {
 
 func (bdd *AccesBdd) GetOnlineDevices() []string {
 
-	linked_devices := bdd.GetSyncLinkedDevices()
+	rows, err := bdd.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
-	var offline_devices []string
-	for _, device := range linked_devices {
+	if err != nil {
+		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", err)
+	}
+	defer rows.Close()
 
-		if bdd.GetDeviceConnectionState(device) {
-			offline_devices = append(offline_devices, device)
+	var online_devices []string
+
+	for rows.Next() {
+		var device LinkDevice
+		rows.Scan(&device.SecureId, &device.IsConnected)
+
+		if device.IsConnected {
+			online_devices = append(online_devices, device.SecureId)
 		}
-
 	}
 
-	return offline_devices
+	return online_devices
 }
 func (bdd *AccesBdd) SetDeviceIP(device_id string, value string) {
 	log.Println("vars : ", bdd.SecureId, device_id, value)

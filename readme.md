@@ -151,3 +151,6 @@ To avoid all conflicts of path, the secure_id is shared between when you link a 
 
 TODO
 - Tester avec un autre appareil
+- trouver un moyen de créer une communication entre le back et le front pour demander le futur chemin pour acceuillir la future synchronisation (fonction dans networking -> case "[LINK_DEVICE]") peut être un mode "attente de nvelle synchro" où on aura déjà spécifié un chemin sur la machine cible, stocké dans un fichier specifique supprimé juste apres. Cela permettraint en plus de ne pas accepter de nouvelles synchro h24.
+
+- etat du test : bloquage dans BuildSetupQueue() -> 2024/02/25 21:35:57 Error while querying database in GetDeviceIP() : sql: no rows in result set

@@ -1,10 +1,10 @@
 package networking
 
 import (
-	"log"
 	"os"
 	"qsync/bdd"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/mdns"
 )
@@ -20,32 +20,28 @@ func (zcs *ZeroConfService) Browse() {
 	defer acces.CloseConnection()
 
 	// check if we want to just browse the network or actually update a table
-	var new_connected_devices []map[string]string
-	var old_connected_devices []string
-	if acces.SecureId != "" {
-		old_connected_devices = acces.GetOnlineDevices()
+	old_connected_devices := acces.GetOnlineDevices()
+	new_connected_devices := GetNetworkDevices()
+
+	// first, we put all linked devices state to false
+	for _, old_device := range old_connected_devices {
+		acces.SetDeviceConnectionState(old_device, false)
 	}
-
-	new_connected_devices = GetNetworkDevices()
-
-	// only if we are not just browsing the network
-	if acces.SecureId != "" {
-		var found bool = false
-		for _, device := range old_connected_devices {
-			for _, new_device := range new_connected_devices {
-				if device == new_device["device_id"] {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				log.Println("Device disconneted : ", device)
-				acces.SetDeviceConnectionState(device, false)
-			}
+	// then, we put all linked and connected devices state to true
+	for _, new_device := range new_connected_devices {
+		if acces.IsDeviceLinked(new_device["device_id"]) {
+			acces.SetDeviceConnectionState(new_device["device_id"], true, new_device["ip_addr"])
 		}
 	}
 
+	// so now, we have a fully up to date device table without making double loops or shits like that :D
+}
+
+func (zcs *ZeroConfService) UpdateDevicesConnectionStateLoop() {
+	for {
+		zcs.Browse()
+		time.Sleep(10 * time.Second)
+	}
 }
 
 func (zcs *ZeroConfService) Register() {
@@ -92,6 +88,7 @@ func GetNetworkDevices() []map[string]string {
 	}()
 
 	// Start the lookup
+	//log.SetOutput(io.Discard)
 	mdns.Lookup("_qsync._tcp.local.", entriesCh)
 	close(entriesCh)
 

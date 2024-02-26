@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const HEADER_LENGTH int = 83
+
 type QEvent struct {
 	Flag        string
 	FileType    string
@@ -46,7 +48,7 @@ func ConnectToDevice(conn net.Conn) {
 
 	// get the device id and secure sync id from header
 
-	header_buff := make([]byte, 82)
+	header_buff := make([]byte, HEADER_LENGTH)
 	_, err := conn.Read(header_buff)
 
 	if err != nil {
@@ -66,7 +68,7 @@ func ConnectToDevice(conn net.Conn) {
 		// makes sure it is marked as connected
 		if !acces.GetDeviceConnectionState(device_id) {
 
-			acces.SetDeviceConnectionState(device_id, true)
+			acces.SetDeviceConnectionState(device_id, true, conn.RemoteAddr().String())
 
 		}
 	}
@@ -87,8 +89,13 @@ func ConnectToDevice(conn net.Conn) {
 
 	log.Println("Request body : ", string(body_buff))
 
+	var data QEvent
+	err = json.Unmarshal(body_buff, &data)
+	if err != nil {
+		log.Fatal("Error while parsing request Qevent payload (might be malformed JSON) .")
+	}
 	// check if this is a regular file event of a special request
-	switch string(body_buff) {
+	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":
 		SetEventNetworkLockForDevice(device_id, false)
@@ -101,8 +108,15 @@ func ConnectToDevice(conn net.Conn) {
 	// is trying to link to you with a new sync task that you may not have
 	// the device sending this is building a SETUP_DL queue to send at you
 	case "[LINK_DEVICE]":
-
-		acces.LinkDevice(device_id)
+		// as this is triggered by another machine telling this one to create a sync task,
+		// we must prepare the environnement to accept this
+		// by creating a new sync task with the same path (replace this later by asking to the user)
+		// and same secure_id
+		log.Println("Initializing env to welcome the other end folder content")
+		acces.SecureId = secure_id
+		acces.CreateSyncFromOtherEnd(data.FilePath, secure_id)
+		log.Println("Linking device : ", device_id)
+		acces.LinkDevice(device_id, conn.RemoteAddr().String())
 
 	case "[UNLINK_DEVICE]":
 		acces.UnlinkDevice(device_id)
@@ -212,6 +226,9 @@ func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id strin
 				log.Fatal("Error while writing to "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
 			}
 
+			conn.Close()
+			SetEventNetworkLockForDevice(device_id, false)
+
 			// wait for the network lock to be released for this device
 			for GetEventNetworkLockForDevice(device_id) {
 				time.Sleep(1 * time.Second)
@@ -246,7 +263,6 @@ func SetEventNetworkLockForDevice(device_id string, value bool) {
 func GetEventNetworkLockForDevice(device_id string) bool {
 
 	var acces bdd.AccesBdd
-
 	return acces.IsFile(device_id + ".nlock")
 
 }
@@ -338,6 +354,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 	var bdd bdd.AccesBdd
 
 	bdd.SecureId = secure_id
+	bdd.InitConnection()
 
 	rootPath := bdd.GetRootSyncPath()
 
@@ -377,6 +394,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 		return nil
 	})
 
+	log.Println("setup event queue : ", queue)
 	var devices []string
 	devices = append(devices, device_id)
 	SendDeviceEventQueueOverNetwork(devices, bdd.SecureId, queue)
