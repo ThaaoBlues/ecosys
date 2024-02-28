@@ -68,7 +68,8 @@ func ConnectToDevice(conn net.Conn) {
 		// makes sure it is marked as connected
 		if !acces.GetDeviceConnectionState(device_id) {
 
-			acces.SetDeviceConnectionState(device_id, true, conn.RemoteAddr().String())
+			// needs split as RemoteAddr ads port to the address
+			acces.SetDeviceConnectionState(device_id, true, strings.Split(conn.RemoteAddr().String(), ":")[0])
 
 		}
 	}
@@ -116,7 +117,7 @@ func ConnectToDevice(conn net.Conn) {
 		acces.SecureId = secure_id
 		acces.CreateSyncFromOtherEnd(data.FilePath, secure_id)
 		log.Println("Linking device : ", device_id)
-		acces.LinkDevice(device_id, conn.RemoteAddr().String())
+		acces.LinkDevice(device_id, strings.Split(conn.RemoteAddr().String(), ":")[0])
 
 	case "[UNLINK_DEVICE]":
 		acces.UnlinkDevice(device_id)
@@ -169,11 +170,13 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 	case "CREATE":
 		if event.FileType == "file" {
-			acces.CreateFile(event.FilePath)
 			event.Delta.PatchFile()
+			acces.CreateFile(event.FilePath)
+
 		} else {
-			acces.CreateFolder(event.FilePath)
 			os.Mkdir(event.FilePath, 0755)
+			acces.CreateFolder(event.FilePath)
+
 		}
 
 	case "UPDATE":

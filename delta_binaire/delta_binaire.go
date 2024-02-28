@@ -2,6 +2,7 @@ package delta_binaire
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -145,7 +146,13 @@ func BuilDelta(filename string, old_file_size int64, old_file_content []byte) De
 }
 
 func (delta Delta) PatchFile() {
+
 	file_handler, err := os.OpenFile(delta.Filename, os.O_WRONLY, os.ModeAppend)
+
+	if errors.Is(err, os.ErrNotExist) {
+		os.Create(delta.Filename)
+		file_handler, err = os.OpenFile(delta.Filename, os.O_WRONLY, os.ModeAppend)
+	}
 
 	if err != nil {
 		log.Fatal("Unable to open file to apply patch.", err)

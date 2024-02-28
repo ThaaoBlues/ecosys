@@ -539,17 +539,23 @@ func (bdd *AccesBdd) RmSync() {
 
 // LinkDevice links a device to the synchronization entry.
 func (bdd *AccesBdd) LinkDevice(device_id string, ip_addr string) {
+
+	// link this device to an existing task
 	_, err := bdd.db_handler.Exec("UPDATE sync SET linked_devices_id=IFNULL(linked_devices_id, '') || ? WHERE secure_id=?", device_id+";", bdd.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while updating database in LinkDevice() : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec("INSERT INTO linked_devices (device_id,is_connected,receiving_update,ip_addr) VALUES(?,TRUE,FALSE,?)", device_id, ip_addr)
+	// if the device is not registered as a target (from previous tasks), register it
+	if !bdd.IsDeviceLinked(device_id) {
+		_, err = bdd.db_handler.Exec("INSERT INTO linked_devices (device_id,is_connected,ip_addr) VALUES(?,TRUE,?)", device_id, ip_addr)
 
-	if err != nil {
-		log.Fatal("Error while updating database in LinkDevice() : ", err)
+		if err != nil {
+			log.Fatal("Error while updating database in LinkDevice() : ", err)
+		}
 	}
+
 }
 
 // UnlinkDevice unlinks a device from a synchronization entry.
@@ -593,7 +599,7 @@ func (bdd *AccesBdd) SetDeviceConnectionState(device_id string, value bool, ip_a
 			log.Fatal("Error while updating database in SetDeviceConnectionState() : ", err)
 		}
 	} else {
-		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=?,ip_addr=? WHERE device_id=?", value, ip_addr, device_id)
+		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=?,ip_addr=? WHERE device_id=?", value, ip_addr[0], device_id)
 
 		if err != nil {
 			log.Fatal("Error while updating database in SetDeviceConnectionState() : ", err)
@@ -614,66 +620,71 @@ func (bdd *AccesBdd) GetDeviceConnectionState(device_id string) bool {
 	return connection_state
 }
 
+// search in the list of secure_id if the given one is receiving updates from another device
 func (bdd *AccesBdd) IsThisFileSystemBeingPatched() bool {
 
-	var json_str string
-	var json_data map[string]bool
-	rows, err := bdd.db_handler.Query("SELECT receiving_update FROM linked_devices")
+	var ids_str string
+	var ids_list []string
 
-	if err == sql.ErrNoRows {
-		return false
-	}
+	row := bdd.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
 
+	err := row.Scan(&ids_str)
 	if err != nil {
-		log.Fatal("Error while querying database : ", err)
+		log.Fatal("Error while querying database ", err)
 	}
 
-	var patching bool = false
+	ids_list = strings.Split(ids_str, ";")
 
-	// first row
-	rows.Scan(&json_str)
-	json.Unmarshal([]byte(json_str), &json_data)
-	if json_data[bdd.SecureId] {
-		patching = true
-	}
-
-	// all the others
-	for rows.Next() {
-		rows.Scan(&json_str)
-		json.Unmarshal([]byte(json_str), &json_data)
-		if json_data[bdd.SecureId] {
-			patching = true
+	for _, id := range ids_list {
+		if id == bdd.SecureId {
+			return true
 		}
 	}
 
-	return patching
+	return false
 
 }
 
 func (bdd *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
 
-	var json_str string
-	var json_data map[string]bool
-	row := bdd.db_handler.QueryRow("SELECT receiving_update FROM linked_devices WHERE device_id=?", device_id)
+	// lock the filesystem (simply add the secure_id of the sync task to the list)
+	if value {
 
-	err := row.Scan(&json_str)
-	if err != nil {
-		log.Fatal("Error while querying database ", err)
-	}
-	json.Unmarshal([]byte(json_str), &json_data)
+		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET receiving_update=IFNULL(receiving_update, '') || ?", bdd.SecureId+";")
 
-	json_data[bdd.SecureId] = value
+		if err != nil {
+			log.Fatal("Error while updating database in LinkDevice() : ", err)
+		}
 
-	json_bytes, json_err := json.MarshalIndent(json_data, "", "\t")
+		// unlock the filesystem
+	} else {
+		var ids_str string
+		var ids_list []string
 
-	if json_err != nil {
-		log.Fatal("Error while building json payload")
-	}
+		row := bdd.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
 
-	_, err = bdd.db_handler.Exec("UPDATE linked_devices SET receiving_update=? WHERE device_id=?", string(json_bytes), device_id)
+		err := row.Scan(&ids_str)
+		if err != nil {
+			log.Fatal("Error while querying database ", err)
+		}
 
-	if err != nil {
-		log.Fatal("Error while updating database ", err)
+		ids_list = strings.Split(ids_str, ";")
+
+		// same list of sync tasks secure_id but without this one
+		var new_ids []string
+		for _, id := range ids_list {
+			if !(id == bdd.SecureId) {
+				new_ids = append(new_ids, id)
+			}
+		}
+
+		// rewrite the updated list
+		_, err = bdd.db_handler.Exec("UPDATE linked_devices SET receiving_update= ?", strings.Join(new_ids, ";"))
+
+		if err != nil {
+			log.Fatal("Error while updating database in LinkDevice() : ", err)
+		}
+
 	}
 }
 
