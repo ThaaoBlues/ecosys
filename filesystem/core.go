@@ -80,7 +80,7 @@ func handleCreateEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path st
 		bdd.CreateFile(relative_path)
 
 		// creates a delta with full file content
-		delta := delta_binaire.BuilDelta(relative_path, absolute_path, bdd.GetFileSizeFromBdd(relative_path), []byte(""))
+		delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
 		// add this delta to retard table
 		bdd.UpdateFile(relative_path, delta)
 
@@ -115,9 +115,13 @@ func handleCreateEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path st
 }
 
 func handleWriteEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path string) {
+
+	var queue []networking.QEvent
 	if bdd.IsFile(absolute_path) {
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, bdd.GetFileSizeFromBdd(relative_path), bdd.GetFileContent(relative_path))
 		bdd.UpdateFile(relative_path, delta)
+
+		log.Println("BUILT FILE DELTA : ", delta)
 
 		var event networking.QEvent
 		event.Flag = "UPDATE"
@@ -126,7 +130,6 @@ func handleWriteEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path str
 		event.FilePath = relative_path
 		event.Delta = delta
 
-		queue := make([]networking.QEvent, 1)
 		queue = append(queue, event)
 
 		networking.SendDeviceEventQueueOverNetwork(bdd.GetOnlineDevices(), bdd.SecureId, queue)
@@ -135,10 +138,10 @@ func handleWriteEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path str
 
 func handleRemoveEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path string) {
 	var file_type string
+	var queue []networking.QEvent
 
-	if bdd.IsFile(absolute_path) {
+	if bdd.WasFile(relative_path) {
 		bdd.RmFile(relative_path)
-
 		file_type = "file"
 
 	} else {
@@ -152,7 +155,6 @@ func handleRemoveEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path st
 	event.FileType = file_type
 	event.FilePath = relative_path
 
-	queue := make([]networking.QEvent, 1)
 	queue = append(queue, event)
 
 	networking.SendDeviceEventQueueOverNetwork(bdd.GetOnlineDevices(), bdd.SecureId, queue)
@@ -162,6 +164,7 @@ func handleRenameEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path st
 	new_absolute_path := computeNewPath(bdd, absolute_path)
 
 	new_relative_path := strings.Replace(new_absolute_path, bdd.GetRootSyncPath(), "", 1)
+	var queue []networking.QEvent
 
 	if new_relative_path != "" {
 
@@ -187,7 +190,6 @@ func handleRenameEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path st
 		event.FilePath = relative_path
 		event.NewFilePath = new_relative_path
 
-		queue := make([]networking.QEvent, 1)
 		queue = append(queue, event)
 
 		networking.SendDeviceEventQueueOverNetwork(bdd.GetOnlineDevices(), bdd.SecureId, queue)

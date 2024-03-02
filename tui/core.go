@@ -41,7 +41,7 @@ func Prompt() string {
 	var query string
 	_, err := fmt.Scanln(&query)
 
-	if err != nil {
+	if err != nil && err.Error() != "unexpected newline" {
 		log.Fatal("Error while reading user query in Prompt() : ", err)
 	}
 
@@ -118,10 +118,12 @@ func HandleMenuQuery(query string) {
 		acces.LinkDevice(device_id, devices[index]["ip_addr"])
 		log.Println("device linked")
 
+		log.Println("Press any key once you have put the destination path on your other machine.")
+		Prompt()
 		// build a custom queue so this device can download all the data contained in your folder
 		networking.BuildSetupQueue(acces.SecureId, device_id)
 
-		fmt.Println("The selected device has successfully been linked to a sync task. You may now want to link the other device ")
+		fmt.Println("The selected device has successfully been linked to a sync task.")
 
 	case "3":
 

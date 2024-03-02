@@ -189,19 +189,8 @@ As example, here is a program that shows a bit how it is working :
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TODO
-- Tester avec un autre appareil
-
-- fix Filename qui est égal au path dans l'event create reçu quand un reçoit une setup queue
-- dans delta binaire, remplacer l'utilisation de delta.FileName pour ouvrir un fichier par delta.FilePath
-	
-- debut de fix dans la reception de setup queue :
-	// fix pas verfié, mise de la sync root après le chemin relatif reçu pour pouvoir
-	// utiliser directement la variable
-	event.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
-
-	// a remplacer par FilePath ? au vu de son utilisation
-	event.Delta.Filename = path.Join(acces.GetRootSyncPath(), event.FilePath)
-
+- Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
+- La suppression de fichier bug (pas signalé en tant que fichier + fichier tjrs présent de l'autre coté) alors que ça fonctionnait bien avec une mauvaise interprétation en tant que folder
 
 - trouver un moyen de sécuriser les communications entre appareils.
 	* hypothèse chaque appareil va posséder une clé unique "device_key", donnée de manière symétrique pendant la création du lien entre deux machines. L'identifiant de l'appareil sera la seule donnée non chiffrée dans les échanges, elle permettra d'aller chercher la device_key associée à cet appareil et de déchiffrer le reste du message.

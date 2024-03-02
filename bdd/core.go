@@ -96,7 +96,7 @@ func (bdd *AccesBdd) InitConnection() {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		device_id TEXT,
 		is_connected BOOLEAN,
-		receiving_update TEXT,
+		receiving_update TEXT DEFAULT "",
 		ip_addr TEXT
 	)`)
 	if err != nil {
@@ -636,7 +636,7 @@ func (bdd *AccesBdd) IsThisFileSystemBeingPatched() bool {
 	var ids_str string
 	var ids_list []string
 
-	row := bdd.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
+	row := bdd.db_handler.QueryRow("SELECT IFNULL(receiving_update, '')FROM linked_devices")
 
 	err := row.Scan(&ids_str)
 

@@ -21,6 +21,8 @@ type Delta struct {
 
 func BuilDelta(relative_path string, absolute_path string, old_file_size int64, old_file_content []byte) Delta {
 
+	full_file, err := os.ReadFile(absolute_path)
+	log.Println("full file : ", full_file)
 	new_file_handler, err := os.Open(absolute_path)
 
 	if err != nil {
@@ -47,17 +49,13 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	if old_file_size > new_file_size {
 		needs_truncature = true
 	}
-
-	// TODO: IMPLEMENT TRUNCATURE IN PATCH AND IN DELTA FORGE
+	log.Println("needs truncature : ", needs_truncature)
 
 	new_file_reader := io.ByteReader(bufio.NewReader(new_file_handler))
 
-	var new_file_buff, old_file_buff byte
+	var new_file_buff byte
 
-	/* replace this with a real database reading */
-	old_file_buff = 10
-
-	file_delta := make([]delta_instruction, 0)
+	var file_delta []delta_instruction
 
 	var byte_index int64 = 0
 	var blocking_byte_index int64 = 0
@@ -65,17 +63,26 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	// errors related to files manipulations
 	var new_err error
 
-	var i int64
+	var i int64 = 0
+	log.Println("old file size : ", old_file_size)
+	log.Println("old file content : ", old_file_content)
+	for (i < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
 
-	for (i < old_file_size) && (new_err != io.EOF) {
 		new_file_buff, new_err = new_file_reader.ReadByte()
+		log.Println("byte read : ", new_file_buff)
+		if new_file_buff == 0 {
+			new_err = io.EOF
+			break
+		}
 
 		if new_err != nil {
 			log.Fatal("Erreur dans la lecture du fichier : ", err)
 		}
 
-		// replace this line with a database read byte
-		old_file_buff = old_file_content[i]
+		var old_file_buff byte
+		if i < old_file_size {
+			old_file_buff = old_file_content[i]
+		}
 
 		// new delta instruction
 
@@ -92,7 +99,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 				InstructionType: "ab",
 				ByteIndex:       byte_index,
 			}
-
+			log.Println("append : ", inst)
 			file_delta = append(file_delta, inst)
 
 			byte_index = byte_index + 1
@@ -139,8 +146,6 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 		}
 
 	}
-
-	log.Println(file_delta)
 
 	return Delta{Instructions: file_delta, FilePath: relative_path}
 }

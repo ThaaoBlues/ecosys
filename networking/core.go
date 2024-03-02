@@ -119,6 +119,7 @@ func ConnectToDevice(conn net.Conn) {
 		log.Println("Initializing env to welcome the other end folder content")
 		acces.SecureId = secure_id
 		path := backendapi.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
+		log.Println("Future sync will be stored at : ", path)
 		acces.CreateSyncFromOtherEnd(path, secure_id)
 		log.Println("Linking device : ", device_id)
 		acces.LinkDevice(device_id, strings.Split(conn.RemoteAddr().String(), ":")[0])
@@ -194,7 +195,8 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 		}
 
 	case "UPDATE":
-		acces.IncrementFileVersion(event.FilePath)
+
+		acces.IncrementFileVersion(relative_path)
 		event.Delta.PatchFile()
 	default:
 		log.Fatal("Qsync network loop received an unknown event type : ", event)
@@ -211,6 +213,8 @@ func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id strin
 
 	for _, device_id := range connected_devices {
 		for _, event := range event_queue {
+
+			log.Println("SENDING EVENT : ", event)
 
 			SetEventNetworkLockForDevice(device_id, true)
 
@@ -399,7 +403,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 			} else {
 				// creates a delta with full file content
-				delta := delta_binaire.BuilDelta(relative_path, absolute_path, bdd.GetFileSizeFromBdd(relative_path), []byte(""))
+				delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
 
 				var event QEvent
 				event.Flag = "CREATE"
