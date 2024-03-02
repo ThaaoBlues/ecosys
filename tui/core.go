@@ -3,10 +3,12 @@ package tui
 import (
 	"fmt"
 	"log"
+	backendapi "qsync/backend_api"
 	"qsync/bdd"
 	"qsync/filesystem"
 	"qsync/networking"
 	"strconv"
+	"time"
 )
 
 var LOGO string = `
@@ -62,9 +64,9 @@ func HandleMenuQuery(query string) {
 	case "0":
 
 		fmt.Println(("Starting watcher ..."))
-		path := "/home/h3x0/dev/projects/qsync/test_files"
-
-		filesystem.StartWatcher(path)
+		for _, task := range acces.ListSyncAllTasks() {
+			filesystem.StartWatcher(task.Path)
+		}
 
 	case "1":
 
@@ -150,6 +152,19 @@ func DisplayMenu() {
 
 	fmt.Print(LOGO)
 	fmt.Print(MENU)
+
+	// interactive events callbacks
+	callbacks := make(map[string]func(string))
+
+	callbacks["[CHOOSELINKPATH]"] = func(context string) {
+		fmt.Println(context + " : ")
+		backendapi.GiveInput("[CHOOSELINKPATH]", Prompt())
+		// let the backend process and suppress the event file
+		time.Sleep(1 * time.Second)
+	}
+
+	go backendapi.WaitEventLoop(callbacks)
+
 	for {
 		HandleMenuQuery(Prompt())
 	}

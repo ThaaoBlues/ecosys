@@ -39,4 +39,24 @@ func main() {
 
 	tui.DisplayMenu()
 
+	/*go func() {
+		user_data := backendapi.AskInput("test", "Donnez une entrée test")
+		fmt.Println("user_data : ", user_data)
+	}()
+
+	time.Sleep(1 * time.Second)
+
+	// get context outside of the callback function (will crash if no inputs are asked)
+	fmt.Println("contexte outside of callback: ", backendapi.ReadInputContext("test"))
+
+	callbacks := make(map[string]func(string))
+
+	callbacks["test"] = func(context string) {
+		fmt.Println("context in callback : ", context)
+		backendapi.GiveInput("test", "OUI OUI HEHEHEHEHEH")
+
+	}
+
+	backendapi.WaitEventLoop(callbacks)*/
+
 }

@@ -7,6 +7,7 @@ import (
 	bdd "qsync/bdd"
 	"qsync/delta_binaire"
 	"qsync/networking"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -48,15 +49,20 @@ func StartWatcher(rootPath string) {
 		case event := <-watcher.Events:
 			if !bdd.IsThisFileSystemBeingPatched() { // Check if the filesystem is not locked
 				log.Println("NEW FILESYSTEM EVENT : ", event)
+				// get only the relative path
+				relative_path := strings.Replace(event.Name, rootPath, "", 1)
 				switch {
-				case event.Op&fsnotify.Create == fsnotify.Create:
-					handleCreateEvent(&bdd, event.Name, watcher)
-				case event.Op&fsnotify.Write == fsnotify.Write:
-					handleWriteEvent(&bdd, event.Name)
-				case event.Op&fsnotify.Remove == fsnotify.Remove:
-					handleRemoveEvent(&bdd, event.Name)
-				case event.Op&fsnotify.Rename == fsnotify.Rename:
-					handleRenameEvent(&bdd, event.Name)
+				case event.Has(fsnotify.Create):
+					handleCreateEvent(&bdd, event.Name, relative_path, watcher)
+				case event.Has(fsnotify.Write):
+					handleWriteEvent(&bdd, event.Name, relative_path)
+				case event.Has(fsnotify.Remove):
+					handleRemoveEvent(&bdd, event.Name, relative_path)
+				case event.Has(fsnotify.Rename):
+					handleRenameEvent(&bdd, event.Name, relative_path)
+				default:
+					log.Println("Unhandled event (maybe in later versions ) : ", event)
+
 				}
 			}
 		case err := <-watcher.Errors:
@@ -65,57 +71,59 @@ func StartWatcher(rootPath string) {
 	}
 }
 
-func handleCreateEvent(bdd *bdd.AccesBdd, path string, watcher *fsnotify.Watcher) {
-	if bdd.IsFile(path) {
-		bdd.CreateFile(path)
+func handleCreateEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path string, watcher *fsnotify.Watcher) {
+
+	var queue []networking.QEvent
+
+	if bdd.IsFile(absolute_path) {
+
+		bdd.CreateFile(relative_path)
 
 		// creates a delta with full file content
-		delta := delta_binaire.BuilDelta(path, bdd.GetFileSizeFromBdd(path), []byte(""))
+		delta := delta_binaire.BuilDelta(relative_path, absolute_path, bdd.GetFileSizeFromBdd(relative_path), []byte(""))
 		// add this delta to retard table
-		bdd.UpdateFile(path, delta)
+		bdd.UpdateFile(relative_path, delta)
 
 		var event networking.QEvent
 		event.Flag = "CREATE"
 		event.SecureId = bdd.SecureId
 		event.FileType = "file"
-		event.FilePath = path
+		event.FilePath = relative_path
 		event.Delta = delta
 
-		queue := make([]networking.QEvent, 1)
 		queue = append(queue, event)
 
 		networking.SendDeviceEventQueueOverNetwork(bdd.GetOnlineDevices(), bdd.SecureId, queue)
 
 	} else {
 		// add a watcher into this new folder
-		watcher.Add(path)
+		watcher.Add(relative_path)
 		// notify changes as usual
-		bdd.CreateFolder(path)
-		bdd.AddFolderToRetard(path)
+		bdd.CreateFolder(relative_path)
+		bdd.AddFolderToRetard(relative_path)
 
 		var event networking.QEvent
 		event.Flag = "CREATE"
 		event.SecureId = bdd.SecureId
 		event.FileType = "folder"
-		event.FilePath = path
+		event.FilePath = relative_path
 
-		queue := make([]networking.QEvent, 1)
 		queue = append(queue, event)
 
 		networking.SendDeviceEventQueueOverNetwork(bdd.GetOnlineDevices(), bdd.SecureId, queue)
 	}
 }
 
-func handleWriteEvent(bdd *bdd.AccesBdd, path string) {
-	if bdd.IsFile(path) {
-		delta := delta_binaire.BuilDelta(path, bdd.GetFileSizeFromBdd(path), bdd.GetFileContent(path))
-		bdd.UpdateFile(path, delta)
+func handleWriteEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path string) {
+	if bdd.IsFile(absolute_path) {
+		delta := delta_binaire.BuilDelta(relative_path, absolute_path, bdd.GetFileSizeFromBdd(relative_path), bdd.GetFileContent(relative_path))
+		bdd.UpdateFile(relative_path, delta)
 
 		var event networking.QEvent
 		event.Flag = "UPDATE"
 		event.SecureId = bdd.SecureId
 		event.FileType = "file"
-		event.FilePath = path
+		event.FilePath = relative_path
 		event.Delta = delta
 
 		queue := make([]networking.QEvent, 1)
@@ -125,15 +133,16 @@ func handleWriteEvent(bdd *bdd.AccesBdd, path string) {
 	}
 }
 
-func handleRemoveEvent(bdd *bdd.AccesBdd, path string) {
+func handleRemoveEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path string) {
 	var file_type string
-	if bdd.IsFile(path) {
-		bdd.RmFile(path)
+
+	if bdd.IsFile(absolute_path) {
+		bdd.RmFile(relative_path)
 
 		file_type = "file"
 
 	} else {
-		bdd.RmFolder(path)
+		bdd.RmFolder(relative_path)
 		file_type = "folder"
 	}
 
@@ -141,7 +150,7 @@ func handleRemoveEvent(bdd *bdd.AccesBdd, path string) {
 	event.Flag = "REMOVE"
 	event.SecureId = bdd.SecureId
 	event.FileType = file_type
-	event.FilePath = path
+	event.FilePath = relative_path
 
 	queue := make([]networking.QEvent, 1)
 	queue = append(queue, event)
@@ -149,15 +158,17 @@ func handleRemoveEvent(bdd *bdd.AccesBdd, path string) {
 	networking.SendDeviceEventQueueOverNetwork(bdd.GetOnlineDevices(), bdd.SecureId, queue)
 }
 
-func handleRenameEvent(bdd *bdd.AccesBdd, path string) {
-	newPath := computeNewPath(bdd, path)
+func handleRenameEvent(bdd *bdd.AccesBdd, absolute_path string, relative_path string) {
+	new_absolute_path := computeNewPath(bdd, absolute_path)
 
-	if newPath != "" {
+	new_relative_path := strings.Replace(new_absolute_path, bdd.GetRootSyncPath(), "", 1)
+
+	if new_relative_path != "" {
 
 		// determining if we moved a file or a directory
 		var file_type string
 
-		if !bdd.IsFile(newPath) {
+		if !bdd.IsFile(new_absolute_path) {
 			file_type = "folder"
 		} else {
 			file_type = "file"
@@ -165,7 +176,7 @@ func handleRenameEvent(bdd *bdd.AccesBdd, path string) {
 
 		// moving it in database
 
-		bdd.Move(path, newPath, file_type)
+		bdd.Move(relative_path, new_relative_path, file_type)
 
 		// sending move event to connected devices
 
@@ -173,8 +184,8 @@ func handleRenameEvent(bdd *bdd.AccesBdd, path string) {
 		event.Flag = "MOVE"
 		event.SecureId = bdd.SecureId
 		event.FileType = file_type
-		event.FilePath = path
-		event.NewFilePath = newPath
+		event.FilePath = relative_path
+		event.NewFilePath = new_relative_path
 
 		queue := make([]networking.QEvent, 1)
 		queue = append(queue, event)

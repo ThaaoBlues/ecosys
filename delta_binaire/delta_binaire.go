@@ -16,15 +16,15 @@ type delta_instruction struct {
 
 type Delta struct {
 	Instructions []delta_instruction
-	Filename     string
+	FilePath     string
 }
 
-func BuilDelta(filename string, old_file_size int64, old_file_content []byte) Delta {
+func BuilDelta(relative_path string, absolute_path string, old_file_size int64, old_file_content []byte) Delta {
 
-	new_file_handler, err := os.Open(filename)
+	new_file_handler, err := os.Open(absolute_path)
 
 	if err != nil {
-		log.Fatal("Error while opening the file from real filesystem to seek changes.", err)
+		log.Fatal("Error while opening the file from real filesystem to seek changes. : ", err)
 	}
 
 	defer new_file_handler.Close()
@@ -142,16 +142,16 @@ func BuilDelta(filename string, old_file_size int64, old_file_content []byte) De
 
 	log.Println(file_delta)
 
-	return Delta{Instructions: file_delta, Filename: filename}
+	return Delta{Instructions: file_delta, FilePath: relative_path}
 }
 
 func (delta Delta) PatchFile() {
 
-	file_handler, err := os.OpenFile(delta.Filename, os.O_WRONLY, os.ModeAppend)
+	file_handler, err := os.OpenFile(delta.FilePath, os.O_WRONLY, os.ModeAppend)
 
 	if errors.Is(err, os.ErrNotExist) {
-		os.Create(delta.Filename)
-		file_handler, err = os.OpenFile(delta.Filename, os.O_WRONLY, os.ModeAppend)
+		os.Create(delta.FilePath)
+		file_handler, err = os.OpenFile(delta.FilePath, os.O_WRONLY, os.ModeAppend)
 	}
 
 	if err != nil {

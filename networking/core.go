@@ -6,7 +6,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
+	backendapi "qsync/backend_api"
 	"qsync/bdd"
 	"qsync/delta_binaire"
 	"strings"
@@ -55,9 +57,10 @@ func ConnectToDevice(conn net.Conn) {
 		log.Fatal("Error in ConnectToDevice() while reading header")
 	}
 
-	log.Println("Request header : ", string(header_buff))
+	//log.Println("Request header : ", string(header_buff))
 
 	var device_id string = strings.Split(string(header_buff), ";")[0]
+
 	var secure_id string = strings.Split(string(header_buff), ";")[1]
 
 	acces.SecureId = secure_id
@@ -88,7 +91,7 @@ func ConnectToDevice(conn net.Conn) {
 		body_buff = append(body_buff, buffer[:n]...)
 	}
 
-	log.Println("Request body : ", string(body_buff))
+	//log.Println("Request body : ", string(body_buff))
 
 	var data QEvent
 	err = json.Unmarshal(body_buff, &data)
@@ -115,7 +118,8 @@ func ConnectToDevice(conn net.Conn) {
 		// and same secure_id
 		log.Println("Initializing env to welcome the other end folder content")
 		acces.SecureId = secure_id
-		acces.CreateSyncFromOtherEnd(data.FilePath, secure_id)
+		path := backendapi.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
+		acces.CreateSyncFromOtherEnd(path, secure_id)
 		log.Println("Linking device : ", device_id)
 		acces.LinkDevice(device_id, strings.Split(conn.RemoteAddr().String(), ":")[0])
 
@@ -154,9 +158,17 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 	acces.SetFileSystemPatchLockState(device_id, true)
 
+	// mise de la sync root après le chemin relatif reçu pour pouvoir
+	// utiliser directement la variable
+	// avant ce bloc, event.FilePath est un chemin relatif vers le fichier.
+	relative_path := event.FilePath
+	new_relative_path := event.NewFilePath
+	event.Delta.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
+	event.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
+
 	switch event.Flag {
 	case "MOVE":
-		acces.Move(event.FilePath, event.NewFilePath, event.FileType)
+		acces.Move(relative_path, new_relative_path, event.FileType)
 		MoveInFilesystem(event.FilePath, event.NewFilePath)
 	case "REMOVE":
 		if event.FileType == "file" {
@@ -169,13 +181,15 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 		RemoveFromFilesystem(event.FilePath)
 
 	case "CREATE":
+
+		log.Println("Creating file : ", event.FilePath)
 		if event.FileType == "file" {
 			event.Delta.PatchFile()
-			acces.CreateFile(event.FilePath)
+			acces.CreateFile(relative_path)
 
 		} else {
 			os.Mkdir(event.FilePath, 0755)
-			acces.CreateFolder(event.FilePath)
+			acces.CreateFolder(relative_path)
 
 		}
 
@@ -363,41 +377,46 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 	var queue []QEvent
 
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(rootPath, func(absolute_path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Fatal("Error accessing path:", path, err)
+			log.Fatal("Error accessing path:", absolute_path, err)
 			return err
 		}
+		relative_path := strings.Replace(absolute_path, rootPath, "", 1)
+		if relative_path != "" {
+			if info.IsDir() {
+				// creates a delta with full file content
 
-		if info.IsDir() {
-			// creates a delta with full file content
+				// only keep the relative path
 
-			var event QEvent
-			event.Flag = "CREATE"
-			event.SecureId = secure_id
-			event.FileType = "folder"
-			event.FilePath = path
+				var event QEvent
+				event.Flag = "CREATE"
+				event.SecureId = secure_id
+				event.FileType = "folder"
+				event.FilePath = relative_path
 
-			queue = append(queue, event)
+				queue = append(queue, event)
 
-		} else {
-			// creates a delta with full file content
-			delta := delta_binaire.BuilDelta(path, bdd.GetFileSizeFromBdd(path), []byte(""))
+			} else {
+				// creates a delta with full file content
+				delta := delta_binaire.BuilDelta(relative_path, absolute_path, bdd.GetFileSizeFromBdd(relative_path), []byte(""))
 
-			var event QEvent
-			event.Flag = "CREATE"
-			event.SecureId = secure_id
-			event.FileType = "file"
-			event.FilePath = path
-			event.Delta = delta
+				var event QEvent
+				event.Flag = "CREATE"
+				event.SecureId = secure_id
+				event.FileType = "file"
+				event.FilePath = relative_path
+				event.Delta = delta
 
-			queue = append(queue, event)
+				queue = append(queue, event)
+			}
+
 		}
 
 		return nil
 	})
 
-	log.Println("setup event queue : ", queue)
+	//log.Println("setup event queue : ", queue)
 	var devices []string
 	devices = append(devices, device_id)
 	SendDeviceEventQueueOverNetwork(devices, bdd.SecureId, queue)

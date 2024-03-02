@@ -147,12 +147,65 @@ no newline between device_id and QEvent data
 
 To avoid all conflicts of path, the secure_id is shared between when you link a device and will be used to identify the correct sync task
 
+## BACK-TO-FRONT COMMUNICATION
+when a request is treated by the backend and it necessitate an user input, it creates a "<flag>.btf" file
+with a context inside that can be displayed to the user. You just have to append write the user response directly after the context(no newline in between).
+As example, here is a program that shows a bit how it is working :
+```go
+
+	// backend
+	go func() {
+		// here, "test" will be the event flag
+		user_data := backendapi.AskInput("test", "Hey ! I need you to write me your name !")
+		fmt.Println("user_data : ", user_data)
+	}()
+
+
+	// let the backend ask the user input (overkill)
+	time.Sleep(1 * time.Second)
+
+	// get context outside of the callback function (will crash if no inputs are asked)
+	fmt.Println("contexte outside of callback: ", backendapi.ReadInputContext("test"))
+
+
+	// mostly used : using callback functions
+	callbacks := make(map[string]func(string))
+
+	// the map keys are the flag ! don't put anything random
+	callbacks["test"] = func(context string) {
+		fmt.Println("context in callback : ", context)
+		// give to backend the user response
+		backendapi.GiveInput("test", "Josette")
+	}
+
+	backendapi.WaitEventLoop(callbacks) // can be put into a goroutine
+
+```
+
+## events flag (files to watch):
+* [CHOOSELINKPATH](.btf) triggered when user has to choose a path that to receive the files of a sync task on another device
+
+
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TODO
 - Tester avec un autre appareil
-- trouver un moyen de créer une communication entre le back et le front pour demander le futur chemin pour acceuillir la future synchronisation (fonction dans networking -> case "[LINK_DEVICE]") peut être un mode "attente de nvelle synchro" où on aura déjà spécifié un chemin sur la machine cible, stocké dans un fichier specifique supprimé juste apres. Cela permettraint en plus de ne pas accepter de nouvelles synchro h24.
 
-- etat du test : bloquage dans BuildSetupQueue() -> 2024/02/25 21:35:57 Error while querying database in GetDeviceIP() : sql: no rows in result set
+- fix Filename qui est égal au path dans l'event create reçu quand un reçoit une setup queue
+- dans delta binaire, remplacer l'utilisation de delta.FileName pour ouvrir un fichier par delta.FilePath
+	
+- debut de fix dans la reception de setup queue :
+	// fix pas verfié, mise de la sync root après le chemin relatif reçu pour pouvoir
+	// utiliser directement la variable
+	event.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
 
-- rewrite filesystem patch lock with a simple list of secure_id, if the provided id is present, this sync is being updated.
+	// a remplacer par FilePath ? au vu de son utilisation
+	event.Delta.Filename = path.Join(acces.GetRootSyncPath(), event.FilePath)
+
+
+- trouver un moyen de sécuriser les communications entre appareils.
+	* hypothèse chaque appareil va posséder une clé unique "device_key", donnée de manière symétrique pendant la création du lien entre deux machines. L'identifiant de l'appareil sera la seule donnée non chiffrée dans les échanges, elle permettra d'aller chercher la device_key associée à cet appareil et de déchiffrer le reste du message.
+	* l'intégrité du message se vérifiera avec un hash de la totalité du message (device_id compris) qui sera rajouté en fin de requète
+
+	https://fr.wikipedia.org/wiki/Mode_d%27op%C3%A9ration_(cryptographie)#Compteur_avec_code_d%27authentification_de_message_de_cha%C3%AEnage_de_blocs_de_chiffrement_%28CCM%29
+	

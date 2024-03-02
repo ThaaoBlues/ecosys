@@ -135,7 +135,7 @@ func (bdd *AccesBdd) CheckFileExists(path string) bool {
 		/*var id int
 
 		if err := rows.Scan(&id); err != nil {
-			log.Fatal("Error while querying database ", err)
+			log.Fatal("Error while querying database in CheckFileExists() : ", err)
 		}*/
 		i++
 
@@ -202,7 +202,7 @@ func (bdd *AccesBdd) GetSecureId(rootpath string) {
 	}
 
 	if err != nil {
-		log.Fatal("Error while querying database ", err)
+		log.Fatal("Error while querying database GetSecureId() : ", err)
 	}
 
 }
@@ -210,10 +210,12 @@ func (bdd *AccesBdd) GetSecureId(rootpath string) {
 // CreateFile adds a file to the database.
 func (bdd *AccesBdd) CreateFile(path string) {
 
-	file_handler, err := os.Open(path)
+	absolute_path := filepath.Join(bdd.GetRootSyncPath(), path)
+
+	file_handler, err := os.Open(absolute_path)
 
 	if err != nil {
-		log.Fatal("Error while opening the file from real filesystem to seek changes.", err)
+		log.Fatal("Error while opening the file from real filesystem to seek changes. : ", err)
 	}
 
 	defer file_handler.Close()
@@ -253,7 +255,7 @@ func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
 	var version_id int64
 	err := row.Scan(&version_id)
 	if err != nil {
-		log.Fatal("Error while querying database ", err)
+		log.Fatal("Error while querying database GetFileLastVersionId() : ", err)
 	}
 
 	return version_id
@@ -262,45 +264,46 @@ func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
 // UpdateFile updates a file in the database with a new version.
 // For that, a binary delta object is used.
 func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
-
-	new_version_id := bdd.GetFileLastVersionId(path) + 1
-
-	bdd.IncrementFileVersion(path)
-
-	// convert detla to json
-	json_data, err := json.Marshal(delta)
-
-	if err != nil {
-		log.Fatal("Error while creating json object from delta type : ", err)
-	}
-
-	// add line in delta table
-
-	_, err = bdd.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", path, new_version_id, json_data, bdd.SecureId)
-
-	if err != nil {
-		log.Fatal("Error while storing binary delta in database : ", err)
-	}
-
-	// add a line in retard table with all devices linked and the version number
-
-	MODTYPES := map[string]string{
-		"creation": "c",
-		"delete":   "d",
-		"patch":    "p",
-		"move":     "m",
-	}
-
 	offline_linked_devices := bdd.GetOfflineDevices()
 
-	_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, path, MODTYPES["patch"], strings.Join(offline_linked_devices, ";"), bdd.SecureId)
+	if len(offline_linked_devices) > 0 {
+		new_version_id := bdd.GetFileLastVersionId(path) + 1
 
-	if err != nil {
-		log.Fatal("Error while inserting new retard : ", err)
+		bdd.IncrementFileVersion(path)
+
+		// convert detla to json
+		json_data, err := json.Marshal(delta)
+
+		if err != nil {
+			log.Fatal("Error while creating json object from delta type : ", err)
+		}
+
+		// add line in delta table
+
+		_, err = bdd.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", path, new_version_id, json_data, bdd.SecureId)
+
+		if err != nil {
+			log.Fatal("Error while storing binary delta in database : ", err)
+		}
+
+		// add a line in retard table with all devices linked and the version number
+
+		MODTYPES := map[string]string{
+			"creation": "c",
+			"delete":   "d",
+			"patch":    "p",
+			"move":     "m",
+		}
+
+		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, path, MODTYPES["patch"], strings.Join(offline_linked_devices, ";"), bdd.SecureId)
+
+		if err != nil {
+			log.Fatal("Error while inserting new retard : ", err)
+		}
 	}
 
-	// update the cached file content to build the next delta
-	bdd.UpdateCachedFile(path)
+	// update the cached file content to build the next delta (needs absolute path to the file)
+	bdd.UpdateCachedFile(filepath.Join(bdd.GetRootSyncPath(), path))
 }
 
 func (bdd *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
@@ -337,7 +340,7 @@ func (bdd *AccesBdd) GetFileContent(path string) []byte {
 	var compressed_content []byte
 	err := row.Scan(&compressed_content)
 	if err != nil {
-		log.Fatal("Error while querying database ", err)
+		log.Fatal("Error while querying database in GetFileContent() : ", err)
 	}
 
 	decompression_buffer := bytes.NewReader(compressed_content)
@@ -381,10 +384,12 @@ func (bdd *AccesBdd) RmFile(path string) {
 	}
 	linked_devices := bdd.GetOfflineDevices()
 
-	_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
+	if len(linked_devices) > 0 {
+		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
 
-	if err != nil {
-		log.Fatal("Error while inserting new retard : ", err)
+		if err != nil {
+			log.Fatal("Error while inserting new retard : ", err)
+		}
 	}
 
 }
@@ -430,10 +435,12 @@ func (bdd *AccesBdd) RmFolder(path string) {
 	}
 	linked_devices := bdd.GetOfflineDevices()
 
-	_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
+	if len(linked_devices) > 0 {
+		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
 
-	if err != nil {
-		log.Fatal("Error while inserting new retard : ", err)
+		if err != nil {
+			log.Fatal("Error while inserting new retard : ", err)
+		}
 	}
 
 }
@@ -455,10 +462,12 @@ func (bdd *AccesBdd) Move(path string, new_path string, file_type string) {
 
 	linked_devices := bdd.GetOfflineDevices()
 
-	_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)", 0, path, MODTYPES["move"], strings.Join(linked_devices, ";"), file_type, bdd.SecureId)
+	if len(linked_devices) > 0 {
+		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)", 0, path, MODTYPES["move"], strings.Join(linked_devices, ";"), file_type, bdd.SecureId)
 
-	if err != nil {
-		log.Fatal("Error while inserting new retard : ", err)
+		if err != nil {
+			log.Fatal("Error while inserting new retard : ", err)
+		}
 	}
 
 }
@@ -495,10 +504,11 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 			return err
 		}
 		log.Println("Registering : ", path)
+		relative_path := strings.Replace(path, rootPath, "", 1)
 		if info.IsDir() {
-			bdd.CreateFolder(path)
+			bdd.CreateFolder(relative_path)
 		} else {
-			bdd.CreateFile(path)
+			bdd.CreateFile(relative_path)
 		}
 
 		return nil
@@ -583,7 +593,7 @@ func (bdd *AccesBdd) GetRootSyncPath() string {
 
 	err := row.Scan(&rootPath)
 	if err != nil {
-		log.Fatal("Error while querying database ", err)
+		log.Fatal("Error while querying database in GetRootSyncPath() : ", err)
 	}
 
 	return rootPath
@@ -629,8 +639,9 @@ func (bdd *AccesBdd) IsThisFileSystemBeingPatched() bool {
 	row := bdd.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
 
 	err := row.Scan(&ids_str)
-	if err != nil {
-		log.Fatal("Error while querying database ", err)
+
+	if err != sql.ErrNoRows && err != nil {
+		log.Fatal("Error while querying database in IsThisFileSystemBeingPatched() ", err)
 	}
 
 	ids_list = strings.Split(ids_str, ";")
@@ -665,7 +676,7 @@ func (bdd *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
 
 		err := row.Scan(&ids_str)
 		if err != nil {
-			log.Fatal("Error while querying database ", err)
+			log.Fatal("Error while querying database SetFileSystemPatchLockState() : ", err)
 		}
 
 		ids_list = strings.Split(ids_str, ";")
@@ -694,7 +705,7 @@ func (bdd *AccesBdd) GetFileSizeFromBdd(path string) int64 {
 
 	err := row.Scan(&size)
 	if err != nil {
-		log.Fatal("Error while querying database ", err)
+		log.Fatal("Error while querying database GetFileSizeFromBdd()", err)
 	}
 
 	return size
@@ -708,7 +719,7 @@ func (bdd *AccesBdd) GetSyncLinkedDevices() []string {
 
 	err := row.Scan(&devices_str)
 	if err != nil {
-		log.Fatal("Error while querying database ", err)
+		log.Fatal("Error while querying database in GetSyncLinkedDevices() :", err)
 	}
 
 	devices_list = strings.Split(devices_str, ";")
@@ -729,7 +740,7 @@ func (bdd *AccesBdd) GetFileDelta(version int64, path string) dtbin.Delta {
 
 	err := row.Scan(&json_data)
 	if err != nil {
-		log.Fatal("Error while querying database ", err)
+		log.Fatal("Error while querying database  in GetFileDelta() : ", err)
 	}
 
 	err = json.Unmarshal([]byte(json_data), &delta)
@@ -910,11 +921,19 @@ func (bdd *AccesBdd) UpdateCachedFile(path string) {
 
 	file_content, err := os.ReadFile(path)
 
+	var bytes_buffer bytes.Buffer
+
+	gzip_writer := gzip.NewWriter(&bytes_buffer)
+
+	gzip_writer.Write(file_content)
+
+	gzip_writer.Close()
+
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while reading file to cache its content : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", file_content, path, bdd.SecureId)
+	_, err = bdd.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), path, bdd.SecureId)
 
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
