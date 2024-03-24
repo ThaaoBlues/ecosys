@@ -190,17 +190,6 @@ As example, here is a program that shows a bit how it is working :
 
 TODO
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
-- Tester tout le systeme de retards
-
-- supprimer un element de retard si sa liste de machines à patch est vide
-* terminé =>>> A TESTER.
-
-- réparer le relative path car la root du watcher renvoie le premier dossier qu'elle regarde et non la totalité du chemin relatif vers le dossier actuel => il faut compléter ce chemin
-* visiblement ça ajoute bien ??? c'était peut-être des restes avant d'introduire absolute_path =>>> A TESTER
-
-- réparer le fait que la création d'un fichier est stoquée comme une update dans la bdd, ce qui va faire crash l'autre machine car il n'existe pas d'ancienne id de ce fichier. => Créer un clone de UpdateFile mais pour créer un fichier (juste mettre creation dans le dictionnaire au lieu de update)
-* Modifié CreateFile() pour prendre le chemin absolu et un flag ("[ADD_TO_RETARD]" ou "[SENT_FROM_THE_OTHER_END]") si le flag demande l'ajout dans la table retard, on le fait (+ creation d'un delta etc...). sinon non. =>>> A TESTER
-
 
 
 
