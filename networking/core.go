@@ -11,20 +11,12 @@ import (
 	backendapi "qsync/backend_api"
 	"qsync/bdd"
 	"qsync/delta_binaire"
+	"qsync/globals"
 	"strings"
 	"time"
 )
 
 const HEADER_LENGTH int = 83
-
-type QEvent struct {
-	Flag        string
-	FileType    string
-	Delta       delta_binaire.Delta
-	FilePath    string
-	NewFilePath string
-	SecureId    string
-}
 
 func NetWorkLoop() {
 
@@ -93,18 +85,19 @@ func ConnectToDevice(conn net.Conn) {
 
 	//log.Println("Request body : ", string(body_buff))
 
-	var data QEvent
+	var data globals.QEvent
 	err = json.Unmarshal(body_buff, &data)
 	if err != nil {
 		log.Fatal("Error while parsing request Qevent payload (might be malformed JSON) .")
 	}
 	// check if this is a regular file event of a special request
+	log.Println("RECEIVING EVENT : ", data)
 	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":
 		SetEventNetworkLockForDevice(device_id, false)
 	case "[SETUP_DL]":
-
+		log.Println("GOT FLAG, BUILDING SETUP QUEUE...")
 		// init an event queue with all elements from the root sync directory
 		BuildSetupQueue(secure_id, device_id)
 
@@ -142,7 +135,7 @@ func ConnectToDevice(conn net.Conn) {
 // used to process a request when it is a regular file event
 func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
-	var event QEvent
+	var event globals.QEvent
 
 	err := json.Unmarshal(buffer, &event)
 	if err != nil {
@@ -186,7 +179,7 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 		log.Println("Creating file : ", event.FilePath)
 		if event.FileType == "file" {
 			event.Delta.PatchFile()
-			acces.CreateFile(relative_path)
+			acces.CreateFile(relative_path, filepath.Join(acces.GetRootSyncPath(), relative_path), "[SENT_FROM_OTHER_DEVICE]")
 
 		} else {
 			os.Mkdir(event.FilePath, 0755)
@@ -206,7 +199,7 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 }
 
-func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id string, event_queue []QEvent, ip_addr ...string) {
+func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id string, event_queue []globals.QEvent, ip_addr ...string) {
 
 	// for all devices connected concerned by the sync task, send the data with the right event flag
 	// all others are handled in retard database table from the filesystem in a function call right before
@@ -379,7 +372,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 	rootPath := bdd.GetRootSyncPath()
 
-	var queue []QEvent
+	var queue []globals.QEvent
 
 	err := filepath.Walk(rootPath, func(absolute_path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -393,7 +386,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 				// only keep the relative path
 
-				var event QEvent
+				var event globals.QEvent
 				event.Flag = "CREATE"
 				event.SecureId = secure_id
 				event.FileType = "folder"
@@ -405,7 +398,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				// creates a delta with full file content
 				delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
 
-				var event QEvent
+				var event globals.QEvent
 				event.Flag = "CREATE"
 				event.SecureId = secure_id
 				event.FileType = "file"

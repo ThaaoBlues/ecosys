@@ -10,7 +10,9 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"qsync/delta_binaire"
 	dtbin "qsync/delta_binaire"
+	"qsync/globals"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -208,9 +210,7 @@ func (bdd *AccesBdd) GetSecureId(rootpath string) {
 }
 
 // CreateFile adds a file to the database.
-func (bdd *AccesBdd) CreateFile(path string) {
-
-	absolute_path := filepath.Join(bdd.GetRootSyncPath(), path)
+func (bdd *AccesBdd) CreateFile(relative_path string, absolute_path string, flag string) {
 
 	file_handler, err := os.Open(absolute_path)
 
@@ -241,11 +241,58 @@ func (bdd *AccesBdd) CreateFile(path string) {
 
 	gzip_writer.Close()
 
-	_, err = bdd.db_handler.Exec("INSERT INTO filesystem (path, version_id, type, size, secure_id,content) VALUES (?, 0, 'file', ?, ?,?)", path, stat.Size(), bdd.SecureId, bytes_buffer.Bytes())
+	_, err = bdd.db_handler.Exec("INSERT INTO filesystem (path, version_id, type, size, secure_id,content) VALUES (?, 0, 'file', ?, ?,?)", relative_path, stat.Size(), bdd.SecureId, bytes_buffer.Bytes())
 
 	if err != nil {
 		log.Fatal("Error while inserting into database ", err)
 	}
+
+	// Now, add this file to retard and delta etc... all for the others linked devices
+	// get only offline devices
+
+	if flag == "[ADD_TO_RETARD]" {
+		delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
+		offline_devices := bdd.GetSyncOfflineDevices()
+		if len(offline_devices) > 0 {
+			new_version_id := bdd.GetFileLastVersionId(relative_path) + 1
+
+			bdd.IncrementFileVersion(relative_path)
+
+			// convert detla to json
+			json_data, err := json.Marshal(delta)
+
+			if err != nil {
+				log.Fatal("Error while creating json object from delta type : ", err)
+			}
+
+			// add line in delta table
+
+			_, err = bdd.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", relative_path, new_version_id, json_data, bdd.SecureId)
+
+			if err != nil {
+				log.Fatal("Error while storing binary delta in database : ", err)
+			}
+
+			// add a line in retard table with all devices linked and the version number
+
+			MODTYPES := map[string]string{
+				"creation": "c",
+				"delete":   "d",
+				"patch":    "p",
+				"move":     "m",
+			}
+
+			_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, relative_path, MODTYPES["creation"], strings.Join(offline_devices, ";"), bdd.SecureId)
+
+			if err != nil {
+				log.Fatal("Error while inserting new retard : ", err)
+			}
+		}
+
+	}
+
+	// update the cached file content to build the next delta (needs absolute path to the file)
+	bdd.UpdateCachedFile(absolute_path)
 }
 
 // GetFileLastVersionId retrieves the last version ID of a file.
@@ -261,12 +308,41 @@ func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
 	return version_id
 }
 
+func (bdd *AccesBdd) GetSyncOfflineDevices() []string {
+	linked_devices := bdd.GetSyncLinkedDevices()
+	query := "SELECT device_id,is_connected FROM linked_devices WHERE device_id IN ('"
+	query += strings.Join(linked_devices, "','")
+	query += "')"
+
+	rows, err := bdd.db_handler.Query(query)
+
+	if err != nil {
+		log.Fatal("Error while querying database from GetSyncOfflineDevices() : ", err)
+	}
+	defer rows.Close()
+
+	var offline_devices []string
+
+	for rows.Next() {
+		var device LinkDevice
+		rows.Scan(&device.SecureId, &device.IsConnected)
+
+		if !device.IsConnected {
+			offline_devices = append(offline_devices, device.SecureId)
+		}
+	}
+
+	return offline_devices
+}
+
 // UpdateFile updates a file in the database with a new version.
 // For that, a binary delta object is used.
 func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
-	offline_linked_devices := bdd.GetOfflineDevices()
 
-	if len(offline_linked_devices) > 0 {
+	// get only offline devices
+
+	offline_devices := bdd.GetSyncOfflineDevices()
+	if len(offline_devices) > 0 {
 		new_version_id := bdd.GetFileLastVersionId(path) + 1
 
 		bdd.IncrementFileVersion(path)
@@ -295,7 +371,7 @@ func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 			"move":     "m",
 		}
 
-		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, path, MODTYPES["patch"], strings.Join(offline_linked_devices, ";"), bdd.SecureId)
+		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, path, MODTYPES["patch"], strings.Join(offline_devices, ";"), bdd.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -382,7 +458,7 @@ func (bdd *AccesBdd) RmFile(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := bdd.GetOfflineDevices()
+	linked_devices := bdd.GetSyncLinkedDevices()
 
 	if len(linked_devices) > 0 {
 		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
@@ -433,7 +509,7 @@ func (bdd *AccesBdd) RmFolder(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := bdd.GetOfflineDevices()
+	linked_devices := bdd.GetSyncLinkedDevices()
 
 	if len(linked_devices) > 0 {
 		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
@@ -460,7 +536,7 @@ func (bdd *AccesBdd) Move(path string, new_path string, file_type string) {
 		"move":     "m",
 	}
 
-	linked_devices := bdd.GetOfflineDevices()
+	linked_devices := bdd.GetSyncLinkedDevices()
 
 	if len(linked_devices) > 0 {
 		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)", 0, path, MODTYPES["move"], strings.Join(linked_devices, ";"), file_type, bdd.SecureId)
@@ -508,7 +584,7 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 		if info.IsDir() {
 			bdd.CreateFolder(relative_path)
 		} else {
-			bdd.CreateFile(relative_path)
+			bdd.CreateFile(relative_path, path, "[ADD_TO_RETARD]")
 		}
 
 		return nil
@@ -754,9 +830,6 @@ func (bdd *AccesBdd) GetFileDelta(version int64, path string) dtbin.Delta {
 
 func (bdd *AccesBdd) AddFolderToRetard(path string) {
 
-	// get lastest version of file and increment it
-	new_version_id := bdd.GetFileLastVersionId(path) + 1
-
 	// add a line in retard table with all devices linked and the version number
 
 	MODTYPES := map[string]string{
@@ -765,9 +838,9 @@ func (bdd *AccesBdd) AddFolderToRetard(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := bdd.GetOfflineDevices()
-
-	_, err := bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", new_version_id, path, MODTYPES["creation"], strings.Join(linked_devices, ";"), bdd.SecureId)
+	linked_devices := bdd.GetSyncLinkedDevices()
+	log.Println("ADDING FOLDER TO RETARD : ", path)
+	_, err := bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], strings.Join(linked_devices, ";"), bdd.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while inserting new retard in AddFolderToRetard() : ", err)
@@ -830,7 +903,7 @@ func (bdd *AccesBdd) GetMyDeviceId() string {
 	row := bdd.db_handler.QueryRow("SELECT device_id FROM mesid")
 
 	if row.Err() != nil {
-		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", row.Err())
+		log.Fatal("Error while querying database from GetMyDeviceId() : ", row.Err())
 	}
 
 	var device_id string
@@ -845,7 +918,7 @@ func (bdd *AccesBdd) GetOfflineDevices() []string {
 	rows, err := bdd.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
 	if err != nil {
-		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", err)
+		log.Fatal("Error while querying database from GetOfflineDevices() : ", err)
 	}
 	defer rows.Close()
 	var offline_devices []string
@@ -866,7 +939,7 @@ func (bdd *AccesBdd) GetOnlineDevices() []string {
 	rows, err := bdd.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
 	if err != nil {
-		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", err)
+		log.Fatal("Error while querying database from GetOnlineDevices() : ", err)
 	}
 	defer rows.Close()
 
@@ -948,7 +1021,7 @@ func (bdd *AccesBdd) ListSyncAllTasks() []SyncInfos {
 	rows, err := bdd.db_handler.Query("SELECT secure_id,root FROM sync")
 
 	if err != nil {
-		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", err)
+		log.Fatal("Error while querying database from ListSyncAllTasks() : ", err)
 	}
 	defer rows.Close()
 
@@ -961,5 +1034,151 @@ func (bdd *AccesBdd) ListSyncAllTasks() []SyncInfos {
 	}
 
 	return list
+
+}
+
+func (bdd *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]*globals.QEvent {
+
+	// as the device can be late on many tasks, we must create an hash table with all
+	// the differents delta on all differents tasks he's late on
+	var queue map[string][]*globals.QEvent = make(map[string][]*globals.QEvent)
+
+	log.Println("Building missed files event queue from retard...")
+	rows, err := bdd.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
+
+	if err != nil {
+		log.Fatal("Error while querying database from BuildEventQueueFromRetard() : ", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event globals.QEvent
+		var delta_bytes []byte
+		var delta dtbin.Delta
+		var mod_type string
+		var secure_id string
+		var filepath string
+		var file_type string
+
+		MODTYPES_REVERSE := map[string]string{
+			"c": "CREATE",
+			"d": "REMOVE",
+			"p": "UPDATE",
+			"m": "MOVE",
+		}
+
+		rows.Scan(&secure_id, &delta_bytes, &mod_type, &filepath, &file_type)
+
+		event.Flag = MODTYPES_REVERSE[mod_type]
+
+		json.Unmarshal(delta_bytes, &delta)
+		event.SecureId = secure_id
+		event.FileType = file_type
+		event.FilePath = filepath
+		event.Delta = delta
+
+		log.Println("ADDING EVENT : ", event)
+
+		queue[secure_id] = append(queue[secure_id], &event)
+	}
+
+	log.Println("Building missed folders creation event queue from retard...")
+	rows, err = bdd.db_handler.Query("SELECT r.secure_id,r.mod_type,r.path,r.type FROM retard AS r WHERE r.devices_to_patch LIKE ? AND r.type='folder'", "%"+device_id+"%")
+
+	if err != nil {
+		log.Fatal("Error while querying database from BuildEventQueueFromRetard() : ", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event globals.QEvent
+		var mod_type string
+		var secure_id string
+		var filepath string
+		var file_type string
+
+		MODTYPES_REVERSE := map[string]string{
+			"c": "CREATE",
+			"d": "REMOVE",
+			"p": "UPDATE",
+			"m": "MOVE",
+		}
+
+		rows.Scan(&secure_id, &mod_type, &filepath, &file_type)
+
+		event.Flag = MODTYPES_REVERSE[mod_type]
+		event.SecureId = secure_id
+		event.FileType = file_type
+		event.FilePath = filepath
+
+		log.Println("ADDING EVENT : ", event)
+
+		queue[secure_id] = append(queue[secure_id], &event)
+	}
+
+	log.Println("Retard queue : ", queue)
+
+	return queue
+
+}
+
+func (bdd *AccesBdd) RemoveDeviceFromRetard(device_id string) {
+
+	// to replace, this code is the one from FileSystemPatchLockState
+
+	var ids_str string
+	var ids_list []string
+
+	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+
+	err := row.Scan(&ids_str)
+	if err != nil {
+		log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+	}
+
+	ids_list = strings.Split(ids_str, ";")
+
+	// same list of sync tasks secure_id but without this one
+	var new_ids []string
+	for _, id := range ids_list {
+		if !(id == device_id) {
+			new_ids = append(new_ids, id)
+		}
+	}
+
+	// if it was the last device to being late, we suppress the row from the table
+	// if not we just rewrite without its id
+	if len(new_ids) > 0 {
+		// rewrite the updated list
+		_, err = bdd.db_handler.Exec("UPDATE retard SET devices_to_patch= ? WHERE devices_to_patch LIKE ?", strings.Join(new_ids, ";"), "%"+device_id+"%")
+
+		if err != nil {
+			log.Fatal("Error while updating database in LinkDevice() : ", err)
+		}
+
+	} else {
+		// rewrite the updated list
+		_, err = bdd.db_handler.Exec("DELETE FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+
+		if err != nil {
+			log.Fatal("Error while updating database in LinkDevice() : ", err)
+		}
+	}
+
+}
+
+// this function checks if a device has some updates to catch up on
+func (bdd *AccesBdd) NeedsUpdate(device_id string) bool {
+
+	var ids_str string
+
+	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+
+	err := row.Scan(&ids_str)
+	if (err != nil) && (err != sql.ErrNoRows) {
+		log.Fatal("Error while querying database in NeedsUpdate() : ", err)
+
+	}
+	return !(err == sql.ErrNoRows)
 
 }

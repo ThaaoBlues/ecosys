@@ -1,8 +1,10 @@
 package networking
 
 import (
+	"log"
 	"os"
 	"qsync/bdd"
+	"qsync/globals"
 	"strings"
 	"time"
 
@@ -30,7 +32,36 @@ func (zcs *ZeroConfService) Browse() {
 	// then, we put all linked and connected devices state to true
 	for _, new_device := range new_connected_devices {
 		if acces.IsDeviceLinked(new_device["device_id"]) {
+			log.Println("Detected device : ", new_device)
 			acces.SetDeviceConnectionState(new_device["device_id"], true, new_device["ip_addr"])
+			log.Println("Checking if he missed any updates : ")
+
+			if acces.NeedsUpdate(new_device["device_id"]) {
+
+				// this function returns a map with secure_id from tasks as keys
+				// and the event queue from the sync task associated with the id as value.
+				// the map only has the tasks the new device needs to catch up on
+				multi_queue := acces.BuildEventQueueFromRetard(new_device["device_id"])
+
+				for secure_id, ptr_queue := range multi_queue {
+					acces.SecureId = secure_id
+
+					// rebuild a queue of actual values and not pointers
+					// HAHAH THIS IS NOT EFFICIENT AT ALL I WILL BURN THE WORLLDDDD
+					var queue []globals.QEvent
+					for _, event := range ptr_queue {
+						log.Println(*event)
+
+						queue = append(queue, *event)
+					}
+
+					SendDeviceEventQueueOverNetwork([]string{new_device["device_id"]}, acces.SecureId, queue, new_device["ip_addr"])
+
+				}
+
+				acces.RemoveDeviceFromRetard(new_device["device_id"])
+			}
+
 		}
 	}
 

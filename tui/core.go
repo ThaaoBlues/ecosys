@@ -6,6 +6,7 @@ import (
 	backendapi "qsync/backend_api"
 	"qsync/bdd"
 	"qsync/filesystem"
+	"qsync/globals"
 	"qsync/networking"
 	"strconv"
 	"time"
@@ -105,12 +106,12 @@ func HandleMenuQuery(query string) {
 
 		device_id := devices[index]["device_id"]
 
-		var event networking.QEvent
+		var event globals.QEvent
 		event.Flag = "[LINK_DEVICE]"
 		event.SecureId = acces.SecureId
 		event.FilePath = path
 
-		queue := []networking.QEvent{event}
+		queue := []globals.QEvent{event}
 
 		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, acces.SecureId, queue, devices[index]["ip_addr"])
 

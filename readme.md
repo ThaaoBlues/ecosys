@@ -190,7 +190,19 @@ As example, here is a program that shows a bit how it is working :
 
 TODO
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
-- La suppression de fichier bug (pas signalé en tant que fichier + fichier tjrs présent de l'autre coté) alors que ça fonctionnait bien avec une mauvaise interprétation en tant que folder
+- Tester tout le systeme de retards
+
+- supprimer un element de retard si sa liste de machines à patch est vide
+* terminé =>>> A TESTER.
+
+- réparer le relative path car la root du watcher renvoie le premier dossier qu'elle regarde et non la totalité du chemin relatif vers le dossier actuel => il faut compléter ce chemin
+* visiblement ça ajoute bien ??? c'était peut-être des restes avant d'introduire absolute_path =>>> A TESTER
+
+- réparer le fait que la création d'un fichier est stoquée comme une update dans la bdd, ce qui va faire crash l'autre machine car il n'existe pas d'ancienne id de ce fichier. => Créer un clone de UpdateFile mais pour créer un fichier (juste mettre creation dans le dictionnaire au lieu de update)
+* Modifié CreateFile() pour prendre le chemin absolu et un flag ("[ADD_TO_RETARD]" ou "[SENT_FROM_THE_OTHER_END]") si le flag demande l'ajout dans la table retard, on le fait (+ creation d'un delta etc...). sinon non. =>>> A TESTER
+
+
+
 
 - trouver un moyen de sécuriser les communications entre appareils.
 	* hypothèse chaque appareil va posséder une clé unique "device_key", donnée de manière symétrique pendant la création du lien entre deux machines. L'identifiant de l'appareil sera la seule donnée non chiffrée dans les échanges, elle permettra d'aller chercher la device_key associée à cet appareil et de déchiffrer le reste du message.
