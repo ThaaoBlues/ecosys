@@ -3,6 +3,33 @@ Qsync is a engine made to provide files synchronisation in real time or not betw
 It automatically detects linked devices on the same network and make sync the wanted folders transparently. 
 In the long term, the goal is to provide a support for a symbiosis between devices and applications states so one can use any of its devices indistinctl.
 
+On desktop os :
+We may achieve this goal by making a qsync addons market where people puts json files with details about how each files is stored in each OS of a specific app. This would allow qsync to adapt and synchronise existing apps. 
+
+On Android : 
+As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. We are thinking about a way to overcome this.
+
+
+## Addons
+Addons are really simple but may evolve as time passes. You must provide a json object with those informations :
+
+```go
+type AppConfig struct {
+	AppDataFolderPath string
+	AppName           string
+	NeedsFormat       bool
+	SupportedPlatforms []string
+}
+```
+
+The supported platform must be within ["Linux","Windows","Android"]
+NeedsFormat is a flag telling qsync to replace some parts of the application path contextually such as :
+* %username% for the user's name
+* %version% for an app specific version ( In first versions qsync will just walk in the parent folder and take the first child. This behavior could change if someone find a better one.)
+* %any% qsync will just walk in the parent folder and take the first child.
+
+> Path separator must be "/"
+
 ## base de données
 - on cartographie le systeme de fichiers visés et l'enregistre une première fois
 - on met tout en mode création dans la bdd
@@ -408,6 +435,17 @@ func DisplayMenu() {
 
 TODO
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
+
+- faire les fonctions dans backend_api: 
+func FormatPath(unformated_path string) {
+}
+
+func LoadAppConfig(config AppConfig) {
+
+	if config.NeedsFormat {
+
+	}
+}
 
 
 

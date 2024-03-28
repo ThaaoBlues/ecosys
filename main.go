@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io"
+	"log"
 	"qsync/networking"
 	"qsync/tui"
 )
@@ -8,6 +10,8 @@ import (
 func main() {
 
 	var zc networking.ZeroConfService
+
+	log.SetOutput(io.Discard)
 
 	// register this device
 	go zc.Register()
