@@ -81,11 +81,26 @@ func HandleMenuQuery(query string) {
 
 	case "2":
 
-		fmt.Println("Enter below the path of the folder you want to synchronize :")
+		fmt.Println("Select below the sync task you want to provide for another device :")
+		tasks := acces.ListSyncAllTasks()
+		for _, task := range tasks {
+			fmt.Println("{")
+			fmt.Println("Path : ", task.Path)
+			fmt.Println("Secure id : ", task.SecureId)
+			fmt.Println("}")
+		}
 
-		var path string = Prompt()
+		index, err := strconv.Atoi(Prompt())
 
-		acces.GetSecureId(path)
+		if err != nil {
+			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
+		}
+
+		if index > len(tasks) {
+			log.Fatal("The number you provied was not corresponding to any task.")
+		}
+
+		acces.GetSecureId(tasks[index].Path)
 
 		fmt.Println("Mapping available devices on your local network...")
 
@@ -96,9 +111,9 @@ func HandleMenuQuery(query string) {
 			fmt.Println(devices[i])
 		}
 
-		// send a link device packet to the one the user choose
+		// send a link device request to the one the user choose
 
-		index, err := strconv.Atoi(Prompt())
+		index, err = strconv.Atoi(Prompt())
 
 		if err != nil {
 			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
@@ -109,7 +124,7 @@ func HandleMenuQuery(query string) {
 		var event globals.QEvent
 		event.Flag = "[LINK_DEVICE]"
 		event.SecureId = acces.SecureId
-		event.FilePath = path
+		event.FilePath = tasks[index].Path
 
 		queue := []globals.QEvent{event}
 
