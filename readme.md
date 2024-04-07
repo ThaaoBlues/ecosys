@@ -9,12 +9,15 @@ We may achieve this goal by making a qsync addons market where people puts json 
 On Android : 
 As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. We are thinking about a way to overcome this.
 
+## QSync "Magasin" :
+We project to make a store where anyone can publish and/or download QSync addons (named "grapins" in all my frenchness bc it grabs apps data ) and QSync apps (named "tout en un" or 'all in one' in english).
 
-## Addons
+
+## QSync "grapins" :
 Addons are really simple but may evolve as time passes. You must provide a json object with those informations :
 
 ```go
-type AppConfig struct {
+type GrapinConfig struct {
 	AppDataFolderPath string
 	AppName           string
 	NeedsFormat       bool
@@ -29,6 +32,29 @@ NeedsFormat is a flag telling qsync to replace some parts of the application pat
 * %any% qsync will just walk in the parent folder and take the first child.
 
 > Path separator must be "/"
+
+## QSync "tout en un" :
+"Tout en un" is the ultimate integration with qsync, you can develop your app and integrate qsync capabilities to sync all the data you want across the user's devices.
+This is really simple, all the files you want to be synchronised must be within the folder specified by the json description of your app, you are free to use it to do whatever you want. Publish your app on our store and QSync will take care of the rest.
+
+By default, the app will be installed to <qsync_installation_root>/apps
+
+
+You can specify informations about your app in a json format matching :
+All the path asked are relative to your app's root
+```go
+type ToutEnUnConfig struct {
+	AppName               string // well... the app's name ?
+	AppDownloadUrl        string // the url where to download the app
+	NeedsInstaller        bool   // if we need to run the binary installer
+	AppLauncherPath       string // the path to the main executable of your app 
+	AppInstallerPath      string // the installer path
+	AppUninstallerPath    string // the uninstaller path
+	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
+}
+```
+
+
 
 ## base de données
 - on cartographie le systeme de fichiers visés et l'enregistre une première fois
@@ -436,17 +462,10 @@ func DisplayMenu() {
 TODO
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 
-- faire les fonctions dans backend_api: 
-func FormatPath(unformated_path string) {
-}
-
-func LoadAppConfig(config AppConfig) {
-
-	if config.NeedsFormat {
-
-	}
-}
-
+- faire les fonctions d'ajout et d'installations d'app tout en un et de grapins
+- ajouter une table avec les applications installées dans la bdd
+- ajouter une page pour lancer les applications installées dans le magasin
+- créer un racourcis vers les applications à l'installation
 
 
 - trouver un moyen de sécuriser les communications entre appareils.

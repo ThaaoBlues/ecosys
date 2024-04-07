@@ -13,6 +13,7 @@ import (
 	"qsync/delta_binaire"
 	dtbin "qsync/delta_binaire"
 	"qsync/globals"
+	"qsync/magasin"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -101,6 +102,7 @@ func (bdd *AccesBdd) InitConnection() {
 		receiving_update TEXT DEFAULT "",
 		ip_addr TEXT
 	)`)
+
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
 	}
@@ -108,6 +110,17 @@ func (bdd *AccesBdd) InitConnection() {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		device_id TEXT
 	)`)
+	if err != nil {
+		log.Fatal("Error while creating table : ", err)
+	}
+
+	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS toutenun(
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT,
+		path TEXT,
+		version_id INTEGER
+	)`)
+
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
 	}
@@ -1169,6 +1182,33 @@ func (bdd *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 
 // this function checks if a device has some updates to catch up on
 func (bdd *AccesBdd) NeedsUpdate(device_id string) bool {
+
+	var ids_str string
+
+	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+
+	err := row.Scan(&ids_str)
+	if (err != nil) && (err != sql.ErrNoRows) {
+		log.Fatal("Error while querying database in NeedsUpdate() : ", err)
+
+	}
+	return !(err == sql.ErrNoRows)
+
+}
+
+// ajoute une application tout en un dans la table exprès
+func (bdd *AccesBdd) AddToutEnUn(data magasin.ToutEnUnConfig) {
+	_, err := bdd.db_handler.Exec("INSERT INTO toutenun (name,path,version_id) VALUES(?,?,?)", data.AppName, data.AppLauncherPath, 1)
+
+	if err != nil {
+		log.Fatal("Error while updating database in LinkDevice() : ", err)
+	}
+}
+
+// this function checks if a device has some updates to catch up on
+func (bdd *AccesBdd) ListInstalledApps() magasin.ToutEnUnConfig {
+
+	// A remplacer, c'est juste le code d'une autre fonction pour modèle
 
 	var ids_str string
 

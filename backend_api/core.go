@@ -3,16 +3,8 @@ package backendapi
 import (
 	"log"
 	"os"
-	"strings"
 	"time"
 )
-
-type AppConfig struct {
-	AppDataFolderPath  string
-	AppName            string
-	NeedsFormat        bool
-	SupportedPlatforms []string
-}
 
 // IF THE BACKEND IS MULTITHREADED, DO NOT CLOSE APP BEFORE THE USER INPUT HAS BEEN
 // PROCESSED BY BACKEND, THIS FUNCTION DOES NOT MAKES SURE OF IT
@@ -118,15 +110,4 @@ func WaitEventLoop(callbacks map[string]func(context string)) {
 		time.Sleep(1 * time.Second)
 	}
 
-}
-
-func FormatPath(unformated_path string) {
-	split_path := strings.Split(unformated_path, "/")
-}
-
-func LoadAppConfig(config AppConfig) {
-
-	if config.NeedsFormat {
-
-	}
 }

@@ -7,6 +7,7 @@ import (
 	"qsync/bdd"
 	"qsync/filesystem"
 	"qsync/globals"
+	"qsync/magasin"
 	"qsync/networking"
 	"strconv"
 	"time"
@@ -30,7 +31,7 @@ var MENU string = `
 [2] - Link another machine to a sync task on yours
 [3] - List current sync task and their id
 [4] - List devices using qsync on your network
-[5] - 
+[5] - Open QSync Magasin
 
 `
 
@@ -158,6 +159,12 @@ func HandleMenuQuery(query string) {
 			fmt.Printf("[%d] ", i)
 			fmt.Println(devices[i])
 		}
+
+	case "5":
+		// open QSync store
+		go magasin.StartServer()
+		time.Sleep(1 * time.Second)
+		magasin.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
 	default:
 		fmt.Println("This option does not exists :/")
