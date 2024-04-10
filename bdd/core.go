@@ -13,7 +13,6 @@ import (
 	"qsync/delta_binaire"
 	dtbin "qsync/delta_binaire"
 	"qsync/globals"
-	"qsync/magasin"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -114,11 +113,14 @@ func (bdd *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS toutenun(
+	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS apps(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT,
 		path TEXT,
-		version_id INTEGER
+		version_id INTEGER,
+		type TEXT,
+		secure_id TEXT,
+		uninstaller_path TEXT
 	)`)
 
 	if err != nil {
@@ -1196,29 +1198,97 @@ func (bdd *AccesBdd) NeedsUpdate(device_id string) bool {
 
 }
 
+type ToutEnUnConfig struct {
+	AppName               string // well... the app's name ?
+	AppDownloadUrl        string // the url where to download the app
+	NeedsInstaller        bool   // if we need to run the binary installer
+	AppLauncherPath       string // the path to the main executable of your app
+	AppInstallerPath      string // the installer path
+	AppUninstallerPath    string // the uninstaller path
+	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
+}
+
+type GrapinConfig struct {
+	AppName               string
+	AppSyncDataFolderPath string
+	NeedsFormat           bool
+	SupportedPlatforms    []string
+}
+
+type MinGenConfig struct {
+	AppName         string
+	AppId           int
+	BinPath         string
+	Type            string
+	SecureId        string
+	UninstallerPath string
+}
+
 // ajoute une application tout en un dans la table exprès
-func (bdd *AccesBdd) AddToutEnUn(data magasin.ToutEnUnConfig) {
-	_, err := bdd.db_handler.Exec("INSERT INTO toutenun (name,path,version_id) VALUES(?,?,?)", data.AppName, data.AppLauncherPath, 1)
+func (bdd *AccesBdd) AddToutEnUn(data ToutEnUnConfig) {
+	_, err := bdd.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"toutenun\",?,?)", data.AppName, data.AppLauncherPath, 1, bdd.SecureId, data.AppUninstallerPath)
 
 	if err != nil {
-		log.Fatal("Error while updating database in LinkDevice() : ", err)
+		log.Fatal("Error while updating database in AddToutEnUn() : ", err)
 	}
 }
 
-// this function checks if a device has some updates to catch up on
-func (bdd *AccesBdd) ListInstalledApps() magasin.ToutEnUnConfig {
+func (bdd *AccesBdd) AddGrapin(data GrapinConfig) {
+	_, err := bdd.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,uninstaller_path) VALUES(?,?,?,\"grapin\",secure_id,?)", data.AppName, "[GRAPIN]", 1, bdd.SecureId, "[GRAPIN]")
 
-	// A remplacer, c'est juste le code d'une autre fonction pour modèle
-
-	var ids_str string
-
-	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
-
-	err := row.Scan(&ids_str)
-	if (err != nil) && (err != sql.ErrNoRows) {
-		log.Fatal("Error while querying database in NeedsUpdate() : ", err)
-
+	if err != nil {
+		log.Fatal("Error while updating database in AddGrapin() : ", err)
 	}
-	return !(err == sql.ErrNoRows)
+}
+
+// this function list all installed apps on qsync
+func (bdd *AccesBdd) ListInstalledApps() []MinGenConfig {
+
+	var configs []MinGenConfig
+	var tmp MinGenConfig
+
+	rows, err := bdd.db_handler.Query("SELECT name,id,path,type FROM apps")
+	if err != nil {
+		log.Fatal("Error while querying database in ListInstalledApps() : ", err)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&tmp)
+		if (err != nil) && (err != sql.ErrNoRows) {
+			log.Fatal("Error while querying database in ListInstalledApps() : ", err)
+
+		}
+
+		configs = append(configs, tmp)
+	}
+
+	return configs
+
+}
+
+// this function get details of a specifi app by its ID
+func (bdd *AccesBdd) GetAppConfig(app_id int) MinGenConfig {
+
+	var config MinGenConfig
+
+	row := bdd.db_handler.QueryRow("SELECT name,id,path,type,uninstaller_peth FROM apps WHERE id=?", app_id)
+
+	err := row.Scan(&config)
+	if (err != nil) && (err != sql.ErrNoRows) {
+		log.Fatal("Error while querying database in GetAppConfig() : ", err)
+	}
+
+	return config
+
+}
+
+// this function get details of a specifi app by its ID
+func (bdd *AccesBdd) DeleteApp(app_id int) {
+
+	_, err := bdd.db_handler.Exec("DELETE FROM apps WHERE id=?", app_id)
+
+	if (err != nil) && (err != sql.ErrNoRows) {
+		log.Fatal("Error while querying database in GetAppConfig() : ", err)
+	}
 
 }

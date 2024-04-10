@@ -8,13 +8,6 @@ import (
 	"strings"
 )
 
-type GrapinConfig struct {
-	AppDataFolderPath  string
-	AppName            string
-	NeedsFormat        bool
-	SupportedPlatforms []string
-}
-
 // Function to format the path based on certain placeholders
 func formatPath(path string) string {
 	// Replace %username% with the actual username (assuming current user)
@@ -54,7 +47,7 @@ func getFirstChildDirectory(parentDir string) string {
 }
 
 func InstallGrapin(data io.ReadCloser) error {
-	var config GrapinConfig
+	var config bdd.GrapinConfig
 	err := json.NewDecoder(data).Decode(&config)
 
 	if err != nil {
@@ -63,14 +56,16 @@ func InstallGrapin(data io.ReadCloser) error {
 
 	// Modify the application path based on the NeedsFormat flag
 	if config.NeedsFormat {
-		config.AppDataFolderPath = formatPath(config.AppDataFolderPath)
+		config.AppSyncDataFolderPath = formatPath(config.AppSyncDataFolderPath)
 	}
 
 	var acces bdd.AccesBdd
 
 	acces.InitConnection()
+	defer acces.CloseConnection()
 
-	acces.CreateSync(config.AppDataFolderPath)
+	acces.CreateSync(config.AppSyncDataFolderPath)
+	acces.AddGrapin(config)
 
 	return nil
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magasin QSync</title>
+    <title>QSync App Manager</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,6 +63,7 @@
             border-radius: 8px;
             overflow: hidden;
             margin-bottom: 20px;
+            position: relative;
         }
         
         .card:hover {
@@ -88,6 +89,16 @@
             font-size: 14px;
             color: #666;
         }
+
+        .button-group {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .button-group button {
+            margin-left: 5px;
+        }
         
         @media (min-width: 768px) {
             .section {
@@ -103,45 +114,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>Magasin QSync</h1>
+        <h1>App Manager</h1>
         
         <div class="tab">
-            <button class="tablinks" onclick="openSection(event, 'Ajouts')">Ajouts</button>
-            <button class="tablinks" onclick="openSection(event, 'ToutEnUn')">Tout en un</button>
+            <button class="tablinks" onclick="openSection(event, 'Installed')">Installed</button>
         </div>
         
-        <div id="Ajouts" class="section active">
+        <div id="Installed" class="section active">
+            {{range .}}
             <div class="card">
+                <div class="button-group">
+                    {{if ne .Type "grapin"}}
+                        <button onclick="launchApp('{{.AppName}}')">Launch</button>
+                    {{end}}
+                    <button onclick="deleteApp('{{.AppName}}')">Delete</button>
+                </div>
                 <img src="https://via.placeholder.com/300" alt="App Image">
                 <div class="card-content">
-                    <div class="card-title">External App 1</div>
-                    <div class="card-description">Description of External App 1.</div>
+                    <div class="card-title">{{.AppName}}</div>
+                    <div class="card-description">{{.Type}}</div>
                 </div>
             </div>
-            <div class="card">
-                <img src="https://via.placeholder.com/300" alt="App Image">
-                <div class="card-content">
-                    <div class="card-title">External App 2</div>
-                    <div class="card-description">Description of External App 2.</div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="ToutEnUn" class="section">
-            <div class="card">
-                <img src="https://via.placeholder.com/300" alt="App Image">
-                <div class="card-content">
-                    <div class="card-title">Pre-Packaged App 1</div>
-                    <div class="card-description">Description of Pre-Packaged App 1.</div>
-                </div>
-            </div>
-            <div class="card">
-                <img src="https://via.placeholder.com/300" alt="App Image">
-                <div class="card-content">
-                    <div class="card-title">Pre-Packaged App 2</div>
-                    <div class="card-description">Description of Pre-Packaged App 2.</div>
-                </div>
-            </div>
+            {{end}}
         </div>
     </div>
 
@@ -158,6 +152,16 @@
             }
             document.getElementById(sectionName).style.display = "block";
             evt.currentTarget.className += " active";
+        }
+
+        function launchApp(appName) {
+            // Function to launch the app
+            alert("Launching " + appName + "...");
+        }
+
+        function deleteApp(appName) {
+            // Function to delete the app
+            alert("Deleting " + appName + "...");
         }
     </script>
 </body>

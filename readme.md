@@ -18,10 +18,10 @@ Addons are really simple but may evolve as time passes. You must provide a json 
 
 ```go
 type GrapinConfig struct {
-	AppDataFolderPath string
-	AppName           string
-	NeedsFormat       bool
-	SupportedPlatforms []string
+	AppName               string
+	AppSyncDataFolderPath string
+	NeedsFormat           bool
+	SupportedPlatforms    []string
 }
 ```
 

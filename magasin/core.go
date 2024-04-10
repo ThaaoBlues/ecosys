@@ -5,7 +5,10 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"qsync/bdd"
 	"runtime"
+	"strconv"
+	"text/template"
 )
 
 // open magasin in a new web browser tab
@@ -28,7 +31,7 @@ func OpenUrlInWebBrowser(url string) error {
 }
 
 // HelloHandler handles requests for the `/hello` resource
-func HelloHandler(w http.ResponseWriter, r *http.Request) {
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./magasin/html/index.html")
 }
 
@@ -46,27 +49,89 @@ func InstallGrapinHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 }
+func InstalledAppsHandler(w http.ResponseWriter, r *http.Request) {
+
+	html, err := os.ReadFile("./magasin/html/installed.html")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	defer acces.CloseConnection()
+
+	// Parse the HTML template
+	tmpl := template.Must(template.New("index").Parse(string(html)))
+
+	// Execute the template with the data
+	if err := tmpl.Execute(w, acces.ListInstalledApps()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func LaunchAppHandler(w http.ResponseWriter, r *http.Request) {
+
+	app_id, err := strconv.Atoi(r.URL.Query().Get("AppId"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	defer acces.CloseConnection()
+
+	config := acces.GetAppConfig(app_id)
+
+	cmd := exec.Command(config.BinPath)
+
+	err = cmd.Run()
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func DeleteAppHandler(w http.ResponseWriter, r *http.Request) {
+
+	app_id, err := strconv.Atoi(r.URL.Query().Get("AppId"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	defer acces.CloseConnection()
+
+	config := acces.GetAppConfig(app_id)
+
+	if config.Type == "toutenun" {
+		err = UninstallToutenun(config)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	acces.DeleteApp(app_id)
+
+}
 
 func StartServer() {
-	//get the value of the ADDR environment variable
-	addr := os.Getenv("ADDR")
 
-	//if it's blank, default to ":80", which means
-	//listen port 80 for requests addressed to any host
-	if len(addr) == 0 {
-		addr = "127.0.0.1:8275"
-	}
+	addr := "127.0.0.1:8275"
 
 	//create a new mux (router)
 	//the mux calls different functions for
 	//different resource paths
 	mux := http.NewServeMux()
 
-	//tell it to call the HelloHandler() function
-	//when someone requests the resource path `/hello`
-	mux.HandleFunc("/", HelloHandler)
+	mux.HandleFunc("/", HomeHandler)
 	mux.HandleFunc("/InstallerAjout", InstallGrapinHandler)
 	mux.HandleFunc("/InstallerToutEnUn", InstallAppHandler)
+	mux.HandleFunc("/InstalledApps", InstalledAppsHandler)
+	mux.HandleFunc("/LaunchApp", LaunchAppHandler)
+	mux.HandleFunc("/DeleteApp", DeleteAppHandler)
 
 	//start the web server using the mux as the root handler,
 	//and report any errors that occur.

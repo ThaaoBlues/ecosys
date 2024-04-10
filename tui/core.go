@@ -182,8 +182,10 @@ func DisplayMenu() {
 	callbacks := make(map[string]func(string))
 
 	callbacks["[CHOOSELINKPATH]"] = func(context string) {
+
 		fmt.Println(context + " : ")
 		backendapi.GiveInput("[CHOOSELINKPATH]", Prompt())
+
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
 	}
