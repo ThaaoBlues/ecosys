@@ -117,6 +117,9 @@ func DeleteAppHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func TestFileHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./magasin/test_configs.json")
+}
 func StartServer() {
 
 	addr := "127.0.0.1:8275"
@@ -132,7 +135,7 @@ func StartServer() {
 	mux.HandleFunc("/InstalledApps", InstalledAppsHandler)
 	mux.HandleFunc("/LaunchApp", LaunchAppHandler)
 	mux.HandleFunc("/DeleteApp", DeleteAppHandler)
-
+	mux.HandleFunc("/test_configs.json", TestFileHandler)
 	//start the web server using the mux as the root handler,
 	//and report any errors that occur.
 	//the ListenAndServe() function will block so

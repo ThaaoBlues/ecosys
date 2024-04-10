@@ -37,7 +37,33 @@ NeedsFormat is a flag telling qsync to replace some parts of the application pat
 "Tout en un" is the ultimate integration with qsync, you can develop your app and integrate qsync capabilities to sync all the data you want across the user's devices.
 This is really simple, all the files you want to be synchronised must be within the folder specified by the json description of your app, you are free to use it to do whatever you want. Publish your app on our store and QSync will take care of the rest.
 
-By default, the app will be installed to <qsync_installation_root>/apps
+By default, the app will be installed to <qsync_installation_root>/apps/<app_name>
+
+examples :
+```json
+	{
+        "AppName": "myapp1",
+        "AppDownloadUrl": "https://example.com/myapp/installer.exe",
+        "NeedsInstaller": true,
+        "AppLauncherPath": "bin/launcher.exe",
+        "AppInstallerPath": "installer.exe",
+        "AppUninstallerPath": "bin/uninstaller.exe",
+        "AppSyncDataFolderPath": "data/sync"
+    }
+	{
+        "AppName": "myapp2",
+        "AppDownloadUrl": "https://example.com/myapp/portable.exe",
+        "NeedsInstaller": false,
+        "AppLauncherPath": "launcher.exe",
+        "AppInstallerPath": "",
+        "AppUninstallerPath": "bin/uninstaller.exe",
+        "AppSyncDataFolderPath": "data/sync"
+    }
+
+```
+
+
+#### THOSE ARE RELATIVE PATH : DO NOT PUT YOUR APP FOLDER NAME, JUST PUT ANYTHING BELOW YOUR APP'S ROOT
 
 
 You can specify informations about your app in a json format matching :
@@ -48,7 +74,7 @@ type ToutEnUnConfig struct {
 	AppDownloadUrl        string // the url where to download the app
 	NeedsInstaller        bool   // if we need to run the binary installer
 	AppLauncherPath       string // the path to the main executable of your app 
-	AppInstallerPath      string // the installer path
+	AppInstallerPath      string // the installer path, 
 	AppUninstallerPath    string // the uninstaller path
 	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
 }
@@ -462,11 +488,7 @@ func DisplayMenu() {
 TODO
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 
-- faire les fonctions d'ajout et d'installations d'app tout en un et de grapins
-- ajouter une table avec les applications installées dans la bdd
-- ajouter une page pour lancer les applications installées dans le magasin
-- créer un racourcis vers les applications à l'installation
-
+- tester l'ajout/suppression/lancement des applications
 
 - trouver un moyen de sécuriser les communications entre appareils.
 	* hypothèse chaque appareil va posséder une clé unique "device_key", donnée de manière symétrique pendant la création du lien entre deux machines. L'identifiant de l'appareil sera la seule donnée non chiffrée dans les échanges, elle permettra d'aller chercher la device_key associée à cet appareil et de déchiffrer le reste du message.

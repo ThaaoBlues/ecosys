@@ -106,42 +106,16 @@
         <h1>Magasin QSync</h1>
         
         <div class="tab">
-            <button class="tablinks" onclick="openSection(event, 'Ajouts')">Ajouts</button>
+            <button class="tablinks" onclick="openSection(event, 'Grapins')">Grapins</button>
             <button class="tablinks" onclick="openSection(event, 'ToutEnUn')">Tout en un</button>
         </div>
         
-        <div id="Ajouts" class="section active">
-            <div class="card">
-                <img src="https://via.placeholder.com/300" alt="App Image">
-                <div class="card-content">
-                    <div class="card-title">External App 1</div>
-                    <div class="card-description">Description of External App 1.</div>
-                </div>
-            </div>
-            <div class="card">
-                <img src="https://via.placeholder.com/300" alt="App Image">
-                <div class="card-content">
-                    <div class="card-title">External App 2</div>
-                    <div class="card-description">Description of External App 2.</div>
-                </div>
-            </div>
+        <div id="Grapins" class="section active">
+            <!-- Content will be dynamically generated here -->
         </div>
         
         <div id="ToutEnUn" class="section">
-            <div class="card">
-                <img src="https://via.placeholder.com/300" alt="App Image">
-                <div class="card-content">
-                    <div class="card-title">Pre-Packaged App 1</div>
-                    <div class="card-description">Description of Pre-Packaged App 1.</div>
-                </div>
-            </div>
-            <div class="card">
-                <img src="https://via.placeholder.com/300" alt="App Image">
-                <div class="card-content">
-                    <div class="card-title">Pre-Packaged App 2</div>
-                    <div class="card-description">Description of Pre-Packaged App 2.</div>
-                </div>
-            </div>
+            <!-- Content will be dynamically generated here -->
         </div>
     </div>
 
@@ -159,6 +133,67 @@
             document.getElementById(sectionName).style.display = "block";
             evt.currentTarget.className += " active";
         }
+
+        // Fetch and parse the config file
+        fetch('test_configs.json')
+            .then(response => response.json())
+            .then(data => {
+                // Process data and generate HTML content dynamically
+                generateHtml(data);
+            })
+            .catch(error => console.error('Error fetching config file:', error));
+
+        function generateHtml(data) {
+            // Extract tout_en_un_configs and grapin_configs from data
+            var toutEnUnConfigs = data.tout_en_un_configs;
+            var grapinConfigs = data.grapin_configs;
+            console.log(data);
+
+            // Generate HTML content for Tout en un section
+            var toutEnUnHtml = toutEnUnConfigs.map(config => `
+                <div class="card">
+                    <img src="https://via.placeholder.com/300" alt="App Image">
+                    <div class="card-content">
+                        <div class="card-title">${config.AppName}</div>
+                        <div class="card-description">Description of ${config.AppName}.</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Generate HTML content for Grapins section
+            var grapinsContainer = document.getElementById('Grapins');
+            grapinConfigs.forEach(config => {
+                var card = document.createElement('div');
+                card.className = 'card';
+
+                var image = document.createElement('img');
+                image.src = 'https://via.placeholder.com/300';
+                image.alt = 'App Image';
+
+                var cardContent = document.createElement('div');
+                cardContent.className = 'card-content';
+
+                var cardTitle = document.createElement('div');
+                cardTitle.className = 'card-title';
+                cardTitle.textContent = config.AppName;
+
+                var cardDescription = document.createElement('div');
+                cardDescription.className = 'card-description';
+                cardDescription.textContent = `Description of ${config.AppName}.`;
+
+                cardContent.appendChild(cardTitle);
+                cardContent.appendChild(cardDescription);
+
+                card.appendChild(image);
+                card.appendChild(cardContent);
+
+                grapinsContainer.appendChild(card);
+            });
+
+            // Set HTML content for Tout en un section
+            document.getElementById('ToutEnUn').innerHTML = toutEnUnHtml;
+        }
     </script>
 </body>
 </html>
+
