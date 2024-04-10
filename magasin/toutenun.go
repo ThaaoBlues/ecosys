@@ -57,16 +57,23 @@ func InstallApp(data io.ReadCloser) error {
 	var json_data bdd.ToutEnUnConfig
 	err := json.NewDecoder(data).Decode(&json_data)
 
+	log.Println("installing app : ")
+	log.Println(json_data)
+
 	// by default, the app will be installed to <qsync_installation_root>/apps/<app_name>
 
 	if err != nil {
 		return err
 	}
 
+	// getting qsync root path
 	self_path, err := os.Executable()
 	if err != nil {
 		log.Fatal("An error occured while determining the path to qsync executable in InstallApp()", err)
 	}
+
+	self_path = filepath.Dir(self_path)
+	log.Println("qsync root path : ", self_path)
 
 	apps_path := filepath.Join(self_path, "apps")
 	ex, err := exists(apps_path)
@@ -76,17 +83,17 @@ func InstallApp(data io.ReadCloser) error {
 	}
 
 	if !ex {
-		os.Mkdir(apps_path, fs.ModeDir)
+		os.Mkdir(apps_path, fs.ModePerm)
 	}
 
 	sanitized_app_name := strings.ReplaceAll(json_data.AppName, " ", "_")
-	new_app_root_path := filepath.Join(self_path, sanitized_app_name)
+	new_app_root_path := filepath.Join(apps_path, sanitized_app_name)
 	json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
 
 	ex, err = exists(new_app_root_path)
 
 	if !ex {
-		os.Mkdir(new_app_root_path, fs.ModeDir)
+		os.Mkdir(new_app_root_path, fs.ModePerm)
 	}
 
 	if err != nil {
@@ -106,14 +113,37 @@ func InstallApp(data io.ReadCloser) error {
 		RunInstaller(json_data.AppInstallerPath)
 	}
 
+	// and last but not least, if the installed did not create it, create the sync folder
+	app_sync_folder := filepath.Join(new_app_root_path, json_data.AppSyncDataFolderPath)
+	ex, err = exists(app_sync_folder)
+	log.Println("making app sync directory : ", app_sync_folder)
+
+	if !ex {
+		os.Mkdir(app_sync_folder, fs.ModePerm)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// finish by putting non relative path so we can revover them easily from the database
+	// when launching app
+	json_data.AppSyncDataFolderPath = filepath.Join(new_app_root_path, json_data.AppSyncDataFolderPath)
+	json_data.AppInstallerPath = filepath.Join(new_app_root_path, json_data.AppInstallerPath)
+	json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppInstallerPath)
+	json_data.AppUninstallerPath = filepath.Join(new_app_root_path, json_data.AppUninstallerPath)
+
+	// now its time to register in the database the new little app
 	var acces bdd.AccesBdd
 
 	acces.InitConnection()
 	defer acces.CloseConnection()
 
-	acces.CreateSync(json_data.AppSyncDataFolderPath)
+	acces.CreateSync(app_sync_folder)
 
 	acces.AddToutEnUn(json_data)
+
+	log.Println("added app to database")
 
 	return nil
 

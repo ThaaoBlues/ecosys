@@ -144,55 +144,109 @@
             .catch(error => console.error('Error fetching config file:', error));
 
         function generateHtml(data) {
-            // Extract tout_en_un_configs and grapin_configs from data
-            var toutEnUnConfigs = data.tout_en_un_configs;
-            var grapinConfigs = data.grapin_configs;
-            console.log(data);
+    // Extract tout_en_un_configs and grapin_configs from data
+    var toutEnUnConfigs = data.tout_en_un_configs;
+    var grapinConfigs = data.grapin_configs;
+    console.log(data);
 
-            // Generate HTML content for Tout en un section
-            var toutEnUnHtml = toutEnUnConfigs.map(config => `
-                <div class="card">
-                    <img src="https://via.placeholder.com/300" alt="App Image">
-                    <div class="card-content">
-                        <div class="card-title">${config.AppName}</div>
-                        <div class="card-description">Description of ${config.AppName}.</div>
-                    </div>
-                </div>
-            `).join('');
+    // Generate HTML content for Tout en un section
+    var toutEnUnContainer = document.getElementById('ToutEnUn');
+    toutEnUnConfigs.forEach(config => {
+        var card = document.createElement('div');
+        card.className = 'card';
 
-            // Generate HTML content for Grapins section
-            var grapinsContainer = document.getElementById('Grapins');
-            grapinConfigs.forEach(config => {
-                var card = document.createElement('div');
-                card.className = 'card';
+        var image = document.createElement('img');
+        image.src = 'https://via.placeholder.com/300';
+        image.alt = 'App Image';
 
-                var image = document.createElement('img');
-                image.src = 'https://via.placeholder.com/300';
-                image.alt = 'App Image';
+        var cardContent = document.createElement('div');
+        cardContent.className = 'card-content';
 
-                var cardContent = document.createElement('div');
-                cardContent.className = 'card-content';
+        var cardTitle = document.createElement('div');
+        cardTitle.className = 'card-title';
+        cardTitle.textContent = config.AppName;
 
-                var cardTitle = document.createElement('div');
-                cardTitle.className = 'card-title';
-                cardTitle.textContent = config.AppName;
+        var cardDescription = document.createElement('div');
+        cardDescription.className = 'card-description';
+        cardDescription.textContent = `Description of ${config.AppName}.`;
 
-                var cardDescription = document.createElement('div');
-                cardDescription.className = 'card-description';
-                cardDescription.textContent = `Description of ${config.AppName}.`;
+        var installButton = document.createElement('button');
+        installButton.textContent = 'Install app';
+        installButton.className = 'install-button'; // You can add a class to style the button
+        installButton.onclick = function() {
+            fetch('/InstallerToutEnUn', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch((error) => console.error('Error:', error));
+        };
 
-                cardContent.appendChild(cardTitle);
-                cardContent.appendChild(cardDescription);
+        cardContent.appendChild(cardTitle);
+        cardContent.appendChild(cardDescription);
+        cardContent.appendChild(installButton); // Add the button to the card content
 
-                card.appendChild(image);
-                card.appendChild(cardContent);
+        card.appendChild(image);
+        card.appendChild(cardContent);
 
-                grapinsContainer.appendChild(card);
-            });
+        toutEnUnContainer.appendChild(card);
+    });
 
-            // Set HTML content for Tout en un section
-            document.getElementById('ToutEnUn').innerHTML = toutEnUnHtml;
-        }
+    // Generate HTML content for Grapins section
+    var grapinsContainer = document.getElementById('Grapins');
+    grapinConfigs.forEach(config => {
+        var card = document.createElement('div');
+        card.className = 'card';app
+
+        var image = document.createElement('img');
+        image.src = 'https://via.placeholder.com/300';
+        image.alt = 'App Image';
+
+        var cardContent = document.createElement('div');
+        cardContent.className = 'card-content';
+
+        var cardTitle = document.createElement('div');
+        cardTitle.className = 'card-title';
+        cardTitle.textContent = config.AppName;
+
+        var cardDescription = document.createElement('div');
+        cardDescription.className = 'card-description';
+        cardDescription.textContent = `Description of ${config.AppName}.`;
+
+        var installButton = document.createElement('button');
+        installButton.textContent = 'Install Grapin';
+        installButton.className = 'install-button'; // You can add a class to style the button
+
+        installButton.onclick = function() {
+            fetch('/InstallerGrapin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch((error) => console.error('Error:', error));
+        };
+
+
+        cardContent.appendChild(cardTitle);
+        cardContent.appendChild(cardDescription);
+        cardContent.appendChild(installButton); // Add the button to the card content
+
+        card.appendChild(image);
+        card.appendChild(cardContent);
+
+        grapinsContainer.appendChild(card);
+    });
+}
+
+
     </script>
 </body>
 </html>

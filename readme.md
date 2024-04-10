@@ -38,6 +38,7 @@ NeedsFormat is a flag telling qsync to replace some parts of the application pat
 This is really simple, all the files you want to be synchronised must be within the folder specified by the json description of your app, you are free to use it to do whatever you want. Publish your app on our store and QSync will take care of the rest.
 
 By default, the app will be installed to <qsync_installation_root>/apps/<app_name>
+If the folder where the files to sync is not created after we check (and started if any) the installer, qsync will create it.
 
 examples :
 ```json
@@ -64,6 +65,8 @@ examples :
 
 
 #### THOSE ARE RELATIVE PATH : DO NOT PUT YOUR APP FOLDER NAME, JUST PUT ANYTHING BELOW YOUR APP'S ROOT
+
+
 
 
 You can specify informations about your app in a json format matching :

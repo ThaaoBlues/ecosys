@@ -1,8 +1,8 @@
 package main
 
 import (
-	"io"
 	"log"
+	"os"
 	"qsync/networking"
 	"qsync/tui"
 )
@@ -10,8 +10,10 @@ import (
 func main() {
 
 	var zc networking.ZeroConfService
+	log_file, _ := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	defer log_file.Close()
 
-	log.SetOutput(io.Discard)
+	log.SetOutput(log_file)
 
 	// register this device
 	go zc.Register()
