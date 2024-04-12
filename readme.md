@@ -22,6 +22,8 @@ type GrapinConfig struct {
 	AppSyncDataFolderPath string
 	NeedsFormat           bool
 	SupportedPlatforms    []string
+	AppDescription        string // well that's the app's descriptions
+	AppIconURL            string
 }
 ```
 
@@ -40,6 +42,23 @@ This is really simple, all the files you want to be synchronised must be within 
 By default, the app will be installed to <qsync_installation_root>/apps/<app_name>
 If the folder where the files to sync is not created after we check (and started if any) the installer, qsync will create it.
 
+You can specify informations about your app in a json format matching :
+All the path asked are relative to your app's root
+```go
+type ToutEnUnConfig struct {
+	AppName               string // well... the app's name ?
+	AppDownloadUrl        string // the url where to download the app
+	NeedsInstaller        bool   // if we need to run the binary installer
+	AppLauncherPath       string // the path to the main executable of your app
+	AppInstallerPath      string // the installer path
+	AppUninstallerPath    string // the uninstaller path
+	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
+	AppDescription        string // well that's the app's descriptions
+	AppIconURL            string
+}
+```
+
+
 examples :
 ```json
 	{
@@ -49,7 +68,9 @@ examples :
         "AppLauncherPath": "bin/launcher.exe",
         "AppInstallerPath": "installer.exe",
         "AppUninstallerPath": "bin/uninstaller.exe",
-        "AppSyncDataFolderPath": "data/sync"
+        "AppSyncDataFolderPath": "data/sync",
+		"AppDescription" : "An example of full packed application.",
+		"AppIconURL" : "https://example.com/logo300x300.png"
     }
 	{
         "AppName": "myapp2",
@@ -58,30 +79,15 @@ examples :
         "AppLauncherPath": "launcher.exe",
         "AppInstallerPath": "",
         "AppUninstallerPath": "bin/uninstaller.exe",
-        "AppSyncDataFolderPath": "data/sync"
+        "AppSyncDataFolderPath": "data/sync",
+		"AppDescription" : "An example of full packed application without installator.",
+		"AppIconURL" : "https://example.com/logo300x300.png"
     }
 
 ```
 
 
 #### THOSE ARE RELATIVE PATH : DO NOT PUT YOUR APP FOLDER NAME, JUST PUT ANYTHING BELOW YOUR APP'S ROOT
-
-
-
-
-You can specify informations about your app in a json format matching :
-All the path asked are relative to your app's root
-```go
-type ToutEnUnConfig struct {
-	AppName               string // well... the app's name ?
-	AppDownloadUrl        string // the url where to download the app
-	NeedsInstaller        bool   // if we need to run the binary installer
-	AppLauncherPath       string // the path to the main executable of your app 
-	AppInstallerPath      string // the installer path, 
-	AppUninstallerPath    string // the uninstaller path
-	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
-}
-```
 
 
 

@@ -1206,6 +1206,8 @@ type ToutEnUnConfig struct {
 	AppInstallerPath      string // the installer path
 	AppUninstallerPath    string // the uninstaller path
 	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
+	AppDescription        string // well that's the app's descriptions
+	AppIconURL            string
 }
 
 type GrapinConfig struct {
@@ -1213,6 +1215,8 @@ type GrapinConfig struct {
 	AppSyncDataFolderPath string
 	NeedsFormat           bool
 	SupportedPlatforms    []string
+	AppDescription        string // well that's the app's descriptions
+	AppIconURL            string
 }
 
 type MinGenConfig struct {

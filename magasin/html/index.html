@@ -80,13 +80,30 @@
         
         .card-title {
             font-size: 18px;
-            font-weight: bold;
+            font-weight: bolder;
             margin-bottom: 10px;
         }
         
         .card-description {
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
             color: #666;
+        }
+
+        .install-button {
+            background-color: rgb(0, 255, 0);
+            border-radius: 5px;
+            border-color: rgb(0, 255, 0);
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            border-bottom: 2px solid rgb(24, 139, 24);
+            padding: 5px;
+            margin: 5px;
+        }
+
+        .install-button:hover{
+            border-bottom: none;
         }
         
         @media (min-width: 768px) {
@@ -156,7 +173,7 @@
         card.className = 'card';
 
         var image = document.createElement('img');
-        image.src = 'https://via.placeholder.com/300';
+        image.src = config.AppIconURL;
         image.alt = 'App Image';
 
         var cardContent = document.createElement('div');
@@ -168,7 +185,7 @@
 
         var cardDescription = document.createElement('div');
         cardDescription.className = 'card-description';
-        cardDescription.textContent = `Description of ${config.AppName}.`;
+        cardDescription.textContent = config.AppDescription;
 
         var installButton = document.createElement('button');
         installButton.textContent = 'Install app';
@@ -200,7 +217,7 @@
     var grapinsContainer = document.getElementById('Grapins');
     grapinConfigs.forEach(config => {
         var card = document.createElement('div');
-        card.className = 'card';app
+        card.className = 'card';
 
         var image = document.createElement('img');
         image.src = 'https://via.placeholder.com/300';

@@ -10,7 +10,7 @@ import (
 func main() {
 
 	var zc networking.ZeroConfService
-	log_file, _ := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	log_file, _ := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0777)
 	defer log_file.Close()
 
 	log.SetOutput(log_file)
