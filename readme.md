@@ -12,6 +12,11 @@ As you may know, android has some very strict policies on apps data, so it canno
 ## QSync "Magasin" :
 We project to make a store where anyone can publish and/or download QSync addons (named "grapins" in all my frenchness bc it grabs apps data ) and QSync apps (named "tout en un" or 'all in one' in english).
 
+# How do I know that Qsync already has linked my app from another device ?
+Wether you are on android or on desktop, when you download an app you can everything is made for you, from the creation of the folder where you put the files you want to sync to the registration of your app in qsync database. The only thing you must do is on android, as the usage of an alternative app store is not user friendly, you must start qsync app from a specific intent to let it know that the user installed an app that works with qsync. This procedure is specified in the android_app.md file
+
+## More details on how to write an android app that works with Qsync in the android_app.md file
+## The following description is usefull for everyone but the examples are for desktop apps
 
 ## QSync "grapins" :
 Addons are really simple but may evolve as time passes. You must provide a json object with those informations :
@@ -498,9 +503,6 @@ TODO
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 
 - tester l'ajout/suppression/lancement des applications
-- ajouter un champ description et miniature pour les toutentun et les grapins
-- prendre parti de ce fameux champ et afficher la bonne description et bonne miniature
-- meilleur bouton pour installer l'app
 - trouver un moyen de faire des apps sur android
 
 - trouver un moyen de sécuriser les communications entre appareils.
