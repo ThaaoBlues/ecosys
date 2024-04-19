@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"qsync/delta_binaire"
-	dtbin "qsync/delta_binaire"
 	"qsync/globals"
 	"strings"
 
@@ -38,15 +37,15 @@ type LinkDevice struct {
 
 // InitConnection initializes the database connection and creates necessary tables if they don't exist.
 // This function is used everytime we create an AccesBdd object
-func (bdd *AccesBdd) InitConnection() {
+func (acces *AccesBdd) InitConnection() {
 	var err error
-	bdd.db_handler, err = sql.Open("sqlite3", filepath.Join(globals.QSyncWriteableDirectory, "qsync.db"))
+	acces.db_handler, err = sql.Open("sqlite3", filepath.Join(globals.QSyncWriteableDirectory, "qsync.db"))
 
 	if err != nil {
 		log.Fatal("An error occured while connecting to the qsync database.", err)
 	}
 
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS retard(
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS retard(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		version_id INTEGER,
 		path TEXT,
@@ -60,7 +59,7 @@ func (bdd *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table retard : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS delta(
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS delta(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		path TEXT,
 		version_id INTEGER,
@@ -71,7 +70,7 @@ func (bdd *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS filesystem(
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS filesystem(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		path TEXT,
 		version_id INTEGER,
@@ -84,7 +83,7 @@ func (bdd *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS sync(
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS sync(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		secure_id TEXT,
 		linked_devices_id TEXT DEFAULT "",
@@ -94,7 +93,7 @@ func (bdd *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS linked_devices(
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS linked_devices(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		device_id TEXT,
 		is_connected BOOLEAN,
@@ -105,7 +104,7 @@ func (bdd *AccesBdd) InitConnection() {
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
 	}
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS mesid(
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS mesid(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		device_id TEXT
 	)`)
@@ -113,7 +112,7 @@ func (bdd *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec(`CREATE TABLE IF NOT EXISTS apps(
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS apps(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT,
 		path TEXT,
@@ -127,19 +126,19 @@ func (bdd *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table : ", err)
 	}
 
-	if !bdd.IsMyDeviceIdGenerated() {
-		bdd.GenerateMyDeviceId()
+	if !acces.IsMyDeviceIdGenerated() {
+		acces.GenerateMyDeviceId()
 	}
 }
 
 // CloseConnection closes the database connection.
-func (bdd *AccesBdd) CloseConnection() {
-	bdd.db_handler.Close()
+func (acces *AccesBdd) CloseConnection() {
+	acces.db_handler.Close()
 }
 
 // CheckFileExists checks if a file with a given path exists in the database.
-func (bdd *AccesBdd) CheckFileExists(path string) bool {
-	rows, err := bdd.db_handler.Query("SELECT id FROM filesystem WHERE path=? AND secure_id=? VALUES=(?,?)", path, bdd.SecureId)
+func (acces *AccesBdd) CheckFileExists(path string) bool {
+	rows, err := acces.db_handler.Query("SELECT id FROM filesystem WHERE path=? AND secure_id=? VALUES=(?,?)", path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while querying database from CheckFileExists() : ", err)
@@ -164,9 +163,9 @@ func (bdd *AccesBdd) CheckFileExists(path string) bool {
 
 // WasFile checks if a file with a given path was present in the past.
 // This is made by checking the database as the filesystem may have been alterated
-func (bdd *AccesBdd) WasFile(path string) bool {
+func (acces *AccesBdd) WasFile(path string) bool {
 
-	row := bdd.db_handler.QueryRow("SELECT type FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
+	row := acces.db_handler.QueryRow("SELECT type FROM filesystem WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	var fileType string
 	err := row.Scan(&fileType)
@@ -189,7 +188,7 @@ func (bdd *AccesBdd) WasFile(path string) bool {
 
 // IsFile checks if a given path represents a file (not a directory).
 // does not acces the db, it uses the client real filesystem
-func (bdd *AccesBdd) IsFile(path string) bool {
+func (acces *AccesBdd) IsFile(path string) bool {
 
 	handler, err := os.Open(path)
 
@@ -209,10 +208,10 @@ func (bdd *AccesBdd) IsFile(path string) bool {
 }
 
 // GetSecureId retrieves the secure ID associated with a given root path.
-func (bdd *AccesBdd) GetSecureId(rootpath string) {
-	row := bdd.db_handler.QueryRow("SELECT secure_id FROM sync WHERE root=?", rootpath)
+func (acces *AccesBdd) GetSecureId(rootpath string) {
+	row := acces.db_handler.QueryRow("SELECT secure_id FROM sync WHERE root=?", rootpath)
 
-	err := row.Scan(&bdd.SecureId)
+	err := row.Scan(&acces.SecureId)
 
 	if err == sql.ErrNoRows {
 		log.Fatal("The provided path does not match any existing sync rootpath")
@@ -225,7 +224,7 @@ func (bdd *AccesBdd) GetSecureId(rootpath string) {
 }
 
 // CreateFile adds a file to the database.
-func (bdd *AccesBdd) CreateFile(relative_path string, absolute_path string, flag string) {
+func (acces *AccesBdd) CreateFile(relative_path string, absolute_path string, flag string) {
 
 	file_handler, err := os.Open(absolute_path)
 
@@ -256,7 +255,7 @@ func (bdd *AccesBdd) CreateFile(relative_path string, absolute_path string, flag
 
 	gzip_writer.Close()
 
-	_, err = bdd.db_handler.Exec("INSERT INTO filesystem (path, version_id, type, size, secure_id,content) VALUES (?, 0, 'file', ?, ?,?)", relative_path, stat.Size(), bdd.SecureId, bytes_buffer.Bytes())
+	_, err = acces.db_handler.Exec("INSERT INTO filesystem (path, version_id, type, size, secure_id,content) VALUES (?, 0, 'file', ?, ?,?)", relative_path, stat.Size(), acces.SecureId, bytes_buffer.Bytes())
 
 	if err != nil {
 		log.Fatal("Error while inserting into database ", err)
@@ -267,11 +266,11 @@ func (bdd *AccesBdd) CreateFile(relative_path string, absolute_path string, flag
 
 	if flag == "[ADD_TO_RETARD]" {
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
-		offline_devices := bdd.GetSyncOfflineDevices()
+		offline_devices := acces.GetSyncOfflineDevices()
 		if len(offline_devices) > 0 {
-			new_version_id := bdd.GetFileLastVersionId(relative_path) + 1
+			new_version_id := acces.GetFileLastVersionId(relative_path) + 1
 
-			bdd.IncrementFileVersion(relative_path)
+			acces.IncrementFileVersion(relative_path)
 
 			// convert detla to json
 			json_data, err := json.Marshal(delta)
@@ -282,7 +281,7 @@ func (bdd *AccesBdd) CreateFile(relative_path string, absolute_path string, flag
 
 			// add line in delta table
 
-			_, err = bdd.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", relative_path, new_version_id, json_data, bdd.SecureId)
+			_, err = acces.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", relative_path, new_version_id, json_data, acces.SecureId)
 
 			if err != nil {
 				log.Fatal("Error while storing binary delta in database : ", err)
@@ -297,7 +296,7 @@ func (bdd *AccesBdd) CreateFile(relative_path string, absolute_path string, flag
 				"move":     "m",
 			}
 
-			_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, relative_path, MODTYPES["creation"], strings.Join(offline_devices, ";"), bdd.SecureId)
+			_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, relative_path, MODTYPES["creation"], strings.Join(offline_devices, ";"), acces.SecureId)
 
 			if err != nil {
 				log.Fatal("Error while inserting new retard : ", err)
@@ -307,12 +306,12 @@ func (bdd *AccesBdd) CreateFile(relative_path string, absolute_path string, flag
 	}
 
 	// update the cached file content to build the next delta (needs absolute path to the file)
-	bdd.UpdateCachedFile(absolute_path)
+	acces.UpdateCachedFile(absolute_path)
 }
 
 // GetFileLastVersionId retrieves the last version ID of a file.
-func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
-	row := bdd.db_handler.QueryRow("SELECT version_id FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
+func (acces *AccesBdd) GetFileLastVersionId(path string) int64 {
+	row := acces.db_handler.QueryRow("SELECT version_id FROM filesystem WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	var version_id int64
 	err := row.Scan(&version_id)
@@ -323,13 +322,13 @@ func (bdd *AccesBdd) GetFileLastVersionId(path string) int64 {
 	return version_id
 }
 
-func (bdd *AccesBdd) GetSyncOfflineDevices() []string {
-	linked_devices := bdd.GetSyncLinkedDevices()
+func (acces *AccesBdd) GetSyncOfflineDevices() []string {
+	linked_devices := acces.GetSyncLinkedDevices()
 	query := "SELECT device_id,is_connected FROM linked_devices WHERE device_id IN ('"
 	query += strings.Join(linked_devices, "','")
 	query += "')"
 
-	rows, err := bdd.db_handler.Query(query)
+	rows, err := acces.db_handler.Query(query)
 
 	if err != nil {
 		log.Fatal("Error while querying database from GetSyncOfflineDevices() : ", err)
@@ -352,15 +351,15 @@ func (bdd *AccesBdd) GetSyncOfflineDevices() []string {
 
 // UpdateFile updates a file in the database with a new version.
 // For that, a binary delta object is used.
-func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
+func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 
 	// get only offline devices
 
-	offline_devices := bdd.GetSyncOfflineDevices()
+	offline_devices := acces.GetSyncOfflineDevices()
 	if len(offline_devices) > 0 {
-		new_version_id := bdd.GetFileLastVersionId(path) + 1
+		new_version_id := acces.GetFileLastVersionId(path) + 1
 
-		bdd.IncrementFileVersion(path)
+		acces.IncrementFileVersion(path)
 
 		// convert detla to json
 		json_data, err := json.Marshal(delta)
@@ -371,7 +370,7 @@ func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 
 		// add line in delta table
 
-		_, err = bdd.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", path, new_version_id, json_data, bdd.SecureId)
+		_, err = acces.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", path, new_version_id, json_data, acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while storing binary delta in database : ", err)
@@ -386,7 +385,7 @@ func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 			"move":     "m",
 		}
 
-		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, path, MODTYPES["patch"], strings.Join(offline_devices, ";"), bdd.SecureId)
+		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, path, MODTYPES["patch"], strings.Join(offline_devices, ";"), acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -394,14 +393,14 @@ func (bdd *AccesBdd) UpdateFile(path string, delta dtbin.Delta) {
 	}
 
 	// update the cached file content to build the next delta (needs absolute path to the file)
-	bdd.UpdateCachedFile(filepath.Join(bdd.GetRootSyncPath(), path))
+	acces.UpdateCachedFile(filepath.Join(acces.GetRootSyncPath(), path))
 }
 
-func (bdd *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
+func (acces *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 	// remove all mentions of the given device_id in the retard table for a specific file
 
 	var devices_to_patch string
-	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE path=? AND secure_id=?", path, bdd.SecureId)
+	row := acces.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	row.Scan(&devices_to_patch)
 
@@ -415,7 +414,7 @@ func (bdd *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 		}
 	}
 
-	_, err := bdd.db_handler.Exec("UPDATE retard SET WHERE path=? AND secure_id=?", list_builder, path)
+	_, err := acces.db_handler.Exec("UPDATE retard SET WHERE path=? AND secure_id=?", list_builder, path)
 
 	if err != nil {
 		log.Fatal("Error while inserting new retard : ", err)
@@ -425,8 +424,8 @@ func (bdd *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 
 // GetFileContent retrieves the content of a file from the database.
 // returned as byte array
-func (bdd *AccesBdd) GetFileContent(path string) []byte {
-	row := bdd.db_handler.QueryRow("SELECT content FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
+func (acces *AccesBdd) GetFileContent(path string) []byte {
+	row := acces.db_handler.QueryRow("SELECT content FROM filesystem WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	var compressed_content []byte
 	err := row.Scan(&compressed_content)
@@ -452,15 +451,15 @@ func (bdd *AccesBdd) GetFileContent(path string) []byte {
 }
 
 // RmFile deletes a file from the database and adds it in delete mode to the retard table.
-func (bdd *AccesBdd) RmFile(path string) {
-	_, err := bdd.db_handler.Exec("DELETE FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
+func (acces *AccesBdd) RmFile(path string) {
+	_, err := acces.db_handler.Exec("DELETE FROM filesystem WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while deleting from database ", err)
 	}
 
 	// now, purge all data involving this file from retard table
-	_, err = bdd.db_handler.Exec("DELETE FROM retard WHERE path=? AND secure_id=?", path, bdd.SecureId)
+	_, err = acces.db_handler.Exec("DELETE FROM retard WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while deleting from database ", err)
@@ -473,10 +472,10 @@ func (bdd *AccesBdd) RmFile(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := bdd.GetSyncLinkedDevices()
+	linked_devices := acces.GetSyncLinkedDevices()
 
 	if len(linked_devices) > 0 {
-		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
+		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -486,8 +485,8 @@ func (bdd *AccesBdd) RmFile(path string) {
 }
 
 // CreateFolder adds a folder to the database.
-func (bdd *AccesBdd) CreateFolder(path string) {
-	_, err := bdd.db_handler.Exec("INSERT INTO filesystem (path, version_id, type, size, secure_id) VALUES (?, 0, 'folder', 0, ?)", path, bdd.SecureId)
+func (acces *AccesBdd) CreateFolder(path string) {
+	_, err := acces.db_handler.Exec("INSERT INTO filesystem (path, version_id, type, size, secure_id) VALUES (?, 0, 'folder', 0, ?)", path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while inserting into database ", err)
@@ -495,23 +494,23 @@ func (bdd *AccesBdd) CreateFolder(path string) {
 }
 
 // RmFolder deletes a folder from the database and adds it in delete mode to the retard table.
-func (bdd *AccesBdd) RmFolder(path string) {
+func (acces *AccesBdd) RmFolder(path string) {
 
-	_, err := bdd.db_handler.Exec("DELETE FROM filesystem WHERE path LIKE ? AND secure_id=?", path+"%", bdd.SecureId)
+	_, err := acces.db_handler.Exec("DELETE FROM filesystem WHERE path LIKE ? AND secure_id=?", path+"%", acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while deleting from database ", err)
 	}
 
 	// now, purge all data involving this folder from retard table
-	_, err = bdd.db_handler.Exec("DELETE FROM retard WHERE path LIKE ? AND secure_id=?", path+"%", bdd.SecureId)
+	_, err = acces.db_handler.Exec("DELETE FROM retard WHERE path LIKE ? AND secure_id=?", path+"%", acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while deleting from database ", err)
 	}
 
 	// purge all data from delta table involving this folder
-	_, err = bdd.db_handler.Exec("DELETE FROM delta WHERE path LIKE ? AND secure_id=?", path+"%", bdd.SecureId)
+	_, err = acces.db_handler.Exec("DELETE FROM delta WHERE path LIKE ? AND secure_id=?", path+"%", acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while deleting from database ", err)
@@ -524,10 +523,10 @@ func (bdd *AccesBdd) RmFolder(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := bdd.GetSyncLinkedDevices()
+	linked_devices := acces.GetSyncLinkedDevices()
 
 	if len(linked_devices) > 0 {
-		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), bdd.SecureId)
+		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -537,8 +536,8 @@ func (bdd *AccesBdd) RmFolder(path string) {
 }
 
 // Move updates the path of a file or folder in the database and adds a move event to the retard table.
-func (bdd *AccesBdd) Move(path string, new_path string, file_type string) {
-	_, err := bdd.db_handler.Exec("UPDATE filesystem SET path=? WHERE path=? AND secure_id=?", new_path, path, bdd.SecureId)
+func (acces *AccesBdd) Move(path string, new_path string, file_type string) {
+	_, err := acces.db_handler.Exec("UPDATE filesystem SET path=? WHERE path=? AND secure_id=?", new_path, path, acces.SecureId)
 	if err != nil {
 		log.Fatal("Error while updating database in move()", err)
 	}
@@ -551,10 +550,10 @@ func (bdd *AccesBdd) Move(path string, new_path string, file_type string) {
 		"move":     "m",
 	}
 
-	linked_devices := bdd.GetSyncLinkedDevices()
+	linked_devices := acces.GetSyncLinkedDevices()
 
 	if len(linked_devices) > 0 {
-		_, err = bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)", 0, path, MODTYPES["move"], strings.Join(linked_devices, ";"), file_type, bdd.SecureId)
+		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)", 0, path, MODTYPES["move"], strings.Join(linked_devices, ";"), file_type, acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -564,7 +563,7 @@ func (bdd *AccesBdd) Move(path string, new_path string, file_type string) {
 }
 
 // CreateSync initializes a new synchronization entry in the database.
-func (bdd *AccesBdd) CreateSync(rootPath string) {
+func (acces *AccesBdd) CreateSync(rootPath string) {
 
 	// generating secure_id
 
@@ -578,10 +577,10 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 
 	secure_id := string(s)
 
-	bdd.SecureId = secure_id
+	acces.SecureId = secure_id
 
 	// adding sync to database
-	_, err := bdd.db_handler.Exec("INSERT INTO sync (secure_id, root) VALUES(?,?)", secure_id, rootPath)
+	_, err := acces.db_handler.Exec("INSERT INTO sync (secure_id, root) VALUES(?,?)", secure_id, rootPath)
 
 	if err != nil {
 		log.Fatal("Error while inserting into database ", err)
@@ -597,9 +596,9 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 		log.Println("Registering : ", path)
 		relative_path := strings.Replace(path, rootPath, "", 1)
 		if info.IsDir() {
-			bdd.CreateFolder(relative_path)
+			acces.CreateFolder(relative_path)
 		} else {
-			bdd.CreateFile(relative_path, path, "[ADD_TO_RETARD]")
+			acces.CreateFile(relative_path, path, "[ADD_TO_RETARD]")
 		}
 
 		return nil
@@ -617,11 +616,11 @@ func (bdd *AccesBdd) CreateSync(rootPath string) {
 // Used to connect from an existing task from another device
 // Filesystem is not mapped by the function as a remote setup procedure
 // is made around this call
-func (bdd *AccesBdd) CreateSyncFromOtherEnd(rootPath string, secure_id string) {
-	bdd.SecureId = secure_id
+func (acces *AccesBdd) CreateSyncFromOtherEnd(rootPath string, secure_id string) {
+	acces.SecureId = secure_id
 
 	// adding sync to database
-	_, err := bdd.db_handler.Exec("INSERT INTO sync (secure_id, root) VALUES(?,?)", secure_id, rootPath)
+	_, err := acces.db_handler.Exec("INSERT INTO sync (secure_id, root) VALUES(?,?)", secure_id, rootPath)
 
 	if err != nil {
 		log.Fatal("Error while inserting into database ", err)
@@ -630,8 +629,8 @@ func (bdd *AccesBdd) CreateSyncFromOtherEnd(rootPath string, secure_id string) {
 
 // RmSync removes a synchronization entry from the database.
 
-func (bdd *AccesBdd) RmSync() {
-	_, err := bdd.db_handler.Exec("DELETE FROM sync WHERE secure_id=?", bdd.SecureId)
+func (acces *AccesBdd) RmSync() {
+	_, err := acces.db_handler.Exec("DELETE FROM sync WHERE secure_id=?", acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while deleting from database ", err)
@@ -639,18 +638,18 @@ func (bdd *AccesBdd) RmSync() {
 }
 
 // LinkDevice links a device to the synchronization entry.
-func (bdd *AccesBdd) LinkDevice(device_id string, ip_addr string) {
+func (acces *AccesBdd) LinkDevice(device_id string, ip_addr string) {
 
 	// link this device to an existing task
-	_, err := bdd.db_handler.Exec("UPDATE sync SET linked_devices_id=IFNULL(linked_devices_id, '') || ? WHERE secure_id=?", device_id+";", bdd.SecureId)
+	_, err := acces.db_handler.Exec("UPDATE sync SET linked_devices_id=IFNULL(linked_devices_id, '') || ? WHERE secure_id=?", device_id+";", acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while updating database in LinkDevice() : ", err)
 	}
 
 	// if the device is not registered as a target (from previous tasks), register it
-	if !bdd.IsDeviceLinked(device_id) {
-		_, err = bdd.db_handler.Exec("INSERT INTO linked_devices (device_id,is_connected,ip_addr) VALUES(?,TRUE,?)", device_id, ip_addr)
+	if !acces.IsDeviceLinked(device_id) {
+		_, err = acces.db_handler.Exec("INSERT INTO linked_devices (device_id,is_connected,ip_addr) VALUES(?,TRUE,?)", device_id, ip_addr)
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -660,17 +659,17 @@ func (bdd *AccesBdd) LinkDevice(device_id string, ip_addr string) {
 }
 
 // UnlinkDevice unlinks a device from a synchronization entry.
-func (bdd *AccesBdd) UnlinkDevice(device_id string) {
+func (acces *AccesBdd) UnlinkDevice(device_id string) {
 
 	// remove id from the list
-	_, err := bdd.db_handler.Exec("DELETE FROM linked_devices WHERE device_id=?", device_id)
+	_, err := acces.db_handler.Exec("DELETE FROM linked_devices WHERE device_id=?", device_id)
 
 	if err != nil {
 		log.Fatal("Error while updating database in UnlinkDevice() : ", err)
 	}
 
 	// remove id from the list in sync table
-	_, err = bdd.db_handler.Exec("UPDATE sync SET linked_devices_id=REPLACE(linked_devices_id,?,'')", device_id+";", bdd.SecureId)
+	_, err = acces.db_handler.Exec("UPDATE sync SET linked_devices_id=REPLACE(linked_devices_id,?,'')", device_id+";", acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while updating database in UnlinkDevice() : ", err)
@@ -678,9 +677,9 @@ func (bdd *AccesBdd) UnlinkDevice(device_id string) {
 }
 
 // GetRootSyncPath retrieves the root path associated with the synchronization entry.
-func (bdd *AccesBdd) GetRootSyncPath() string {
+func (acces *AccesBdd) GetRootSyncPath() string {
 	var rootPath string
-	row := bdd.db_handler.QueryRow("SELECT root FROM sync WHERE secure_id=?", bdd.SecureId)
+	row := acces.db_handler.QueryRow("SELECT root FROM sync WHERE secure_id=?", acces.SecureId)
 
 	err := row.Scan(&rootPath)
 	if err != nil {
@@ -691,16 +690,16 @@ func (bdd *AccesBdd) GetRootSyncPath() string {
 }
 
 // SetDeviceConnectionState updates the connection state of a linked device.
-func (bdd *AccesBdd) SetDeviceConnectionState(device_id string, value bool, ip_addr ...string) {
+func (acces *AccesBdd) SetDeviceConnectionState(device_id string, value bool, ip_addr ...string) {
 
 	if len(ip_addr) == 0 {
-		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=? WHERE device_id=?", value, device_id)
+		_, err := acces.db_handler.Exec("UPDATE linked_devices SET is_connected=? WHERE device_id=?", value, device_id)
 
 		if err != nil {
 			log.Fatal("Error while updating database in SetDeviceConnectionState() : ", err)
 		}
 	} else {
-		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET is_connected=?,ip_addr=? WHERE device_id=?", value, ip_addr[0], device_id)
+		_, err := acces.db_handler.Exec("UPDATE linked_devices SET is_connected=?,ip_addr=? WHERE device_id=?", value, ip_addr[0], device_id)
 
 		if err != nil {
 			log.Fatal("Error while updating database in SetDeviceConnectionState() : ", err)
@@ -709,9 +708,9 @@ func (bdd *AccesBdd) SetDeviceConnectionState(device_id string, value bool, ip_a
 
 }
 
-func (bdd *AccesBdd) GetDeviceConnectionState(device_id string) bool {
+func (acces *AccesBdd) GetDeviceConnectionState(device_id string) bool {
 	var connection_state bool
-	row := bdd.db_handler.QueryRow("SELECT is_connected FROM linked_devices WHERE device_id=?", device_id)
+	row := acces.db_handler.QueryRow("SELECT is_connected FROM linked_devices WHERE device_id=?", device_id)
 
 	err := row.Scan(&connection_state)
 	if err != nil {
@@ -722,12 +721,12 @@ func (bdd *AccesBdd) GetDeviceConnectionState(device_id string) bool {
 }
 
 // search in the list of secure_id if the given one is receiving updates from another device
-func (bdd *AccesBdd) IsThisFileSystemBeingPatched() bool {
+func (acces *AccesBdd) IsThisFileSystemBeingPatched() bool {
 
 	var ids_str string
 	var ids_list []string
 
-	row := bdd.db_handler.QueryRow("SELECT IFNULL(receiving_update, '')FROM linked_devices")
+	row := acces.db_handler.QueryRow("SELECT IFNULL(receiving_update, '')FROM linked_devices")
 
 	err := row.Scan(&ids_str)
 
@@ -738,7 +737,7 @@ func (bdd *AccesBdd) IsThisFileSystemBeingPatched() bool {
 	ids_list = strings.Split(ids_str, ";")
 
 	for _, id := range ids_list {
-		if id == bdd.SecureId {
+		if id == acces.SecureId {
 			return true
 		}
 	}
@@ -747,12 +746,12 @@ func (bdd *AccesBdd) IsThisFileSystemBeingPatched() bool {
 
 }
 
-func (bdd *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
+func (acces *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
 
 	// lock the filesystem (simply add the secure_id of the sync task to the list)
 	if value {
 
-		_, err := bdd.db_handler.Exec("UPDATE linked_devices SET receiving_update=IFNULL(receiving_update, '') || ?", bdd.SecureId+";")
+		_, err := acces.db_handler.Exec("UPDATE linked_devices SET receiving_update=IFNULL(receiving_update, '') || ?", acces.SecureId+";")
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -763,7 +762,7 @@ func (bdd *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
 		var ids_str string
 		var ids_list []string
 
-		row := bdd.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
+		row := acces.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
 
 		err := row.Scan(&ids_str)
 		if err != nil {
@@ -775,13 +774,13 @@ func (bdd *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
 		// same list of sync tasks secure_id but without this one
 		var new_ids []string
 		for _, id := range ids_list {
-			if !(id == bdd.SecureId) {
+			if !(id == acces.SecureId) {
 				new_ids = append(new_ids, id)
 			}
 		}
 
 		// rewrite the updated list
-		_, err = bdd.db_handler.Exec("UPDATE linked_devices SET receiving_update= ?", strings.Join(new_ids, ";"))
+		_, err = acces.db_handler.Exec("UPDATE linked_devices SET receiving_update= ?", strings.Join(new_ids, ";"))
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -790,9 +789,9 @@ func (bdd *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
 	}
 }
 
-func (bdd *AccesBdd) GetFileSizeFromBdd(path string) int64 {
+func (acces *AccesBdd) GetFileSizeFromBdd(path string) int64 {
 	var size int64
-	row := bdd.db_handler.QueryRow("SELECT size FROM filesystem WHERE path=? AND secure_id=?", path, bdd.SecureId)
+	row := acces.db_handler.QueryRow("SELECT size FROM filesystem WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	err := row.Scan(&size)
 	if err != nil {
@@ -802,11 +801,11 @@ func (bdd *AccesBdd) GetFileSizeFromBdd(path string) int64 {
 	return size
 }
 
-func (bdd *AccesBdd) GetSyncLinkedDevices() []string {
+func (acces *AccesBdd) GetSyncLinkedDevices() []string {
 	var devices_str string
 	var devices_list []string
 
-	row := bdd.db_handler.QueryRow("SELECT linked_devices_id FROM sync WHERE secure_id=?", bdd.SecureId)
+	row := acces.db_handler.QueryRow("SELECT linked_devices_id FROM sync WHERE secure_id=?", acces.SecureId)
 
 	err := row.Scan(&devices_str)
 	if err != nil {
@@ -822,12 +821,12 @@ func (bdd *AccesBdd) GetSyncLinkedDevices() []string {
 	return devices_list
 }
 
-func (bdd *AccesBdd) GetFileDelta(version int64, path string) dtbin.Delta {
+func (acces *AccesBdd) GetFileDelta(version int64, path string) delta_binaire.Delta {
 
-	var delta dtbin.Delta
+	var delta delta_binaire.Delta
 	var json_data string
 
-	row := bdd.db_handler.QueryRow("SELECT delta FROM delta WHERE path=? AND version_id=?", path, version)
+	row := acces.db_handler.QueryRow("SELECT delta FROM delta WHERE path=? AND version_id=?", path, version)
 
 	err := row.Scan(&json_data)
 	if err != nil {
@@ -843,7 +842,7 @@ func (bdd *AccesBdd) GetFileDelta(version int64, path string) dtbin.Delta {
 	return delta
 }
 
-func (bdd *AccesBdd) AddFolderToRetard(path string) {
+func (acces *AccesBdd) AddFolderToRetard(path string) {
 
 	// add a line in retard table with all devices linked and the version number
 
@@ -853,9 +852,9 @@ func (bdd *AccesBdd) AddFolderToRetard(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := bdd.GetSyncLinkedDevices()
+	linked_devices := acces.GetSyncLinkedDevices()
 	log.Println("ADDING FOLDER TO RETARD : ", path)
-	_, err := bdd.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], strings.Join(linked_devices, ";"), bdd.SecureId)
+	_, err := acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], strings.Join(linked_devices, ";"), acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while inserting new retard in AddFolderToRetard() : ", err)
@@ -863,8 +862,8 @@ func (bdd *AccesBdd) AddFolderToRetard(path string) {
 
 }
 
-func (bdd *AccesBdd) IsDeviceLinked(device_id string) bool {
-	rows, err := bdd.db_handler.Query("SELECT id FROM linked_devices WHERE device_id=?", device_id)
+func (acces *AccesBdd) IsDeviceLinked(device_id string) bool {
+	rows, err := acces.db_handler.Query("SELECT id FROM linked_devices WHERE device_id=?", device_id)
 
 	if err != nil {
 		log.Fatal("Error while querying database from IsDeviceLinked() : ", err)
@@ -880,8 +879,8 @@ func (bdd *AccesBdd) IsDeviceLinked(device_id string) bool {
 
 }
 
-func (bdd *AccesBdd) IsMyDeviceIdGenerated() bool {
-	rows, err := bdd.db_handler.Query("SELECT id FROM mesid")
+func (acces *AccesBdd) IsMyDeviceIdGenerated() bool {
+	rows, err := acces.db_handler.Query("SELECT id FROM mesid")
 
 	if err != nil {
 		log.Fatal("Error while querying database from IsMyDeviceIdGenerated() : ", err)
@@ -896,7 +895,7 @@ func (bdd *AccesBdd) IsMyDeviceIdGenerated() bool {
 	return i > 0
 }
 
-func (bdd *AccesBdd) GenerateMyDeviceId() {
+func (acces *AccesBdd) GenerateMyDeviceId() {
 
 	// generating secure_id
 
@@ -911,11 +910,11 @@ func (bdd *AccesBdd) GenerateMyDeviceId() {
 	secure_id := string(s)
 
 	// adding it to database
-	bdd.db_handler.Exec("INSERT INTO mesid(device_id) VALUES(?)", secure_id)
+	acces.db_handler.Exec("INSERT INTO mesid(device_id) VALUES(?)", secure_id)
 
 }
-func (bdd *AccesBdd) GetMyDeviceId() string {
-	row := bdd.db_handler.QueryRow("SELECT device_id FROM mesid")
+func (acces *AccesBdd) GetMyDeviceId() string {
+	row := acces.db_handler.QueryRow("SELECT device_id FROM mesid")
 
 	if row.Err() != nil {
 		log.Fatal("Error while querying database from GetMyDeviceId() : ", row.Err())
@@ -928,9 +927,9 @@ func (bdd *AccesBdd) GetMyDeviceId() string {
 	return device_id
 }
 
-func (bdd *AccesBdd) GetOfflineDevices() []string {
+func (acces *AccesBdd) GetOfflineDevices() []string {
 
-	rows, err := bdd.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
+	rows, err := acces.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
 	if err != nil {
 		log.Fatal("Error while querying database from GetOfflineDevices() : ", err)
@@ -949,9 +948,9 @@ func (bdd *AccesBdd) GetOfflineDevices() []string {
 	return offline_devices
 }
 
-func (bdd *AccesBdd) GetOnlineDevices() []string {
+func (acces *AccesBdd) GetOnlineDevices() []string {
 
-	rows, err := bdd.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
+	rows, err := acces.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
 	if err != nil {
 		log.Fatal("Error while querying database from GetOnlineDevices() : ", err)
@@ -971,18 +970,18 @@ func (bdd *AccesBdd) GetOnlineDevices() []string {
 
 	return online_devices
 }
-func (bdd *AccesBdd) SetDeviceIP(device_id string, value string) {
-	log.Println("vars : ", bdd.SecureId, device_id, value)
-	_, err := bdd.db_handler.Exec("UPDATE linked_devices SET ip_addr=? WHERE secure_id=? AND device_id=?", value, bdd.SecureId, device_id)
+func (acces *AccesBdd) SetDeviceIP(device_id string, value string) {
+	log.Println("vars : ", acces.SecureId, device_id, value)
+	_, err := acces.db_handler.Exec("UPDATE linked_devices SET ip_addr=? WHERE secure_id=? AND device_id=?", value, acces.SecureId, device_id)
 
 	if err != nil {
 		log.Fatal("Error while updating database in SetDeviceIP() : ", err)
 	}
 }
 
-func (bdd *AccesBdd) GetDeviceIP(device_id string) string {
+func (acces *AccesBdd) GetDeviceIP(device_id string) string {
 	var ip_addr string
-	row := bdd.db_handler.QueryRow("SELECT ip_addr FROM linked_devices WHERE device_id=?", device_id)
+	row := acces.db_handler.QueryRow("SELECT ip_addr FROM linked_devices WHERE device_id=?", device_id)
 
 	err := row.Scan(&ip_addr)
 	if err != nil {
@@ -992,19 +991,19 @@ func (bdd *AccesBdd) GetDeviceIP(device_id string) string {
 	return ip_addr
 }
 
-func (bdd *AccesBdd) IncrementFileVersion(path string) {
+func (acces *AccesBdd) IncrementFileVersion(path string) {
 	// get lastest version of file and increment it
-	new_version_id := bdd.GetFileLastVersionId(path) + 1
+	new_version_id := acces.GetFileLastVersionId(path) + 1
 
 	// update version number in db
-	_, err := bdd.db_handler.Exec("UPDATE filesystem SET version_id=? WHERE path=? AND secure_id=?", new_version_id, path, bdd.SecureId)
+	_, err := acces.db_handler.Exec("UPDATE filesystem SET version_id=? WHERE path=? AND secure_id=?", new_version_id, path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while updating file version_id in IncrementFileVersion()")
 	}
 }
 
-func (bdd *AccesBdd) UpdateCachedFile(path string) {
+func (acces *AccesBdd) UpdateCachedFile(path string) {
 	// reads the current state of the given file and update it in the database
 
 	file_content, err := os.ReadFile(path)
@@ -1021,19 +1020,19 @@ func (bdd *AccesBdd) UpdateCachedFile(path string) {
 		log.Fatal("Error in UpdateCachedFile() while reading file to cache its content : ", err)
 	}
 
-	_, err = bdd.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), path, bdd.SecureId)
+	_, err = acces.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
 	}
 }
 
-func (bdd *AccesBdd) ListSyncAllTasks() []SyncInfos {
+func (acces *AccesBdd) ListSyncAllTasks() []SyncInfos {
 
 	// used to get all sync task secure_id and root path listed
 	// returns a custom type containing the two values as string
 
-	rows, err := bdd.db_handler.Query("SELECT secure_id,root FROM sync")
+	rows, err := acces.db_handler.Query("SELECT secure_id,root FROM sync")
 
 	if err != nil {
 		log.Fatal("Error while querying database from ListSyncAllTasks() : ", err)
@@ -1052,14 +1051,14 @@ func (bdd *AccesBdd) ListSyncAllTasks() []SyncInfos {
 
 }
 
-func (bdd *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]*globals.QEvent {
+func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]*globals.QEvent {
 
 	// as the device can be late on many tasks, we must create an hash table with all
 	// the differents delta on all differents tasks he's late on
 	var queue map[string][]*globals.QEvent = make(map[string][]*globals.QEvent)
 
 	log.Println("Building missed files event queue from retard...")
-	rows, err := bdd.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
+	rows, err := acces.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
 
 	if err != nil {
 		log.Fatal("Error while querying database from BuildEventQueueFromRetard() : ", err)
@@ -1069,7 +1068,7 @@ func (bdd *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]*g
 	for rows.Next() {
 		var event globals.QEvent
 		var delta_bytes []byte
-		var delta dtbin.Delta
+		var delta delta_binaire.Delta
 		var mod_type string
 		var secure_id string
 		var filepath string
@@ -1098,7 +1097,7 @@ func (bdd *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]*g
 	}
 
 	log.Println("Building missed folders creation event queue from retard...")
-	rows, err = bdd.db_handler.Query("SELECT r.secure_id,r.mod_type,r.path,r.type FROM retard AS r WHERE r.devices_to_patch LIKE ? AND r.type='folder'", "%"+device_id+"%")
+	rows, err = acces.db_handler.Query("SELECT r.secure_id,r.mod_type,r.path,r.type FROM retard AS r WHERE r.devices_to_patch LIKE ? AND r.type='folder'", "%"+device_id+"%")
 
 	if err != nil {
 		log.Fatal("Error while querying database from BuildEventQueueFromRetard() : ", err)
@@ -1137,14 +1136,14 @@ func (bdd *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]*g
 
 }
 
-func (bdd *AccesBdd) RemoveDeviceFromRetard(device_id string) {
+func (acces *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 
 	// to replace, this code is the one from FileSystemPatchLockState
 
 	var ids_str string
 	var ids_list []string
 
-	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+	row := acces.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
 
 	err := row.Scan(&ids_str)
 	if err != nil {
@@ -1165,7 +1164,7 @@ func (bdd *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 	// if not we just rewrite without its id
 	if len(new_ids) > 0 {
 		// rewrite the updated list
-		_, err = bdd.db_handler.Exec("UPDATE retard SET devices_to_patch= ? WHERE devices_to_patch LIKE ?", strings.Join(new_ids, ";"), "%"+device_id+"%")
+		_, err = acces.db_handler.Exec("UPDATE retard SET devices_to_patch= ? WHERE devices_to_patch LIKE ?", strings.Join(new_ids, ";"), "%"+device_id+"%")
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -1173,7 +1172,7 @@ func (bdd *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 
 	} else {
 		// rewrite the updated list
-		_, err = bdd.db_handler.Exec("DELETE FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+		_, err = acces.db_handler.Exec("DELETE FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -1183,11 +1182,11 @@ func (bdd *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 }
 
 // this function checks if a device has some updates to catch up on
-func (bdd *AccesBdd) NeedsUpdate(device_id string) bool {
+func (acces *AccesBdd) NeedsUpdate(device_id string) bool {
 
 	var ids_str string
 
-	row := bdd.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+	row := acces.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
 
 	err := row.Scan(&ids_str)
 	if (err != nil) && (err != sql.ErrNoRows) {
@@ -1199,16 +1198,16 @@ func (bdd *AccesBdd) NeedsUpdate(device_id string) bool {
 }
 
 // ajoute une application tout en un dans la table exprès
-func (bdd *AccesBdd) AddToutEnUn(data globals.ToutEnUnConfig) {
-	_, err := bdd.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"toutenun\",?,?)", data.AppName, data.AppLauncherPath, 1, bdd.SecureId, data.AppUninstallerPath)
+func (acces *AccesBdd) AddToutEnUn(data globals.ToutEnUnConfig) {
+	_, err := acces.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"toutenun\",?,?)", data.AppName, data.AppLauncherPath, 1, acces.SecureId, data.AppUninstallerPath)
 
 	if err != nil {
 		log.Fatal("Error while updating database in AddToutEnUn() : ", err)
 	}
 }
 
-func (bdd *AccesBdd) AddGrapin(data globals.GrapinConfig) {
-	_, err := bdd.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,uninstaller_path) VALUES(?,?,?,\"grapin\",secure_id,?)", data.AppName, "[GRAPIN]", 1, bdd.SecureId, "[GRAPIN]")
+func (acces *AccesBdd) AddGrapin(data globals.GrapinConfig) {
+	_, err := acces.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,uninstaller_path) VALUES(?,?,?,\"grapin\",secure_id,?)", data.AppName, "[GRAPIN]", 1, acces.SecureId, "[GRAPIN]")
 
 	if err != nil {
 		log.Fatal("Error while updating database in AddGrapin() : ", err)
@@ -1216,12 +1215,12 @@ func (bdd *AccesBdd) AddGrapin(data globals.GrapinConfig) {
 }
 
 // this function list all installed apps on qsync
-func (bdd *AccesBdd) ListInstalledApps() []globals.MinGenConfig {
+func (acces *AccesBdd) ListInstalledApps() []globals.MinGenConfig {
 
 	var configs []globals.MinGenConfig
 	var tmp globals.MinGenConfig
 
-	rows, err := bdd.db_handler.Query("SELECT name,id,path,type FROM apps")
+	rows, err := acces.db_handler.Query("SELECT name,id,path,type FROM apps")
 	if err != nil {
 		log.Fatal("Error while querying database in ListInstalledApps() : ", err)
 	}
@@ -1241,11 +1240,11 @@ func (bdd *AccesBdd) ListInstalledApps() []globals.MinGenConfig {
 }
 
 // this function get details of a specifi app by its ID
-func (bdd *AccesBdd) GetAppConfig(app_id int) globals.MinGenConfig {
+func (acces *AccesBdd) GetAppConfig(app_id int) globals.MinGenConfig {
 
 	var config globals.MinGenConfig
 
-	row := bdd.db_handler.QueryRow("SELECT name,id,path,type,uninstaller_peth FROM apps WHERE id=?", app_id)
+	row := acces.db_handler.QueryRow("SELECT name,id,path,type,uninstaller_peth FROM apps WHERE id=?", app_id)
 
 	err := row.Scan(&config)
 	if (err != nil) && (err != sql.ErrNoRows) {
@@ -1257,9 +1256,9 @@ func (bdd *AccesBdd) GetAppConfig(app_id int) globals.MinGenConfig {
 }
 
 // this function get details of a specifi app by its ID
-func (bdd *AccesBdd) DeleteApp(app_id int) {
+func (acces *AccesBdd) DeleteApp(app_id int) {
 
-	_, err := bdd.db_handler.Exec("DELETE FROM apps WHERE id=?", app_id)
+	_, err := acces.db_handler.Exec("DELETE FROM apps WHERE id=?", app_id)
 
 	if (err != nil) && (err != sql.ErrNoRows) {
 		log.Fatal("Error while querying database in GetAppConfig() : ", err)
