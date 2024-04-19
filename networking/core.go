@@ -8,7 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	backendapi "qsync/backend_api"
+	"qsync/backend_api"
 	"qsync/bdd"
 	"qsync/delta_binaire"
 	"qsync/globals"
@@ -111,7 +111,7 @@ func ConnectToDevice(conn net.Conn) {
 		// and same secure_id
 		log.Println("Initializing env to welcome the other end folder content")
 		acces.SecureId = secure_id
-		path := backendapi.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
+		path := backend_api.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
 		log.Println("Future sync will be stored at : ", path)
 		acces.CreateSyncFromOtherEnd(path, secure_id)
 		log.Println("Linking device : ", device_id)
@@ -255,7 +255,7 @@ func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id strin
 func SetEventNetworkLockForDevice(device_id string, value bool) {
 
 	if value {
-		file, err := os.Create(device_id + ".nlock")
+		file, err := os.Create(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
 
 		if err != nil {
 			log.Fatal("Error while creating a network lock file in SetEventNetworkLockForDevice() : ", err)
@@ -264,7 +264,7 @@ func SetEventNetworkLockForDevice(device_id string, value bool) {
 		file.Close()
 	} else {
 
-		err := os.Remove(device_id + ".nlock")
+		err := os.Remove(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
 
 		if err != nil {
 			log.Fatal("Error while removing a network lock file in SetEventNetworkLockForDevice() : ", err)
@@ -277,7 +277,7 @@ func SetEventNetworkLockForDevice(device_id string, value bool) {
 func GetEventNetworkLockForDevice(device_id string) bool {
 
 	var acces bdd.AccesBdd
-	return acces.IsFile(device_id + ".nlock")
+	return acces.IsFile(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
 
 }
 
@@ -365,12 +365,12 @@ func MoveInFilesystem(old_path string, new_path string) {
 
 func BuildSetupQueue(secure_id string, device_id string) {
 
-	var bdd bdd.AccesBdd
+	var acces bdd.AccesBdd
 
-	bdd.SecureId = secure_id
-	bdd.InitConnection()
+	acces.SecureId = secure_id
+	acces.InitConnection()
 
-	rootPath := bdd.GetRootSyncPath()
+	rootPath := acces.GetRootSyncPath()
 
 	var queue []globals.QEvent
 
@@ -416,7 +416,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 	//log.Println("setup event queue : ", queue)
 	var devices []string
 	devices = append(devices, device_id)
-	SendDeviceEventQueueOverNetwork(devices, bdd.SecureId, queue)
+	SendDeviceEventQueueOverNetwork(devices, acces.SecureId, queue)
 
 	if err != nil {
 		log.Fatal(err)

@@ -3,7 +3,7 @@ package tui
 import (
 	"fmt"
 	"log"
-	backendapi "qsync/backend_api"
+	"qsync/backend_api"
 	"qsync/bdd"
 	"qsync/filesystem"
 	"qsync/globals"
@@ -184,13 +184,13 @@ func DisplayMenu() {
 	callbacks["[CHOOSELINKPATH]"] = func(context string) {
 
 		fmt.Println(context + " : ")
-		backendapi.GiveInput("[CHOOSELINKPATH]", Prompt())
+		backend_api.GiveInput("[CHOOSELINKPATH]", Prompt())
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
 	}
 
-	go backendapi.WaitEventLoop(callbacks)
+	go backend_api.WaitEventLoop(callbacks)
 
 	for {
 		HandleMenuQuery(Prompt())

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"qsync/bdd"
+	"qsync/globals"
 	"strings"
 )
 
@@ -54,7 +55,7 @@ func exists(path string) (bool, error) {
 }
 
 func InstallApp(data io.ReadCloser) error {
-	var json_data bdd.ToutEnUnConfig
+	var json_data globals.ToutEnUnConfig
 	err := json.NewDecoder(data).Decode(&json_data)
 
 	log.Println("installing app : ")
@@ -149,7 +150,7 @@ func InstallApp(data io.ReadCloser) error {
 
 }
 
-func UninstallToutenun(config bdd.MinGenConfig) error {
+func UninstallToutenun(config globals.MinGenConfig) error {
 
 	cmd := exec.Command(config.UninstallerPath)
 

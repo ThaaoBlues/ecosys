@@ -40,7 +40,7 @@ type LinkDevice struct {
 // This function is used everytime we create an AccesBdd object
 func (bdd *AccesBdd) InitConnection() {
 	var err error
-	bdd.db_handler, err = sql.Open("sqlite3", "qsync.db")
+	bdd.db_handler, err = sql.Open("sqlite3", filepath.Join(globals.QSyncWriteableDirectory, "qsync.db"))
 
 	if err != nil {
 		log.Fatal("An error occured while connecting to the qsync database.", err)
@@ -1198,38 +1198,8 @@ func (bdd *AccesBdd) NeedsUpdate(device_id string) bool {
 
 }
 
-type ToutEnUnConfig struct {
-	AppName               string // well... the app's name ?
-	AppDownloadUrl        string // the url where to download the app
-	NeedsInstaller        bool   // if we need to run the binary installer
-	AppLauncherPath       string // the path to the main executable of your app
-	AppInstallerPath      string // the installer path
-	AppUninstallerPath    string // the uninstaller path
-	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
-	AppDescription        string // well that's the app's descriptions
-	AppIconURL            string
-}
-
-type GrapinConfig struct {
-	AppName               string
-	AppSyncDataFolderPath string
-	NeedsFormat           bool
-	SupportedPlatforms    []string
-	AppDescription        string // well that's the app's descriptions
-	AppIconURL            string
-}
-
-type MinGenConfig struct {
-	AppName         string
-	AppId           int
-	BinPath         string
-	Type            string
-	SecureId        string
-	UninstallerPath string
-}
-
 // ajoute une application tout en un dans la table exprès
-func (bdd *AccesBdd) AddToutEnUn(data ToutEnUnConfig) {
+func (bdd *AccesBdd) AddToutEnUn(data globals.ToutEnUnConfig) {
 	_, err := bdd.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"toutenun\",?,?)", data.AppName, data.AppLauncherPath, 1, bdd.SecureId, data.AppUninstallerPath)
 
 	if err != nil {
@@ -1237,7 +1207,7 @@ func (bdd *AccesBdd) AddToutEnUn(data ToutEnUnConfig) {
 	}
 }
 
-func (bdd *AccesBdd) AddGrapin(data GrapinConfig) {
+func (bdd *AccesBdd) AddGrapin(data globals.GrapinConfig) {
 	_, err := bdd.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,uninstaller_path) VALUES(?,?,?,\"grapin\",secure_id,?)", data.AppName, "[GRAPIN]", 1, bdd.SecureId, "[GRAPIN]")
 
 	if err != nil {
@@ -1246,10 +1216,10 @@ func (bdd *AccesBdd) AddGrapin(data GrapinConfig) {
 }
 
 // this function list all installed apps on qsync
-func (bdd *AccesBdd) ListInstalledApps() []MinGenConfig {
+func (bdd *AccesBdd) ListInstalledApps() []globals.MinGenConfig {
 
-	var configs []MinGenConfig
-	var tmp MinGenConfig
+	var configs []globals.MinGenConfig
+	var tmp globals.MinGenConfig
 
 	rows, err := bdd.db_handler.Query("SELECT name,id,path,type FROM apps")
 	if err != nil {
@@ -1271,9 +1241,9 @@ func (bdd *AccesBdd) ListInstalledApps() []MinGenConfig {
 }
 
 // this function get details of a specifi app by its ID
-func (bdd *AccesBdd) GetAppConfig(app_id int) MinGenConfig {
+func (bdd *AccesBdd) GetAppConfig(app_id int) globals.MinGenConfig {
 
-	var config MinGenConfig
+	var config globals.MinGenConfig
 
 	row := bdd.db_handler.QueryRow("SELECT name,id,path,type,uninstaller_peth FROM apps WHERE id=?", app_id)
 

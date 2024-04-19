@@ -10,3 +10,33 @@ type QEvent struct {
 	NewFilePath string
 	SecureId    string
 }
+
+type ToutEnUnConfig struct {
+	AppName               string // well... the app's name ?
+	AppDownloadUrl        string // the url where to download the app
+	NeedsInstaller        bool   // if we need to run the binary installer
+	AppLauncherPath       string // the path to the main executable of your app
+	AppInstallerPath      string // the installer path
+	AppUninstallerPath    string // the uninstaller path
+	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
+	AppDescription        string // well that's the app's descriptions
+	AppIconURL            string
+}
+
+type GrapinConfig struct {
+	AppName               string
+	AppSyncDataFolderPath string
+	NeedsFormat           bool
+	SupportedPlatforms    []string
+	AppDescription        string // well that's the app's descriptions
+	AppIconURL            string
+}
+
+type MinGenConfig struct {
+	AppName         string
+	AppId           int
+	BinPath         string
+	Type            string
+	SecureId        string
+	UninstallerPath string
+}

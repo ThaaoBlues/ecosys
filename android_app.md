@@ -1,4 +1,5 @@
 # How do I let Qsync know that I want to work with it ?
+You have to send an intent to qsync, containing the application JSON string :
 
 
 

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"qsync/bdd"
+	"qsync/globals"
 	"strings"
 )
 
@@ -47,7 +48,7 @@ func getFirstChildDirectory(parentDir string) string {
 }
 
 func InstallGrapin(data io.ReadCloser) error {
-	var config bdd.GrapinConfig
+	var config globals.GrapinConfig
 	err := json.NewDecoder(data).Decode(&config)
 
 	if err != nil {

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"qsync/globals"
 	"qsync/networking"
 	"qsync/tui"
 )
@@ -21,6 +22,11 @@ func main() {
 	go zc.UpdateDevicesConnectionStateLoop()
 	// loop accepting and treating requests from other devices
 	go networking.NetWorkLoop()
+
+	// as in this main function we are always on desktop
+	// assume the directory where qsync the executable is
+	// has read/write access
+	globals.SetQsyncWriteableDirectory("")
 
 	tui.DisplayMenu()
 

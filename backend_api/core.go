@@ -1,8 +1,10 @@
-package backendapi
+package backend_api
 
 import (
 	"log"
 	"os"
+	"path/filepath"
+	"qsync/globals"
 	"time"
 )
 
@@ -10,8 +12,8 @@ import (
 // PROCESSED BY BACKEND, THIS FUNCTION DOES NOT MAKES SURE OF IT
 func AskInput(flag string, context string) string {
 
-	f, err := os.Create(flag + ".btf")
-	defer os.Remove(flag + ".btf")
+	f, err := os.Create(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
+	defer os.Remove(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
 
 	if err != nil {
 		log.Fatal("Unable to Create input file in AskInput() : ", err)
@@ -19,7 +21,7 @@ func AskInput(flag string, context string) string {
 
 	f.WriteString(context)
 
-	og_fstat, err_2 := os.Stat(flag + ".btf")
+	og_fstat, err_2 := os.Stat(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
 
 	if err_2 != nil {
 		log.Fatal("Unable to read stats of input file in AskInput() : ", err)
@@ -27,7 +29,7 @@ func AskInput(flag string, context string) string {
 
 	// wait for front-end to provide user input
 	var nw_fstat os.FileInfo
-	nw_fstat, err_2 = os.Stat(flag + ".btf")
+	nw_fstat, err_2 = os.Stat(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
 
 	if err_2 != nil {
 		log.Fatal("Unable to read stats of input file in AskInput() : ", err)
@@ -36,7 +38,7 @@ func AskInput(flag string, context string) string {
 	for nw_fstat.Size() == og_fstat.Size() {
 		time.Sleep(2 * time.Second)
 
-		nw_fstat, err_2 = os.Stat(flag + ".btf")
+		nw_fstat, err_2 = os.Stat(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
 
 		if err_2 != nil {
 			log.Fatal("Unable to read stats of input file in AskInput() : ", err)
@@ -46,7 +48,7 @@ func AskInput(flag string, context string) string {
 
 	// now that we have the user input in the file, we can read it
 
-	ret, err := os.ReadFile(flag + ".btf")
+	ret, err := os.ReadFile(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
 	if err != nil {
 		log.Fatal("Unable to Read input file in AskInput() : ", err)
 	}
@@ -58,7 +60,7 @@ func AskInput(flag string, context string) string {
 // must be used before providing the user's input
 func ReadInputContext(flag string) string {
 
-	buff, err := os.ReadFile(flag + ".btf")
+	buff, err := os.ReadFile(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
 	if err != nil {
 		log.Fatal("Unable to Read input file in ReadInputContext() : ", err)
 	}
@@ -67,7 +69,7 @@ func ReadInputContext(flag string) string {
 }
 
 func GiveInput(flag string, data string) {
-	f, err := os.OpenFile(flag+".btf", os.O_RDWR|os.O_APPEND, os.ModeAppend)
+	f, err := os.OpenFile(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"), os.O_RDWR|os.O_APPEND, os.ModeAppend)
 	if err != nil {
 		log.Fatal("Unable to Create input file in AskInput() : ", err)
 	}
@@ -82,7 +84,7 @@ func WaitEventLoop(callbacks map[string]func(context string)) {
 
 	for {
 		// Read the contents of the root directory
-		files, err := os.ReadDir(".")
+		files, err := os.ReadDir(globals.QSyncWriteableDirectory)
 		if err != nil {
 			log.Fatal(err)
 		}
