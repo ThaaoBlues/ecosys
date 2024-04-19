@@ -18,7 +18,7 @@ func StartWatcher(rootPath string) {
 	// Initialize the database connection
 	acces := bdd.AccesBdd{}
 	acces.InitConnection()
-	acces.GetSecureId(rootPath)
+	acces.GetSecureIdFromRootPath(rootPath)
 
 	defer acces.CloseConnection()
 

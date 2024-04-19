@@ -101,7 +101,7 @@ func HandleMenuQuery(query string) {
 			log.Fatal("The number you provied was not corresponding to any task.")
 		}
 
-		acces.GetSecureId(tasks[index].Path)
+		acces.GetSecureIdFromRootPath(tasks[index].Path)
 
 		fmt.Println("Mapping available devices on your local network...")
 

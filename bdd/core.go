@@ -207,8 +207,8 @@ func (acces *AccesBdd) IsFile(path string) bool {
 	return !stat.IsDir()
 }
 
-// GetSecureId retrieves the secure ID associated with a given root path.
-func (acces *AccesBdd) GetSecureId(rootpath string) {
+// GetSecureIdFromRootPath retrieves the secure ID associated with a given root path.
+func (acces *AccesBdd) GetSecureIdFromRootPath(rootpath string) {
 	row := acces.db_handler.QueryRow("SELECT secure_id FROM sync WHERE root=?", rootpath)
 
 	err := row.Scan(&acces.SecureId)
@@ -218,7 +218,7 @@ func (acces *AccesBdd) GetSecureId(rootpath string) {
 	}
 
 	if err != nil {
-		log.Fatal("Error while querying database GetSecureId() : ", err)
+		log.Fatal("Error while querying database GetSecureIdFromRootPath() : ", err)
 	}
 
 }

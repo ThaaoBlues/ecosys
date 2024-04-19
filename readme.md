@@ -400,7 +400,7 @@ func HandleMenuQuery(query string) {
 
 		var path string = Prompt()
 
-		acces.GetSecureId(path)
+		acces.GetSecureIdFromRootPath(path)
 
 		fmt.Println("Mapping available devices on your local network...")
 
