@@ -199,14 +199,15 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 }
 
-func SendDeviceEventQueueOverNetwork(connected_devices []string, secure_id string, event_queue []globals.QEvent, ip_addr ...string) {
+func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string], secure_id string, event_queue globals.GenArray[globals.QEvent], ip_addr ...string) {
 
 	// for all devices connected concerned by the sync task, send the data with the right event flag
 	// all others are handled in retard database table from the filesystem in a function call right before
 
-	for _, device_id := range connected_devices {
-		for _, event := range event_queue {
-
+	for i := 0; i < connected_devices.Size(); i++ {
+		device_id := connected_devices.Get(i)
+		for i := 0; i < event_queue.Size(); i++ {
+			event := event_queue.Get(i)
 			log.Println("SENDING EVENT : ", event)
 
 			SetEventNetworkLockForDevice(device_id, true)
@@ -372,7 +373,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 	rootPath := acces.GetRootSyncPath()
 
-	var queue []globals.QEvent
+	var queue globals.GenArray[globals.QEvent]
 
 	err := filepath.Walk(rootPath, func(absolute_path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -392,7 +393,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				event.FileType = "folder"
 				event.FilePath = relative_path
 
-				queue = append(queue, event)
+				queue = queue.Add(event)
 
 			} else {
 				// creates a delta with full file content
@@ -405,7 +406,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				event.FilePath = relative_path
 				event.Delta = delta
 
-				queue = append(queue, event)
+				queue = queue.Add(event)
 			}
 
 		}
@@ -414,8 +415,8 @@ func BuildSetupQueue(secure_id string, device_id string) {
 	})
 
 	//log.Println("setup event queue : ", queue)
-	var devices []string
-	devices = append(devices, device_id)
+	var devices globals.GenArray[string]
+	devices = devices.Add(device_id)
 	SendDeviceEventQueueOverNetwork(devices, acces.SecureId, queue)
 
 	if err != nil {

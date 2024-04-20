@@ -267,7 +267,7 @@ func (acces *AccesBdd) CreateFile(relative_path string, absolute_path string, fl
 	if flag == "[ADD_TO_RETARD]" {
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
 		offline_devices := acces.GetSyncOfflineDevices()
-		if len(offline_devices) > 0 {
+		if offline_devices.Size() > 0 {
 			new_version_id := acces.GetFileLastVersionId(relative_path) + 1
 
 			acces.IncrementFileVersion(relative_path)
@@ -296,7 +296,14 @@ func (acces *AccesBdd) CreateFile(relative_path string, absolute_path string, fl
 				"move":     "m",
 			}
 
-			_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, relative_path, MODTYPES["creation"], strings.Join(offline_devices, ";"), acces.SecureId)
+			var str_ids string = ""
+			for i := 0; i < offline_devices.Size(); i++ {
+				str_ids += offline_devices.Get(i) + ";"
+			}
+			// remove the last semicolon
+			str_ids = str_ids[:len(str_ids)-1]
+
+			_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, relative_path, MODTYPES["creation"], str_ids, acces.SecureId)
 
 			if err != nil {
 				log.Fatal("Error while inserting new retard : ", err)
@@ -322,10 +329,18 @@ func (acces *AccesBdd) GetFileLastVersionId(path string) int64 {
 	return version_id
 }
 
-func (acces *AccesBdd) GetSyncOfflineDevices() []string {
+func (acces *AccesBdd) GetSyncOfflineDevices() globals.GenArray[string] {
 	linked_devices := acces.GetSyncLinkedDevices()
+
+	var str_ids string = ""
+	for i := 0; i < linked_devices.Size(); i++ {
+		str_ids += linked_devices.Get(i) + ","
+	}
+	// remove the last colon
+	str_ids = str_ids[:len(str_ids)-1]
+
 	query := "SELECT device_id,is_connected FROM linked_devices WHERE device_id IN ('"
-	query += strings.Join(linked_devices, "','")
+	query += str_ids
 	query += "')"
 
 	rows, err := acces.db_handler.Query(query)
@@ -335,14 +350,14 @@ func (acces *AccesBdd) GetSyncOfflineDevices() []string {
 	}
 	defer rows.Close()
 
-	var offline_devices []string
+	var offline_devices globals.GenArray[string]
 
 	for rows.Next() {
 		var device LinkDevice
 		rows.Scan(&device.SecureId, &device.IsConnected)
 
 		if !device.IsConnected {
-			offline_devices = append(offline_devices, device.SecureId)
+			offline_devices = offline_devices.Add(device.SecureId)
 		}
 	}
 
@@ -356,7 +371,7 @@ func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 	// get only offline devices
 
 	offline_devices := acces.GetSyncOfflineDevices()
-	if len(offline_devices) > 0 {
+	if offline_devices.Size() > 0 {
 		new_version_id := acces.GetFileLastVersionId(path) + 1
 
 		acces.IncrementFileVersion(path)
@@ -385,7 +400,20 @@ func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 			"move":     "m",
 		}
 
-		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, path, MODTYPES["patch"], strings.Join(offline_devices, ";"), acces.SecureId)
+		var str_ids string = ""
+		for i := 0; i < offline_devices.Size(); i++ {
+			str_ids += offline_devices.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		_, err = acces.db_handler.Exec(
+			"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)",
+			new_version_id,
+			path,
+			MODTYPES["patch"],
+			str_ids,
+			acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -406,11 +434,11 @@ func (acces *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 
 	devices_split := strings.Split(devices_to_patch, ";")
 
-	var list_builder []string
+	var list_builder globals.GenArray[string]
 
 	for _, dev := range devices_split {
 		if !(dev == device_id) {
-			list_builder = append(list_builder, dev)
+			list_builder = list_builder.Add(dev)
 		}
 	}
 
@@ -474,8 +502,15 @@ func (acces *AccesBdd) RmFile(path string) {
 	}
 	linked_devices := acces.GetSyncLinkedDevices()
 
-	if len(linked_devices) > 0 {
-		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), acces.SecureId)
+	if linked_devices.Size() > 0 {
+		var str_ids string = ""
+		for i := 0; i < linked_devices.Size(); i++ {
+			str_ids += linked_devices.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", 0, path, MODTYPES["delete"], str_ids, acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -525,8 +560,15 @@ func (acces *AccesBdd) RmFolder(path string) {
 	}
 	linked_devices := acces.GetSyncLinkedDevices()
 
-	if len(linked_devices) > 0 {
-		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 0, path, MODTYPES["delete"], strings.Join(linked_devices, ";"), acces.SecureId)
+	if linked_devices.Size() > 0 {
+		var str_ids string = ""
+		for i := 0; i < linked_devices.Size(); i++ {
+			str_ids += linked_devices.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 0, path, MODTYPES["delete"], str_ids, acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -552,8 +594,16 @@ func (acces *AccesBdd) Move(path string, new_path string, file_type string) {
 
 	linked_devices := acces.GetSyncLinkedDevices()
 
-	if len(linked_devices) > 0 {
-		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)", 0, path, MODTYPES["move"], strings.Join(linked_devices, ";"), file_type, acces.SecureId)
+	if linked_devices.Size() > 0 {
+
+		var str_ids string = ""
+		for i := 0; i < linked_devices.Size(); i++ {
+			str_ids += linked_devices.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)", 0, path, MODTYPES["move"], str_ids, file_type, acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard : ", err)
@@ -724,7 +774,7 @@ func (acces *AccesBdd) GetDeviceConnectionState(device_id string) bool {
 func (acces *AccesBdd) IsThisFileSystemBeingPatched() bool {
 
 	var ids_str string
-	var ids_list []string
+	var ids_list globals.GenArray[string]
 
 	row := acces.db_handler.QueryRow("SELECT IFNULL(receiving_update, '')FROM linked_devices")
 
@@ -734,10 +784,12 @@ func (acces *AccesBdd) IsThisFileSystemBeingPatched() bool {
 		log.Fatal("Error while querying database in IsThisFileSystemBeingPatched() ", err)
 	}
 
-	ids_list = strings.Split(ids_str, ";")
+	for _, val := range strings.Split(ids_str, ";") {
+		ids_list = ids_list.Add(val)
+	}
 
-	for _, id := range ids_list {
-		if id == acces.SecureId {
+	for i := 0; i < ids_list.Size(); i++ {
+		if ids_list.Get(i) == acces.SecureId {
 			return true
 		}
 	}
@@ -760,7 +812,7 @@ func (acces *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool)
 		// unlock the filesystem
 	} else {
 		var ids_str string
-		var ids_list []string
+		var ids_list globals.GenArray[string]
 
 		row := acces.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
 
@@ -769,18 +821,26 @@ func (acces *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool)
 			log.Fatal("Error while querying database SetFileSystemPatchLockState() : ", err)
 		}
 
-		ids_list = strings.Split(ids_str, ";")
-
-		// same list of sync tasks secure_id but without this one
-		var new_ids []string
-		for _, id := range ids_list {
-			if !(id == acces.SecureId) {
-				new_ids = append(new_ids, id)
-			}
+		for _, val := range strings.Split(ids_str, ";") {
+			ids_list = ids_list.Add(val)
 		}
 
+		// same list of sync tasks secure_id but without this one
+		var new_ids globals.GenArray[string]
+		for i := 0; i < ids_list.Size(); i++ {
+			if !(ids_list.Get(i) == acces.SecureId) {
+				new_ids = new_ids.Add(ids_list.Get(i))
+			}
+		}
+		var str_ids string = ""
+		for i := 0; i < new_ids.Size(); i++ {
+			str_ids += new_ids.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
 		// rewrite the updated list
-		_, err = acces.db_handler.Exec("UPDATE linked_devices SET receiving_update= ?", strings.Join(new_ids, ";"))
+		_, err = acces.db_handler.Exec("UPDATE linked_devices SET receiving_update= ?", str_ids)
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -801,9 +861,9 @@ func (acces *AccesBdd) GetFileSizeFromBdd(path string) int64 {
 	return size
 }
 
-func (acces *AccesBdd) GetSyncLinkedDevices() []string {
+func (acces *AccesBdd) GetSyncLinkedDevices() globals.GenArray[string] {
 	var devices_str string
-	var devices_list []string
+	var devices_list globals.GenArray[string]
 
 	row := acces.db_handler.QueryRow("SELECT linked_devices_id FROM sync WHERE secure_id=?", acces.SecureId)
 
@@ -812,11 +872,13 @@ func (acces *AccesBdd) GetSyncLinkedDevices() []string {
 		log.Fatal("Error while querying database in GetSyncLinkedDevices() :", err)
 	}
 
-	devices_list = strings.Split(devices_str, ";")
+	for _, val := range strings.Split(devices_str, ";") {
+		devices_list = devices_list.Add(val)
+	}
 
 	// remove the last slot (empty space) in the array
 	// caused by the last semicolon of the string representation of the list
-	devices_list = devices_list[:len(devices_list)-1]
+	devices_list.PopLast()
 
 	return devices_list
 }
@@ -853,8 +915,15 @@ func (acces *AccesBdd) AddFolderToRetard(path string) {
 		"move":     "m",
 	}
 	linked_devices := acces.GetSyncLinkedDevices()
+	var str_ids string = ""
+	for i := 0; i < linked_devices.Size(); i++ {
+		str_ids += linked_devices.Get(i) + ";"
+	}
+	// remove the last semicolon
+	str_ids = str_ids[:len(str_ids)-1]
+
 	log.Println("ADDING FOLDER TO RETARD : ", path)
-	_, err := acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], strings.Join(linked_devices, ";"), acces.SecureId)
+	_, err := acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], str_ids, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while inserting new retard in AddFolderToRetard() : ", err)
@@ -927,7 +996,7 @@ func (acces *AccesBdd) GetMyDeviceId() string {
 	return device_id
 }
 
-func (acces *AccesBdd) GetOfflineDevices() []string {
+func (acces *AccesBdd) GetOfflineDevices() globals.GenArray[string] {
 
 	rows, err := acces.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
@@ -935,20 +1004,20 @@ func (acces *AccesBdd) GetOfflineDevices() []string {
 		log.Fatal("Error while querying database from GetOfflineDevices() : ", err)
 	}
 	defer rows.Close()
-	var offline_devices []string
+	var offline_devices globals.GenArray[string]
 
 	for rows.Next() {
 		var device LinkDevice
 		rows.Scan(&device.SecureId, &device.IsConnected)
 		if !device.IsConnected {
-			offline_devices = append(offline_devices, device.SecureId)
+			offline_devices = offline_devices.Add(device.SecureId)
 		}
 	}
 
 	return offline_devices
 }
 
-func (acces *AccesBdd) GetOnlineDevices() []string {
+func (acces *AccesBdd) GetOnlineDevices() globals.GenArray[string] {
 
 	rows, err := acces.db_handler.Query("SELECT device_id,is_connected FROM linked_devices")
 
@@ -957,14 +1026,14 @@ func (acces *AccesBdd) GetOnlineDevices() []string {
 	}
 	defer rows.Close()
 
-	var online_devices []string
+	var online_devices globals.GenArray[string]
 
 	for rows.Next() {
 		var device LinkDevice
 		rows.Scan(&device.SecureId, &device.IsConnected)
 
 		if device.IsConnected {
-			online_devices = append(online_devices, device.SecureId)
+			online_devices = online_devices.Add(device.SecureId)
 		}
 	}
 
@@ -1027,7 +1096,7 @@ func (acces *AccesBdd) UpdateCachedFile(path string) {
 	}
 }
 
-func (acces *AccesBdd) ListSyncAllTasks() []SyncInfos {
+func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 
 	// used to get all sync task secure_id and root path listed
 	// returns a custom type containing the two values as string
@@ -1039,23 +1108,23 @@ func (acces *AccesBdd) ListSyncAllTasks() []SyncInfos {
 	}
 	defer rows.Close()
 
-	var list []SyncInfos
+	var list globals.GenArray[SyncInfos]
 
 	for rows.Next() {
 		var info SyncInfos
 		rows.Scan(&info.SecureId, &info.Path)
-		list = append(list, info)
+		list = list.Add(info)
 	}
 
 	return list
 
 }
 
-func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]*globals.QEvent {
+func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]globals.GenArray[*globals.QEvent] {
 
 	// as the device can be late on many tasks, we must create an hash table with all
 	// the differents delta on all differents tasks he's late on
-	var queue map[string][]*globals.QEvent = make(map[string][]*globals.QEvent)
+	var queue map[string]globals.GenArray[*globals.QEvent] = make(map[string]globals.GenArray[*globals.QEvent])
 
 	log.Println("Building missed files event queue from retard...")
 	rows, err := acces.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
@@ -1093,7 +1162,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]
 
 		log.Println("ADDING EVENT : ", event)
 
-		queue[secure_id] = append(queue[secure_id], &event)
+		queue[secure_id] = queue[secure_id].Add(&event)
 	}
 
 	log.Println("Building missed folders creation event queue from retard...")
@@ -1127,7 +1196,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string][]
 
 		log.Println("ADDING EVENT : ", event)
 
-		queue[secure_id] = append(queue[secure_id], &event)
+		queue[secure_id] = queue[secure_id].Add(&event)
 	}
 
 	log.Println("Retard queue : ", queue)
@@ -1141,7 +1210,7 @@ func (acces *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 	// to replace, this code is the one from FileSystemPatchLockState
 
 	var ids_str string
-	var ids_list []string
+	var ids_list globals.GenArray[string]
 
 	row := acces.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
 
@@ -1150,21 +1219,31 @@ func (acces *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 		log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
 	}
 
-	ids_list = strings.Split(ids_str, ";")
+	for _, val := range strings.Split(ids_str, ";") {
+		ids_list = ids_list.Add(val)
+	}
 
 	// same list of sync tasks secure_id but without this one
-	var new_ids []string
-	for _, id := range ids_list {
-		if !(id == device_id) {
-			new_ids = append(new_ids, id)
+	var new_ids globals.GenArray[string]
+	for i := 0; i < ids_list.Size(); i++ {
+		if !(ids_list.Get(i) == device_id) {
+			new_ids = new_ids.Add(ids_list.Get(i))
 		}
 	}
 
 	// if it was the last device to being late, we suppress the row from the table
 	// if not we just rewrite without its id
-	if len(new_ids) > 0 {
+	if new_ids.Size() > 0 {
 		// rewrite the updated list
-		_, err = acces.db_handler.Exec("UPDATE retard SET devices_to_patch= ? WHERE devices_to_patch LIKE ?", strings.Join(new_ids, ";"), "%"+device_id+"%")
+
+		var str_ids string = ""
+		for i := 0; i < new_ids.Size(); i++ {
+			str_ids += new_ids.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		_, err = acces.db_handler.Exec("UPDATE retard SET devices_to_patch= ? WHERE devices_to_patch LIKE ?", str_ids, "%"+device_id+"%")
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -1198,7 +1277,7 @@ func (acces *AccesBdd) NeedsUpdate(device_id string) bool {
 }
 
 // ajoute une application tout en un dans la table exprès
-func (acces *AccesBdd) AddToutEnUn(data globals.ToutEnUnConfig) {
+func (acces *AccesBdd) AddToutEnUn(data *globals.ToutEnUnConfig) {
 	_, err := acces.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"toutenun\",?,?)", data.AppName, data.AppLauncherPath, 1, acces.SecureId, data.AppUninstallerPath)
 
 	if err != nil {
@@ -1206,7 +1285,7 @@ func (acces *AccesBdd) AddToutEnUn(data globals.ToutEnUnConfig) {
 	}
 }
 
-func (acces *AccesBdd) AddGrapin(data globals.GrapinConfig) {
+func (acces *AccesBdd) AddGrapin(data *globals.GrapinConfig) {
 	_, err := acces.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,uninstaller_path) VALUES(?,?,?,\"grapin\",secure_id,?)", data.AppName, "[GRAPIN]", 1, acces.SecureId, "[GRAPIN]")
 
 	if err != nil {
@@ -1215,9 +1294,9 @@ func (acces *AccesBdd) AddGrapin(data globals.GrapinConfig) {
 }
 
 // this function list all installed apps on qsync
-func (acces *AccesBdd) ListInstalledApps() []globals.MinGenConfig {
+func (acces *AccesBdd) ListInstalledApps() globals.GenArray[*globals.MinGenConfig] {
 
-	var configs []globals.MinGenConfig
+	var configs globals.GenArray[*globals.MinGenConfig]
 	var tmp globals.MinGenConfig
 
 	rows, err := acces.db_handler.Query("SELECT name,id,path,type FROM apps")
@@ -1232,7 +1311,7 @@ func (acces *AccesBdd) ListInstalledApps() []globals.MinGenConfig {
 
 		}
 
-		configs = append(configs, tmp)
+		configs = configs.Add(&tmp)
 	}
 
 	return configs

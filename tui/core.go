@@ -66,8 +66,9 @@ func HandleMenuQuery(query string) {
 	case "0":
 
 		fmt.Println(("Starting watcher ..."))
-		for _, task := range acces.ListSyncAllTasks() {
-			filesystem.StartWatcher(task.Path)
+		tasks := acces.ListSyncAllTasks()
+		for i := 0; i < tasks.Size(); i++ {
+			filesystem.StartWatcher(tasks.Get(i).Path)
 		}
 
 	case "1":
@@ -84,7 +85,8 @@ func HandleMenuQuery(query string) {
 
 		fmt.Println("Select below the sync task you want to provide for another device :")
 		tasks := acces.ListSyncAllTasks()
-		for _, task := range tasks {
+		for i := 0; i < tasks.Size(); i++ {
+			task := tasks.Get(i)
 			fmt.Println("{")
 			fmt.Println("Path : ", task.Path)
 			fmt.Println("Secure id : ", task.SecureId)
@@ -97,19 +99,19 @@ func HandleMenuQuery(query string) {
 			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
 		}
 
-		if index > len(tasks) {
+		if index > tasks.Size() {
 			log.Fatal("The number you provied was not corresponding to any task.")
 		}
 
-		acces.GetSecureIdFromRootPath(tasks[index].Path)
+		acces.GetSecureIdFromRootPath(tasks.Get(index).Path)
 
 		fmt.Println("Mapping available devices on your local network...")
 
 		// list qsync devices across the network
 		devices := networking.GetNetworkDevices()
-		for i := 0; i < len(devices); i++ {
+		for i := 0; i < devices.Size(); i++ {
 			fmt.Printf("[%d] ", i)
-			fmt.Println(devices[i])
+			fmt.Println(devices.Get(i))
 		}
 
 		// send a link device request to the one the user choose
@@ -120,19 +122,22 @@ func HandleMenuQuery(query string) {
 			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
 		}
 
-		device_id := devices[index]["device_id"]
+		device_id := devices.Get(index)["device_id"]
 
 		var event globals.QEvent
 		event.Flag = "[LINK_DEVICE]"
 		event.SecureId = acces.SecureId
-		event.FilePath = tasks[index].Path
+		event.FilePath = tasks.Get(index).Path
 
-		queue := []globals.QEvent{event}
+		var queue globals.GenArray[globals.QEvent]
+		queue = queue.Add(event)
+		var device_ids globals.GenArray[string]
+		device_ids = device_ids.Add(device_id)
 
-		networking.SendDeviceEventQueueOverNetwork([]string{device_id}, acces.SecureId, queue, devices[index]["ip_addr"])
+		networking.SendDeviceEventQueueOverNetwork(device_ids, acces.SecureId, queue, devices.Get(index)["ip_addr"])
 
 		// link the device into this db
-		acces.LinkDevice(device_id, devices[index]["ip_addr"])
+		acces.LinkDevice(device_id, devices.Get(index)["ip_addr"])
 		log.Println("device linked")
 
 		log.Println("Press any key once you have put the destination path on your other machine.")
@@ -143,8 +148,9 @@ func HandleMenuQuery(query string) {
 		fmt.Println("The selected device has successfully been linked to a sync task.")
 
 	case "3":
-
-		for _, task := range acces.ListSyncAllTasks() {
+		tasks := acces.ListSyncAllTasks()
+		for i := 0; i < tasks.Size(); i++ {
+			task := tasks.Get(i)
 			fmt.Println("{")
 			fmt.Println("Path : ", task.Path)
 			fmt.Println("Secure id : ", task.SecureId)
@@ -155,9 +161,9 @@ func HandleMenuQuery(query string) {
 		// list qsync devices across the network
 
 		devices := networking.GetNetworkDevices()
-		for i := 0; i < len(devices); i++ {
+		for i := 0; i < devices.Size(); i++ {
 			fmt.Printf("[%d] ", i)
-			fmt.Println(devices[i])
+			fmt.Println(devices.Get(i))
 		}
 
 	case "5":

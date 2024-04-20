@@ -142,7 +142,7 @@ func InstallApp(data io.ReadCloser) error {
 
 	acces.CreateSync(app_sync_folder)
 
-	acces.AddToutEnUn(json_data)
+	acces.AddToutEnUn(&json_data)
 
 	log.Println("added app to database")
 

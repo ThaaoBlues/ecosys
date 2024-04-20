@@ -492,7 +492,9 @@ func DisplayMenu() {
 
 ```
 
-
+## INFOS DE COMPILATION ET AUTRES BUGS GOLANG
+- gomobile n'aime pas les passages par valeur de structures
+- gomobile n'aime pas les slice
 
 
 
@@ -500,10 +502,14 @@ func DisplayMenu() {
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TODO
+
+- changer les passages de struct par valeur par des passages par addresse
+- transformer chaque slice en struct bizarre de slice
+https://github.com/golang/go/issues/13445
+
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 
 - tester l'ajout/suppression/lancement des applications
-- trouver un moyen de faire des apps sur android
 
 - trouver un moyen de sécuriser les communications entre appareils.
 	* hypothèse chaque appareil va posséder une clé unique "device_key", donnée de manière symétrique pendant la création du lien entre deux machines. L'identifiant de l'appareil sera la seule donnée non chiffrée dans les échanges, elle permettra d'aller chercher la device_key associée à cet appareil et de déchiffrer le reste du message.

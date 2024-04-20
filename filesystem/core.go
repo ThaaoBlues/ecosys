@@ -74,7 +74,7 @@ func StartWatcher(rootPath string) {
 
 func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path string, watcher *fsnotify.Watcher) {
 
-	var queue []globals.QEvent
+	var queue globals.GenArray[globals.QEvent]
 
 	if acces.IsFile(absolute_path) {
 
@@ -90,8 +90,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FilePath = relative_path
 		event.Delta = delta
 
-		queue = append(queue, event)
-
+		queue = queue.Add(event)
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 
 	} else {
@@ -108,7 +107,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FileType = "folder"
 		event.FilePath = relative_path
 
-		queue = append(queue, event)
+		queue = queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 	}
@@ -116,7 +115,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path string) {
 
-	var queue []globals.QEvent
+	var queue globals.GenArray[globals.QEvent]
 	if acces.IsFile(absolute_path) {
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, acces.GetFileSizeFromBdd(relative_path), acces.GetFileContent(relative_path))
 		acces.UpdateFile(relative_path, delta)
@@ -130,7 +129,7 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 		event.FilePath = relative_path
 		event.Delta = delta
 
-		queue = append(queue, event)
+		queue = queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 	}
@@ -138,7 +137,7 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 
 func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path string) {
 	var file_type string
-	var queue []globals.QEvent
+	var queue globals.GenArray[globals.QEvent]
 
 	if acces.WasFile(relative_path) {
 		acces.RmFile(relative_path)
@@ -155,7 +154,7 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 	event.FileType = file_type
 	event.FilePath = relative_path
 
-	queue = append(queue, event)
+	queue = queue.Add(event)
 
 	networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 }
@@ -164,7 +163,7 @@ func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 	new_absolute_path := computeNewPath(acces, absolute_path)
 
 	new_relative_path := strings.Replace(new_absolute_path, acces.GetRootSyncPath(), "", 1)
-	var queue []globals.QEvent
+	var queue globals.GenArray[globals.QEvent]
 
 	if new_relative_path != "" {
 
@@ -190,8 +189,7 @@ func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FilePath = relative_path
 		event.NewFilePath = new_relative_path
 
-		queue = append(queue, event)
-
+		queue = queue.Add(event)
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 	}
 }
@@ -245,8 +243,8 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		event.FileType = file_type
 		event.FilePath = path
 
-		queue := make([]globals.QEvent, 1)
-		queue = append(queue, event)
+		var queue globals.GenArray[globals.QEvent]
+		queue = queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 
@@ -274,8 +272,8 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		event.FileType = file_type
 		event.FilePath = path
 
-		queue := make([]globals.QEvent, 1)
-		queue = append(queue, event)
+		var queue globals.GenArray[globals.QEvent]
+		queue = queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 

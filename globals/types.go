@@ -40,3 +40,31 @@ type MinGenConfig struct {
 	SecureId        string
 	UninstallerPath string
 }
+
+type GenArrayInterface[T any] interface {
+	Add(val T) GenArray[T]
+	Get(i int) T
+	Size() int
+}
+
+// TODO solve this with generics
+type GenArray[T any] struct {
+	items []T
+}
+
+func (array GenArray[T]) Add(val T) GenArray[T] {
+	array.items = append(array.items, val)
+	return array
+}
+
+func (array GenArray[T]) Get(i int) T {
+	return array.items[i]
+}
+func (array GenArray[T]) PopLast() GenArray[T] {
+	array.items = array.items[:len(array.items)-1]
+	return array
+}
+
+func (array GenArray[T]) Size() int {
+	return len(array.items)
+}

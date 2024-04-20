@@ -66,7 +66,7 @@ func InstallGrapin(data io.ReadCloser) error {
 	defer acces.CloseConnection()
 
 	acces.CreateSync(config.AppSyncDataFolderPath)
-	acces.AddGrapin(config)
+	acces.AddGrapin(&config)
 
 	return nil
 

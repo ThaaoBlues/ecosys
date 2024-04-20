@@ -26,11 +26,13 @@ func (zcs *ZeroConfService) Browse() {
 	new_connected_devices := GetNetworkDevices()
 
 	// first, we put all linked devices state to false
-	for _, old_device := range old_connected_devices {
-		acces.SetDeviceConnectionState(old_device, false)
+	for i := 0; i < old_connected_devices.Size(); i++ {
+		acces.SetDeviceConnectionState(old_connected_devices.Get(i), false)
 	}
 	// then, we put all linked and connected devices state to true
-	for _, new_device := range new_connected_devices {
+	for i := 0; i < new_connected_devices.Size(); i++ {
+
+		new_device := new_connected_devices.Get(i)
 		if acces.IsDeviceLinked(new_device["device_id"]) {
 			log.Println("Detected device : ", new_device)
 			acces.SetDeviceConnectionState(new_device["device_id"], true, new_device["ip_addr"])
@@ -48,14 +50,17 @@ func (zcs *ZeroConfService) Browse() {
 
 					// rebuild a queue of actual values and not pointers
 					// HAHAH THIS IS NOT EFFICIENT AT ALL I WILL BURN THE WORLLDDDD
-					var queue []globals.QEvent
-					for _, event := range ptr_queue {
-						log.Println(*event)
+					var queue globals.GenArray[globals.QEvent]
+					for i := 0; i < ptr_queue.Size(); i++ {
+						ptr_event := ptr_queue.Get(i)
+						log.Println(*ptr_event)
 
-						queue = append(queue, *event)
+						queue = queue.Add(*ptr_event)
 					}
 
-					SendDeviceEventQueueOverNetwork([]string{new_device["device_id"]}, acces.SecureId, queue, new_device["ip_addr"])
+					var device_ids globals.GenArray[string]
+					device_ids = device_ids.Add(new_device["device_id"])
+					SendDeviceEventQueueOverNetwork(device_ids, acces.SecureId, queue, new_device["ip_addr"])
 
 				}
 
@@ -100,9 +105,9 @@ func (zcs *ZeroConfService) Shutdown() {
 	zcs.Server.Shutdown()
 }
 
-func GetNetworkDevices() []map[string]string {
+func GetNetworkDevices() globals.GenArray[map[string]string] {
 
-	devices_list := make([]map[string]string, 0)
+	var devices_list globals.GenArray[map[string]string]
 
 	// Make a channel for results and start listening
 	entriesCh := make(chan *mdns.ServiceEntry, 4)
@@ -113,7 +118,7 @@ func GetNetworkDevices() []map[string]string {
 			dev["ip_addr"] = entry.AddrV4.String()
 			dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
 			dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
-			devices_list = append(devices_list, dev)
+			devices_list = devices_list.Add(dev)
 
 		}
 	}()
