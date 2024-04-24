@@ -120,6 +120,10 @@ func ConnectToDevice(conn net.Conn) {
 	case "[UNLINK_DEVICE]":
 		acces.UnlinkDevice(device_id)
 
+	case "[OTDL]":
+		// goroutine because it will later ask and wait approval for the user
+		go HandleLargageAerien(data, conn.RemoteAddr().String())
+
 	default:
 
 		// regular file event
@@ -423,4 +427,62 @@ func BuildSetupQueue(secure_id string, device_id string) {
 		log.Fatal(err)
 	}
 
+}
+
+// exists returns whether the given file or directory exists
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func HandleLargageAerien(data globals.QEvent, ip_addr string) {
+	// makes sure we are not given a path for some reasons
+	file_name := filepath.Base(data.Delta.FilePath)
+	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"[y/N]")
+	if user_response == "y" || user_response == "Y" {
+		// make sure we have the right directory set-up
+		ex, err := exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+
+		if err != nil {
+			log.Fatal("Error while trying to check if the largage_aerien folder exsists in HandleLargageAerien() : ", err)
+
+		}
+
+		if !ex {
+			os.Mkdir(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"), 0775)
+		}
+
+		// build the path to the largage_aerien folder
+		data.Delta.FilePath = filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", file_name)
+
+		// write the file. As this is probably a full file, the binary delta is just the file content
+		data.Delta.PatchFile()
+
+	}
+}
+
+func SendLargageAerien(file_path string, device_ip string) {
+
+	var queue globals.GenArray[globals.QEvent]
+	file_name := filepath.Base(file_path)
+
+	// creates a delta with full file content
+	delta := delta_binaire.BuilDelta(file_name, file_path, 0, []byte(""))
+
+	var event globals.QEvent
+	event.Flag = "[OTDL]"
+	event.SecureId = "le_ciel_me_tombe_sur_la_tete"
+	event.FileType = "file"
+	event.FilePath = file_name
+	event.Delta = delta
+
+	queue = queue.Add(event)
+	var dummy_device globals.GenArray[string]
+	SendDeviceEventQueueOverNetwork(dummy_device, "le_ciel_me_tombe_sur_la_tete", queue, device_ip)
 }

@@ -86,7 +86,7 @@ func WaitEventLoop(callbacks map[string]func(context string)) {
 		// Read the contents of the root directory
 		files, err := os.ReadDir(globals.QSyncWriteableDirectory)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Error while reading directory in WaitEventLoop() : ", err)
 		}
 
 		// Check each file to see if it has a .btf extension

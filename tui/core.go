@@ -32,7 +32,7 @@ var MENU string = `
 [3] - List current sync task and their id
 [4] - List devices using qsync on your network
 [5] - Open QSync Magasin
-
+[6] - Send something to another device : "Largage Aérien"
 `
 
 var PROMPT string = "\n>> "
@@ -172,6 +172,9 @@ func HandleMenuQuery(query string) {
 		time.Sleep(1 * time.Second)
 		magasin.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
+	case "6":
+		networking.SendLargageAerien("/tmp/test.txt", "127.0.0.1")
+
 	default:
 		fmt.Println("This option does not exists :/")
 		HandleMenuQuery(Prompt())
@@ -191,6 +194,16 @@ func DisplayMenu() {
 
 		fmt.Println(context + " : ")
 		backend_api.GiveInput("[CHOOSELINKPATH]", Prompt())
+
+		// let the backend process and suppress the event file
+		time.Sleep(1 * time.Second)
+	}
+
+	// air dropping something
+	callbacks["[OTDL]"] = func(context string) {
+
+		fmt.Println(context)
+		backend_api.GiveInput("[OTDL]", Prompt())
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)

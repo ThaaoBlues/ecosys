@@ -45,6 +45,7 @@ type GenArrayInterface[T any] interface {
 	Add(val T) GenArray[T]
 	Get(i int) T
 	Size() int
+	PopLast() GenArray[T]
 }
 
 // TODO solve this with generics

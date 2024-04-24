@@ -26,7 +26,7 @@ func main() {
 	// as in this main function we are always on desktop
 	// assume the directory where qsync the executable is
 	// has read/write access
-	globals.SetQsyncWriteableDirectory("")
+	globals.SetQsyncWriteableDirectory(".")
 
 	tui.DisplayMenu()
 

@@ -96,6 +96,16 @@ examples :
 
 
 
+## QSync "Largage Aérien"
+An airdrop-like one time upload that the other device will accept or not.
+
+In this feature, the binary delta is built the same way as the others event, just it will contain a full file.
+All the file path fields in the data structure of the event must be only the file's name.
+QSync recieve the file in its dedicated folder (<qsync_root>/largage_aerien).
+If the user do not want to receive it, nothing is wrote as the file is kept in RAM as a binary delta.
+The flag used for the event is "[OTDL]"
+
+
 ## base de données
 - on cartographie le systeme de fichiers visés et l'enregistre une première fois
 - on met tout en mode création dans la bdd
@@ -506,10 +516,12 @@ TODO
 - changer les passages de struct par valeur par des passages par addresse
 - transformer chaque slice en struct bizarre de slice
 https://github.com/golang/go/issues/13445
+- arrange le problèeme d'instanciation des arrays ?
 
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 
 - tester l'ajout/suppression/lancement des applications
+- finir le largage aérien
 
 - trouver un moyen de sécuriser les communications entre appareils.
 	* hypothèse chaque appareil va posséder une clé unique "device_key", donnée de manière symétrique pendant la création du lien entre deux machines. L'identifiant de l'appareil sera la seule donnée non chiffrée dans les échanges, elle permettra d'aller chercher la device_key associée à cet appareil et de déchiffrer le reste du message.
