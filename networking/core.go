@@ -448,7 +448,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	// makes sure we are not given a path for some reasons
 	file_name := filepath.Base(data.Delta.FilePath)
 	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"  [y/N]")
-	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui"{
+	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
 		ex, err := exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
