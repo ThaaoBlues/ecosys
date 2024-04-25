@@ -38,8 +38,13 @@ var MENU string = `
 
 var PROMPT string = "\n>> "
 
+var PROCESSING_EVENT bool
+var CURRENT_EVENT_FLAG string
+
 func Prompt() string {
 
+	// if we are here, no backend events have been detected
+	// we can safely display the regular menu's prompt
 	fmt.Print(PROMPT)
 	var query string
 	_, err := fmt.Scanln(&query)
@@ -48,12 +53,21 @@ func Prompt() string {
 		log.Fatal("Error while reading user query in Prompt() : ", err)
 	}
 
+	if PROCESSING_EVENT {
+		backend_api.GiveInput(CURRENT_EVENT_FLAG, query)
+		query = "[BACKEND_OVERRIDE]"
+		PROCESSING_EVENT = false
+	}
 	return query
 }
 
 func AskConfirmation(msg string, validation string) bool {
 	fmt.Println(msg)
 	return Prompt() == validation
+}
+
+func ClearTerm() {
+	fmt.Print("\033[H\033[2J")
 }
 
 func HandleMenuQuery(query string) {
@@ -174,7 +188,25 @@ func HandleMenuQuery(query string) {
 		magasin.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
 	case "6":
-		networking.SendLargageAerien("/tmp/test.txt", "127.0.0.1")
+		fmt.Println("Paste the absolute path to the file you want to send")
+		filepath := Prompt()
+
+		fmt.Println("Select a device on the network : ")
+		devices := networking.GetNetworkDevices()
+		for i := 0; i < devices.Size(); i++ {
+			fmt.Printf("[%d] ", i)
+			fmt.Println(devices.Get(i))
+		}
+		index, err := strconv.Atoi(Prompt())
+		if err != nil || index > devices.Size() {
+			log.Fatal("Vous n'avez pas saisi un nombre valide !")
+		}
+
+		fmt.Println("Sending " + filepath + " to " + devices.Get(index)["host"])
+		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"])
+
+	case "[BACKEND_OVERRIDE]":
+		break
 
 	default:
 		fmt.Println("This option does not exists :/")
@@ -192,21 +224,37 @@ func DisplayMenu() {
 	callbacks := make(map[string]func(string))
 
 	callbacks["[CHOOSELINKPATH]"] = func(context string) {
+		// simulate new prompt as the real one is displayed before the text
+		fmt.Print("\n" + context + "\n\n>> ")
+		// don't give back response, as it is handled by the regular prompt-loop
+		PROCESSING_EVENT = true
+		CURRENT_EVENT_FLAG = "[CHOOSELINKPATH]"
 
-		fmt.Println(context + " : ")
-		backend_api.GiveInput("[CHOOSELINKPATH]", Prompt())
+		// wait user input in regular prompt system
+		for PROCESSING_EVENT {
+			time.Sleep(time.Millisecond * 500)
+		}
 
 		// let the backend process and suppress the event file
+
 		time.Sleep(1 * time.Second)
 	}
 
 	// air dropping something
 	callbacks["[OTDL]"] = func(context string) {
+		// simulate new prompt as the real one is displayed before the text
+		fmt.Print("\n" + context + "\n\n>> ")
 
-		fmt.Println(context)
-		backend_api.GiveInput("[OTDL]", Prompt())
+		// don't give back response, as it is handled by the regular prompt-loop
+		PROCESSING_EVENT = true
+		CURRENT_EVENT_FLAG = "[OTDL]"
 
-		fmt.Println("Saving file to the folder : " + filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+		// wait user input in regular prompt system
+		for PROCESSING_EVENT {
+			time.Sleep(time.Millisecond * 500)
+		}
+
+		fmt.Print("\nSaving file to the folder : " + filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien") + "\n\n>> ")
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
