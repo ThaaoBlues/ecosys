@@ -83,7 +83,7 @@ func ConnectToDevice(conn net.Conn) {
 		body_buff = append(body_buff, buffer[:n]...)
 	}
 
-	//log.Println("Request body : ", string(body_buff))
+	log.Println("Request body : ", string(body_buff))
 
 	var data globals.QEvent
 	err = json.Unmarshal(body_buff, &data)
@@ -121,6 +121,7 @@ func ConnectToDevice(conn net.Conn) {
 		acces.UnlinkDevice(device_id)
 
 	case "[OTDL]":
+
 		// goroutine because it will later ask and wait approval for the user
 		go HandleLargageAerien(data, conn.RemoteAddr().String())
 
@@ -246,6 +247,8 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			}
 
 			conn.Close()
+
+			log.Println("Event sent !")
 			SetEventNetworkLockForDevice(device_id, false)
 
 			// wait for the network lock to be released for this device
@@ -444,8 +447,8 @@ func exists(path string) (bool, error) {
 func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	// makes sure we are not given a path for some reasons
 	file_name := filepath.Base(data.Delta.FilePath)
-	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"[y/N]")
-	if user_response == "y" || user_response == "Y" {
+	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"  [y/N]")
+	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui"{
 		// make sure we have the right directory set-up
 		ex, err := exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
@@ -477,12 +480,17 @@ func SendLargageAerien(file_path string, device_ip string) {
 
 	var event globals.QEvent
 	event.Flag = "[OTDL]"
-	event.SecureId = "le_ciel_me_tombe_sur_la_tete"
+	event.SecureId = "le_ciel_me_tombe_sur_la_tete_000000000000"
 	event.FileType = "file"
 	event.FilePath = file_name
 	event.Delta = delta
 
 	queue = queue.Add(event)
+
+	// not used list of device_id
 	var dummy_device globals.GenArray[string]
-	SendDeviceEventQueueOverNetwork(dummy_device, "le_ciel_me_tombe_sur_la_tete", queue, device_ip)
+	// it still needs to have the size of the number of ip addresses we want to use
+	// so we add the device ip addr as placeholder
+	dummy_device = dummy_device.Add(device_ip)
+	SendDeviceEventQueueOverNetwork(dummy_device, "le_ciel_me_tombe_sur_la_tete_000000000000", queue, device_ip)
 }

@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"qsync/backend_api"
 	"qsync/bdd"
 	"qsync/filesystem"
@@ -204,6 +205,8 @@ func DisplayMenu() {
 
 		fmt.Println(context)
 		backend_api.GiveInput("[OTDL]", Prompt())
+
+		fmt.Println("Saving file to the folder : " + filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
