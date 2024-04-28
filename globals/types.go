@@ -60,7 +60,7 @@ func (array *GenArray[T]) Add(val T) {
 func (array *GenArray[T]) Get(i int) T {
 	return array.items[i]
 }
-func (array *GenArray[T]) PopLast() GenArray[T] {
+func (array *GenArray[T]) PopLast() {
 	array.items = array.items[:len(array.items)-1]
 }
 
