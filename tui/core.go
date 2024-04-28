@@ -145,9 +145,9 @@ func HandleMenuQuery(query string) {
 		event.FilePath = tasks.Get(index).Path
 
 		var queue globals.GenArray[globals.QEvent]
-		queue = queue.Add(event)
+		queue.Add(event)
 		var device_ids globals.GenArray[string]
-		device_ids = device_ids.Add(device_id)
+		device_ids.Add(device_id)
 
 		networking.SendDeviceEventQueueOverNetwork(device_ids, acces.SecureId, queue, devices.Get(index)["ip_addr"])
 

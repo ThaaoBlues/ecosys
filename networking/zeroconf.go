@@ -55,11 +55,11 @@ func (zcs *ZeroConfService) Browse() {
 						ptr_event := ptr_queue.Get(i)
 						log.Println(*ptr_event)
 
-						queue = queue.Add(*ptr_event)
+						queue.Add(*ptr_event)
 					}
 
 					var device_ids globals.GenArray[string]
-					device_ids = device_ids.Add(new_device["device_id"])
+					device_ids.Add(new_device["device_id"])
 					SendDeviceEventQueueOverNetwork(device_ids, acces.SecureId, queue, new_device["ip_addr"])
 
 				}
@@ -118,7 +118,7 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 			dev["ip_addr"] = entry.AddrV4.String()
 			dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
 			dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
-			devices_list = devices_list.Add(dev)
+			devices_list.Add(dev)
 
 		}
 	}()

@@ -42,18 +42,6 @@ func DownloadFromUrl(url string, installer_path string) error {
 	return nil
 }
 
-// exists returns whether the given file or directory exists
-func exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
 func InstallApp(data io.ReadCloser) error {
 	var json_data globals.ToutEnUnConfig
 	err := json.NewDecoder(data).Decode(&json_data)
@@ -77,7 +65,7 @@ func InstallApp(data io.ReadCloser) error {
 	log.Println("qsync root path : ", self_path)
 
 	apps_path := filepath.Join(self_path, "apps")
-	ex, err := exists(apps_path)
+	ex, err := globals.Exists(apps_path)
 
 	if err != nil {
 		log.Fatal("An error occured while checking if a path exists in InstallApp()", err)
@@ -91,7 +79,7 @@ func InstallApp(data io.ReadCloser) error {
 	new_app_root_path := filepath.Join(apps_path, sanitized_app_name)
 	json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
 
-	ex, err = exists(new_app_root_path)
+	ex, err = globals.Exists(new_app_root_path)
 
 	if !ex {
 		os.Mkdir(new_app_root_path, fs.ModePerm)
@@ -116,7 +104,7 @@ func InstallApp(data io.ReadCloser) error {
 
 	// and last but not least, if the installed did not create it, create the sync folder
 	app_sync_folder := filepath.Join(new_app_root_path, json_data.AppSyncDataFolderPath)
-	ex, err = exists(app_sync_folder)
+	ex, err = globals.Exists(app_sync_folder)
 	log.Println("making app sync directory : ", app_sync_folder)
 
 	if !ex {

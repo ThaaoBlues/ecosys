@@ -53,19 +53,17 @@ type GenArray[T any] struct {
 	items []T
 }
 
-func (array GenArray[T]) Add(val T) GenArray[T] {
+func (array *GenArray[T]) Add(val T) {
 	array.items = append(array.items, val)
-	return array
 }
 
-func (array GenArray[T]) Get(i int) T {
+func (array *GenArray[T]) Get(i int) T {
 	return array.items[i]
 }
-func (array GenArray[T]) PopLast() GenArray[T] {
+func (array *GenArray[T]) PopLast() GenArray[T] {
 	array.items = array.items[:len(array.items)-1]
-	return array
 }
 
-func (array GenArray[T]) Size() int {
+func (array *GenArray[T]) Size() int {
 	return len(array.items)
 }

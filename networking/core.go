@@ -400,7 +400,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				event.FileType = "folder"
 				event.FilePath = relative_path
 
-				queue = queue.Add(event)
+				queue.Add(event)
 
 			} else {
 				// creates a delta with full file content
@@ -413,7 +413,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				event.FilePath = relative_path
 				event.Delta = delta
 
-				queue = queue.Add(event)
+				queue.Add(event)
 			}
 
 		}
@@ -423,7 +423,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 	//log.Println("setup event queue : ", queue)
 	var devices globals.GenArray[string]
-	devices = devices.Add(device_id)
+	devices.Add(device_id)
 	SendDeviceEventQueueOverNetwork(devices, acces.SecureId, queue)
 
 	if err != nil {
@@ -432,25 +432,13 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 }
 
-// exists returns whether the given file or directory exists
-func exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
 func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	// makes sure we are not given a path for some reasons
 	file_name := filepath.Base(data.Delta.FilePath)
 	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"  [y/N]")
 	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
-		ex, err := exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+		ex, err := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
 		if err != nil {
 			log.Fatal("Error while trying to check if the largage_aerien folder exsists in HandleLargageAerien() : ", err)
@@ -485,12 +473,12 @@ func SendLargageAerien(file_path string, device_ip string) {
 	event.FilePath = file_name
 	event.Delta = delta
 
-	queue = queue.Add(event)
+	queue.Add(event)
 
 	// not used list of device_id
 	var dummy_device globals.GenArray[string]
 	// it still needs to have the size of the number of ip addresses we want to use
 	// so we add the device ip addr as placeholder
-	dummy_device = dummy_device.Add(device_ip)
+	dummy_device.Add(device_ip)
 	SendDeviceEventQueueOverNetwork(dummy_device, "le_ciel_me_tombe_sur_la_tete_000000000000", queue, device_ip)
 }

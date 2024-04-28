@@ -357,7 +357,7 @@ func (acces *AccesBdd) GetSyncOfflineDevices() globals.GenArray[string] {
 		rows.Scan(&device.SecureId, &device.IsConnected)
 
 		if !device.IsConnected {
-			offline_devices = offline_devices.Add(device.SecureId)
+			offline_devices.Add(device.SecureId)
 		}
 	}
 
@@ -438,7 +438,7 @@ func (acces *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 
 	for _, dev := range devices_split {
 		if !(dev == device_id) {
-			list_builder = list_builder.Add(dev)
+			list_builder.Add(dev)
 		}
 	}
 
@@ -785,7 +785,7 @@ func (acces *AccesBdd) IsThisFileSystemBeingPatched() bool {
 	}
 
 	for _, val := range strings.Split(ids_str, ";") {
-		ids_list = ids_list.Add(val)
+		ids_list.Add(val)
 	}
 
 	for i := 0; i < ids_list.Size(); i++ {
@@ -822,14 +822,14 @@ func (acces *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool)
 		}
 
 		for _, val := range strings.Split(ids_str, ";") {
-			ids_list = ids_list.Add(val)
+			ids_list.Add(val)
 		}
 
 		// same list of sync tasks secure_id but without this one
 		var new_ids globals.GenArray[string]
 		for i := 0; i < ids_list.Size(); i++ {
 			if !(ids_list.Get(i) == acces.SecureId) {
-				new_ids = new_ids.Add(ids_list.Get(i))
+				new_ids.Add(ids_list.Get(i))
 			}
 		}
 		var str_ids string = ""
@@ -873,7 +873,7 @@ func (acces *AccesBdd) GetSyncLinkedDevices() globals.GenArray[string] {
 	}
 
 	for _, val := range strings.Split(devices_str, ";") {
-		devices_list = devices_list.Add(val)
+		devices_list.Add(val)
 	}
 
 	// remove the last slot (empty space) in the array
@@ -1010,7 +1010,7 @@ func (acces *AccesBdd) GetOfflineDevices() globals.GenArray[string] {
 		var device LinkDevice
 		rows.Scan(&device.SecureId, &device.IsConnected)
 		if !device.IsConnected {
-			offline_devices = offline_devices.Add(device.SecureId)
+			offline_devices.Add(device.SecureId)
 		}
 	}
 
@@ -1033,7 +1033,7 @@ func (acces *AccesBdd) GetOnlineDevices() globals.GenArray[string] {
 		rows.Scan(&device.SecureId, &device.IsConnected)
 
 		if device.IsConnected {
-			online_devices = online_devices.Add(device.SecureId)
+			online_devices.Add(device.SecureId)
 		}
 	}
 
@@ -1113,18 +1113,18 @@ func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 	for rows.Next() {
 		var info SyncInfos
 		rows.Scan(&info.SecureId, &info.Path)
-		list = list.Add(info)
+		list.Add(info)
 	}
 
 	return list
 
 }
 
-func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]globals.GenArray[*globals.QEvent] {
+func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*globals.GenArray[*globals.QEvent] {
 
 	// as the device can be late on many tasks, we must create an hash table with all
 	// the differents delta on all differents tasks he's late on
-	var queue map[string]globals.GenArray[*globals.QEvent] = make(map[string]globals.GenArray[*globals.QEvent])
+	var queue map[string]*globals.GenArray[*globals.QEvent] = make(map[string]*globals.GenArray[*globals.QEvent])
 
 	log.Println("Building missed files event queue from retard...")
 	rows, err := acces.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
@@ -1162,7 +1162,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]gl
 
 		log.Println("ADDING EVENT : ", event)
 
-		queue[secure_id] = queue[secure_id].Add(&event)
+		queue[secure_id].Add(&event)
 	}
 
 	log.Println("Building missed folders creation event queue from retard...")
@@ -1196,7 +1196,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]gl
 
 		log.Println("ADDING EVENT : ", event)
 
-		queue[secure_id] = queue[secure_id].Add(&event)
+		queue[secure_id].Add(&event)
 	}
 
 	log.Println("Retard queue : ", queue)
@@ -1220,14 +1220,14 @@ func (acces *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 	}
 
 	for _, val := range strings.Split(ids_str, ";") {
-		ids_list = ids_list.Add(val)
+		ids_list.Add(val)
 	}
 
 	// same list of sync tasks secure_id but without this one
 	var new_ids globals.GenArray[string]
 	for i := 0; i < ids_list.Size(); i++ {
 		if !(ids_list.Get(i) == device_id) {
-			new_ids = new_ids.Add(ids_list.Get(i))
+			new_ids.Add(ids_list.Get(i))
 		}
 	}
 
@@ -1311,7 +1311,7 @@ func (acces *AccesBdd) ListInstalledApps() globals.GenArray[*globals.MinGenConfi
 
 		}
 
-		configs = configs.Add(&tmp)
+		configs.Add(&tmp)
 	}
 
 	return configs

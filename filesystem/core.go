@@ -90,7 +90,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FilePath = relative_path
 		event.Delta = delta
 
-		queue = queue.Add(event)
+		queue.Add(event)
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 
 	} else {
@@ -107,7 +107,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FileType = "folder"
 		event.FilePath = relative_path
 
-		queue = queue.Add(event)
+		queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 	}
@@ -129,7 +129,7 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 		event.FilePath = relative_path
 		event.Delta = delta
 
-		queue = queue.Add(event)
+		queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 	}
@@ -154,7 +154,7 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 	event.FileType = file_type
 	event.FilePath = relative_path
 
-	queue = queue.Add(event)
+	queue.Add(event)
 
 	networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 }
@@ -189,7 +189,7 @@ func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FilePath = relative_path
 		event.NewFilePath = new_relative_path
 
-		queue = queue.Add(event)
+		queue.Add(event)
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 	}
 }
@@ -244,7 +244,7 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		event.FilePath = path
 
 		var queue globals.GenArray[globals.QEvent]
-		queue = queue.Add(event)
+		queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 
@@ -273,7 +273,7 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		event.FilePath = path
 
 		var queue globals.GenArray[globals.QEvent]
-		queue = queue.Add(event)
+		queue.Add(event)
 
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 
