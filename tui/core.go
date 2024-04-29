@@ -34,6 +34,7 @@ var MENU string = `
 [4] - List devices using qsync on your network
 [5] - Open QSync Magasin
 [6] - Send something to another device : "Largage Aérien"
+[7] - Allow/Disallow people to send you Largage Aerien
 `
 
 var PROMPT string = "\n>> "
@@ -75,6 +76,8 @@ func HandleMenuQuery(query string) {
 	var acces bdd.AccesBdd
 
 	acces.InitConnection()
+
+	defer acces.CloseConnection()
 
 	switch query {
 
@@ -204,6 +207,23 @@ func HandleMenuQuery(query string) {
 
 		fmt.Println("Sending " + filepath + " to " + devices.Get(index)["host"])
 		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"])
+
+	case "7":
+		var is_allowing bool
+
+		is_allowing = acces.AreLargageAerienAllowed()
+
+		if is_allowing {
+			fmt.Println("You are currently allowing people to send you Largages Aerien.\n\n Changing this to disallow it")
+			acces.SwitchLargageAerienAllowingState()
+			fmt.Println("Setting changed, you are now disallowing people to send you Largages Aerien.")
+
+		} else {
+			fmt.Println("You are currently prohibitng people to send you Largages Aerien.\n\n Changing this to allow it")
+			acces.SwitchLargageAerienAllowingState()
+			fmt.Println("Setting changed, you are now allowing people to send you Largages Aerien.")
+
+		}
 
 	case "[BACKEND_OVERRIDE]":
 		break

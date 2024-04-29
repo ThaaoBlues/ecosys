@@ -106,7 +106,8 @@ func (acces *AccesBdd) InitConnection() {
 	}
 	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS mesid(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		device_id TEXT
+		device_id TEXT,
+		accepte_largage_aerien BOOLEAN DEFAULT TRUE
 	)`)
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
@@ -1343,4 +1344,33 @@ func (acces *AccesBdd) DeleteApp(app_id int) {
 		log.Fatal("Error while querying database in GetAppConfig() : ", err)
 	}
 
+}
+
+// this function is just getting the value of wether the user wants to
+// receive largage aerien or not
+func (acces *AccesBdd) AreLargageAerienAllowed() bool {
+
+	var ret bool
+	row := acces.db_handler.QueryRow("SELECT accepte_largage_aerien FROM mesid")
+
+	err := row.Scan(&ret)
+	if (err != nil) && (err != sql.ErrNoRows) {
+		log.Fatal("Error while querying database in AreLargageAerienAllowed() : ", err)
+	}
+
+	return ret
+}
+
+// if true set to false, if false set to true
+// setting the value if the use wants or not to receive largage aerien
+func (acces *AccesBdd) SwitchLargageAerienAllowingState() bool {
+
+	var ret bool
+	_, err := acces.db_handler.Exec("UPDATE mesid SET accepte_largage_aerien=NOT accepte_largage_aerien")
+
+	if (err != nil) && (err != sql.ErrNoRows) {
+		log.Fatal("Error while querying database in SwitchLargageAerienAllowingState() : ", err)
+	}
+
+	return ret
 }
