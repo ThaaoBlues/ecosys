@@ -425,6 +425,9 @@ func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 	acces.UpdateCachedFile(filepath.Join(acces.GetRootSyncPath(), path))
 }
 
+// THIS FUNCTION DOES NOT SEEM TO BE USED ???
+// IT EVEN HAVE AN ERROR IN THE SECOND SQL SYNTAX
+// BUT I'M AFRAID TO REMOVE IT
 func (acces *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
 	// remove all mentions of the given device_id in the retard table for a specific file
 
