@@ -519,6 +519,9 @@ TODO
 
 - tester l'ajout/suppression/lancement des applications
 
+- finir l'implémentation java de createSync() avec le parcours et mappage des fichiers.
+- finir l'implémentation java de la bdd et des fichiers manquants
+
 - 2024/04/28 21:37:43 Error while querying database in SwitchLargageAerienAllowingState() : ambiguous column name: accepte_largage_aerien
 
 
