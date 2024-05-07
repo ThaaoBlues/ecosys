@@ -22,6 +22,10 @@ type Delta struct {
 func BuilDelta(relative_path string, absolute_path string, old_file_size int64, old_file_content []byte) Delta {
 
 	full_file, err := os.ReadFile(absolute_path)
+	if err != nil {
+		log.Fatal("Error while reading the file from real filesystem to seek changes. : ", err)
+	}
+
 	log.Println("full file : ", full_file)
 	new_file_handler, err := os.Open(absolute_path)
 
@@ -58,6 +62,9 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	var file_delta []delta_instruction
 
 	var byte_index int64 = 0
+	// blocking byte index is used to concatenate
+	// multiples consecutives bytes change
+	// into a single delta instruction
 	var blocking_byte_index int64 = 0
 
 	// errors related to files manipulations

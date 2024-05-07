@@ -93,7 +93,7 @@ func (zcs *ZeroConfService) Register() {
 		"version=0.0.1-PreAlpha",
 		"device_id=" + acces.GetMyDeviceId(),
 	}
-	service, _ := mdns.NewMDNSService(host, "_qsync._tcp.local", "", "", 8274, nil, info)
+	service, _ := mdns.NewMDNSService(host, "_qsync._tcp.", "", "", 8274, nil, info)
 
 	// Create the mDNS server, defer shutdown
 	server, _ := mdns.NewServer(&mdns.Config{Zone: service})
@@ -125,7 +125,7 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 
 	// Start the lookup
 	//log.SetOutput(io.Discard)
-	mdns.Lookup("_qsync._tcp.local.", entriesCh)
+	mdns.Lookup("_qsync._tcp.", entriesCh)
 	close(entriesCh)
 
 	return devices_list
