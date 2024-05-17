@@ -519,7 +519,17 @@ TODO
 
 - tester l'ajout/suppression/lancement des applications
 
-- Pour l'app : Trouver pourquoi le filepath n'est pas bon dans l'intent pour ouvrir le fichier
+- Pour l'app : Trouver une manière de check le service type dans onServiceLost
+- Pour l'app : Fix le fichier qui s'ouvre mal avec la popup
+- Pour l'app : Fix le problème d'unsigned int
+- Pour l'app : Fix la différence de byte array entre android et go 
+ [{"InstructionType":"ab","Data":"cHJvdXQK","ByteIndex":0}] (go)
+ vs
+ [{"Data":[10,20,-30]} ] (java) 
+
+- Pour l'app : Faire les synchronisations
+
+
 
 - 2024/04/28 21:37:43 Error while querying database in SwitchLargageAerienAllowingState() : ambiguous column name: accepte_largage_aerien
 

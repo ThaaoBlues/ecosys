@@ -26,6 +26,7 @@ func NetWorkLoop() {
 	}
 	for {
 		conn, err := ln.Accept()
+		log.Println("Accepted client")
 		if err != nil {
 
 			log.Fatal("Error while accepting a client socket connection : ", err)
@@ -43,17 +44,40 @@ func ConnectToDevice(conn net.Conn) {
 	// get the device id and secure sync id from header
 
 	header_buff := make([]byte, HEADER_LENGTH)
+	// prevent the fucking java sockets to break my app
+	// because it fucking sends zeros before the messages
+	// java go fuck yourself.
+	padding_buff := make([]byte, 1)
+	padding_buff[0] = 0
+	for padding_buff[0] == 0 {
+		_, err := conn.Read(padding_buff)
+		if err != nil {
+			log.Fatal("Error in ConnectToDevice() while reading header")
+		}
+	}
+
 	_, err := conn.Read(header_buff)
+	log.Println("HEADER BUFF", header_buff)
+
+	// as the padding got the first element of the header, we must shift the header slice by one
+	header_buff = append([]byte{padding_buff[0]}, header_buff...)
+	header_buff = header_buff[:len(header_buff)-1]
 
 	if err != nil {
 		log.Fatal("Error in ConnectToDevice() while reading header")
 	}
 
 	//log.Println("Request header : ", string(header_buff))
+	var device_id string
+	var secure_id string
+	if len(strings.Split(string(header_buff), ";")) == 2 {
+		device_id = strings.Split(string(header_buff), ";")[0]
 
-	var device_id string = strings.Split(string(header_buff), ";")[0]
-
-	var secure_id string = strings.Split(string(header_buff), ";")[1]
+		secure_id = strings.Split(string(header_buff), ";")[1]
+	} else {
+		log.Println("A malformed request has been refused.")
+		return
+	}
 
 	acces.SecureId = secure_id
 
@@ -71,6 +95,10 @@ func ConnectToDevice(conn net.Conn) {
 
 	// read the body of the request and store it in a buffer
 	var body_buff []byte
+
+	// append the first bracket as the header shift got it erased
+	// OUI C'EST DU BRICOLAGE OKAY
+	body_buff = append(body_buff, byte('{'))
 	for {
 		buffer := make([]byte, 1024) // You can adjust the buffer size as needed
 		n, err := conn.Read(buffer)
@@ -88,7 +116,7 @@ func ConnectToDevice(conn net.Conn) {
 	var data globals.QEvent
 	err = json.Unmarshal(body_buff, &data)
 	if err != nil {
-		log.Fatal("Error while parsing request Qevent payload (might be malformed JSON) .")
+		log.Fatal("Error while parsing request Qevent payload (might be malformed JSON) .", err.Error())
 	}
 	// check if this is a regular file event of a special request
 	log.Println("RECEIVING EVENT : ", data)

@@ -10,7 +10,7 @@ import (
 
 type delta_instruction struct {
 	InstructionType string
-	Data            []byte
+	Data            []int8
 	ByteIndex       int64
 }
 
@@ -102,11 +102,11 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 		if (new_file_buff != old_file_buff) && (byte_index_cond) {
 			inst := delta_instruction{
-				Data:            []byte{new_file_buff},
+				Data:            []int8{int8(new_file_buff)},
 				InstructionType: "ab",
 				ByteIndex:       byte_index,
 			}
-			log.Println("append : ", inst)
+			//log.Println("append : ", inst)
 			file_delta = append(file_delta, inst)
 
 			byte_index = byte_index + 1
@@ -116,7 +116,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 			if new_file_buff != old_file_buff {
 
 				// add the byte we've just read to the data of the delta chunk
-				file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, new_file_buff)
+				file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff))
 
 				// don't forget to increment byte index
 				byte_index = byte_index + 1
@@ -139,20 +139,22 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 			delta_index = len(file_delta) - 1
 			file_delta = append(file_delta,
 				delta_instruction{
-					Data:            []byte{0},
+					Data:            []int8{0},
 					InstructionType: "t",
 					ByteIndex:       new_file_size,
 				})
 
 		} else {
 			file_delta[delta_index] = delta_instruction{
-				Data:            []byte{0},
+				Data:            []int8{0},
 				InstructionType: "t",
 				ByteIndex:       new_file_size,
 			}
 		}
 
 	}
+
+	log.Println(file_delta)
 
 	return Delta{Instructions: file_delta, FilePath: relative_path}
 }
@@ -178,10 +180,17 @@ func (delta Delta) PatchFile() {
 		switch delta.Instructions[i].InstructionType {
 		case "ab":
 			file_writer.Seek(delta.Instructions[i].ByteIndex, io.SeekStart)
-			_, err = file_writer.Write(delta.Instructions[i].Data)
-			if err != nil {
-				log.Fatal(err)
+
+			// convert int8 to byte
+			// all this shit is needed as a byte is unsigned in go
+			// and signed in java
+			for _, v := range delta.Instructions[i].Data {
+				_, err = file_writer.Write([]byte{byte(v)})
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
+
 		case "t":
 			file_handler.Truncate(delta.Instructions[i].ByteIndex)
 		}

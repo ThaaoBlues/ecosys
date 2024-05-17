@@ -2,6 +2,7 @@ package networking
 
 import (
 	"log"
+	"net"
 	"os"
 	"qsync/bdd"
 	"qsync/globals"
@@ -80,6 +81,18 @@ func (zcs *ZeroConfService) UpdateDevicesConnectionStateLoop() {
 	}
 }
 
+func GetOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
+}
+
 func (zcs *ZeroConfService) Register() {
 
 	//var err error
@@ -93,7 +106,7 @@ func (zcs *ZeroConfService) Register() {
 		"version=0.0.1-PreAlpha",
 		"device_id=" + acces.GetMyDeviceId(),
 	}
-	service, _ := mdns.NewMDNSService(host, "_qsync._tcp.", "", "", 8274, nil, info)
+	service, _ := mdns.NewMDNSService(host, "_qsync._tcp.", "", "", 8274, []net.IP{GetOutboundIP()}, info)
 
 	// Create the mDNS server, defer shutdown
 	server, _ := mdns.NewServer(&mdns.Config{Zone: service})
