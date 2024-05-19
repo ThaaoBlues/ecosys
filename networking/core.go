@@ -1,7 +1,6 @@
 package networking
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 	"net"
@@ -96,9 +95,9 @@ func ConnectToDevice(conn net.Conn) {
 	// read the body of the request and store it in a buffer
 	var body_buff []byte
 
-	// append the first bracket as the header shift got it erased
+	// append the first char of the event flag as the header shift got it erased
 	// OUI C'EST DU BRICOLAGE OKAY
-	body_buff = append(body_buff, byte('{'))
+	body_buff = append(body_buff, byte('['))
 	for {
 		buffer := make([]byte, 1024) // You can adjust the buffer size as needed
 		n, err := conn.Read(buffer)
@@ -113,13 +112,10 @@ func ConnectToDevice(conn net.Conn) {
 
 	log.Println("Request body : ", string(body_buff))
 
-	var data globals.QEvent
-	err = json.Unmarshal(body_buff, &data)
-	if err != nil {
-		log.Fatal("Error while parsing request Qevent payload (might be malformed JSON) .", err.Error())
-	}
+	var data globals.QEvent = globals.DeSerializeQevent(string(body_buff))
+
 	// check if this is a regular file event of a special request
-	log.Println("RECEIVING EVENT : ", data)
+	log.Println("DECODED EVENT : ", data)
 	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":
@@ -153,6 +149,11 @@ func ConnectToDevice(conn net.Conn) {
 		// goroutine because it will later ask and wait approval for the user
 		go HandleLargageAerien(data, conn.RemoteAddr().String())
 
+	case "[MOTDL]":
+
+		// goroutine because it will later ask and wait approval for the user
+		go HandleLargageAerien(data, conn.RemoteAddr().String())
+
 	default:
 
 		// regular file event
@@ -168,12 +169,12 @@ func ConnectToDevice(conn net.Conn) {
 // used to process a request when it is a regular file event
 func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
-	var event globals.QEvent
-
-	err := json.Unmarshal(buffer, &event)
+	/*err := json.Unmarshal(buffer, &event)
 	if err != nil {
 		log.Fatal("Error while decoding json data from request buffer in HandleEvent()", err)
-	}
+	}*/
+
+	event := globals.DeSerializeQevent(string(buffer))
 
 	// first, we lock the filesystem watcher so it don't notify the changes we are doing
 	// as it would do a ping-pong effect
@@ -245,10 +246,8 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 
 			SetEventNetworkLockForDevice(device_id, true)
 
-			event_json, err := json.Marshal(event)
-			if err != nil {
-				log.Fatal("An error occured in SendDeviceEventQueueOverNetwork() while creating a json object from the event struct : ", err)
-			}
+			formatted_event := globals.SerializeQevent(event)
+			log.Println("formatted event : ", formatted_event)
 
 			var acces bdd.AccesBdd
 			acces.InitConnection()
@@ -261,7 +260,7 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			}
 
 			// /!\ the device_id we send is our own so the other end can identify ourselves
-			write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + string(event_json))
+			write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + string(formatted_event))
 
 			conn, err := net.Dial("tcp", ip_addr[0]+":8274")
 

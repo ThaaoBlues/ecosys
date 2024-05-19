@@ -105,6 +105,9 @@ QSync recieve the file in its dedicated folder (<qsync_root>/largage_aerien).
 If the user do not want to receive it, nothing is wrote as the file is kept in RAM as a binary delta.
 The flag used for the event is "[OTDL]"
 
+### Multiples largages aeriens 
+Like the usual "Largage Aeriens" but under the flag [MOTDL] and will be unzipped at the end.
+
 
 ## base de données
 - on cartographie le systeme de fichiers visés et l'enregistre une première fois
@@ -185,15 +188,7 @@ Each request will contain an header of 256 bit that will represents the device_i
 
 The typical request must look like :
 
-3354HJfjysqgydfk6778Yhgqdsièfoiuhkj(device_id);2556ZJfjgfotydfk6778Yhdddsaèfoiuhkj(secure_id)type QEvent struct {
-	Flag          string
-	delta         delta_binaire.Delta
-	file_path     string
-	new_file_path string
-	sync_id       string
-} (json string)
-
-no newline between device_id and QEvent data
+3354HJfjysqgydfk6778Yhgqdsièfoiuhkj(device_id);2556ZJfjgfotydfk6778Yhdddsaèfoiuhkj(secure_id);[OTDL](flag);file(filetype);ab(delta instruction),112(data),114,111,117,116,10,0;test(deltafilepath);test(filepath);(newfilepath);(secure_id->redundancy field not used)
 
 
 
@@ -519,13 +514,13 @@ TODO
 
 - tester l'ajout/suppression/lancement des applications
 
+- pouvoir recevoir plusieurs fichiers en otdl (app et pc)
+Idée : utiliser un event [MOTDL] pour envoyer un zip
 - Pour l'app : Trouver une manière de check le service type dans onServiceLost
 - Pour l'app : Fix le fichier qui s'ouvre mal avec la popup
-- Pour l'app : Fix le problème d'unsigned int
-- Pour l'app : Fix la différence de byte array entre android et go 
- [{"InstructionType":"ab","Data":"cHJvdXQK","ByteIndex":0}] (go)
- vs
- [{"Data":[10,20,-30]} ] (java) 
+
+- Changer la structure de donnée à envoyer par une structure linéaire avec des places assignées
+- le parsing doit devenir quasi-instantané
 
 - Pour l'app : Faire les synchronisations
 

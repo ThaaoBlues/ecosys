@@ -8,14 +8,14 @@ import (
 	"os"
 )
 
-type delta_instruction struct {
+type Delta_instruction struct {
 	InstructionType string
 	Data            []int8
 	ByteIndex       int64
 }
 
 type Delta struct {
-	Instructions []delta_instruction
+	Instructions []Delta_instruction
 	FilePath     string
 }
 
@@ -59,7 +59,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 	var new_file_buff byte
 
-	var file_delta []delta_instruction
+	var file_delta []Delta_instruction
 
 	var byte_index int64 = 0
 	// blocking byte index is used to concatenate
@@ -101,7 +101,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 		}
 
 		if (new_file_buff != old_file_buff) && (byte_index_cond) {
-			inst := delta_instruction{
+			inst := Delta_instruction{
 				Data:            []int8{int8(new_file_buff)},
 				InstructionType: "ab",
 				ByteIndex:       byte_index,
@@ -138,14 +138,14 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 		if len(file_delta) > 0 {
 			delta_index = len(file_delta) - 1
 			file_delta = append(file_delta,
-				delta_instruction{
+				Delta_instruction{
 					Data:            []int8{0},
 					InstructionType: "t",
 					ByteIndex:       new_file_size,
 				})
 
 		} else {
-			file_delta[delta_index] = delta_instruction{
+			file_delta[delta_index] = Delta_instruction{
 				Data:            []int8{0},
 				InstructionType: "t",
 				ByteIndex:       new_file_size,
