@@ -3,7 +3,7 @@ package tui
 import (
 	"fmt"
 	"log"
-	"path/filepath"
+	"os"
 	"qsync/backend_api"
 	"qsync/bdd"
 	"qsync/filesystem"
@@ -12,6 +12,8 @@ import (
 	"qsync/networking"
 	"strconv"
 	"time"
+
+	"github.com/sqweek/dialog"
 )
 
 var LOGO string = `
@@ -34,7 +36,8 @@ var MENU string = `
 [4] - List devices using qsync on your network
 [5] - Open QSync Magasin
 [6] - Send something to another device : "Largage Aérien"
-[7] - Allow/Disallow people to send you Largage Aerien
+[7] - Send a whole folder to another device : "Multi Largage Aérien"
+[8] - Allow/Disallow people to send you Largage Aerien
 `
 
 var PROMPT string = "\n>> "
@@ -91,9 +94,11 @@ func HandleMenuQuery(query string) {
 
 	case "1":
 
-		fmt.Println("Enter below the path of the folder you want to synchronize :")
-
-		var path string = Prompt()
+		path, err := dialog.Directory().Title("Select Folder").Browse()
+		if err != nil {
+			fmt.Println("Folder selection cancelled.")
+			return
+		}
 
 		acces.CreateSync(path)
 
@@ -158,10 +163,10 @@ func HandleMenuQuery(query string) {
 		acces.LinkDevice(device_id, devices.Get(index)["ip_addr"])
 		log.Println("device linked")
 
-		log.Println("Press any key once you have put the destination path on your other machine.")
+		/*log.Println("Press any key once you have put the destination path on your other machine.")
 		Prompt()
 		// build a custom queue so this device can download all the data contained in your folder
-		networking.BuildSetupQueue(acces.SecureId, device_id)
+		networking.BuildSetupQueue(acces.SecureId, device_id)*/
 
 		fmt.Println("The selected device has successfully been linked to a sync task.")
 
@@ -191,9 +196,12 @@ func HandleMenuQuery(query string) {
 		magasin.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
 	case "6":
-		fmt.Println("Paste the absolute path to the file you want to send")
-		filepath := Prompt()
 
+		filepath, err := dialog.File().Title("Select Folder").Load()
+		if err != nil {
+			fmt.Println("Folder selection cancelled.")
+			return
+		}
 		fmt.Println("Select a device on the network : ")
 		devices := acces.GetNetworkMap()
 		for i := 0; i < devices.Size(); i++ {
@@ -209,6 +217,39 @@ func HandleMenuQuery(query string) {
 		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"], false)
 
 	case "7":
+		folder_path, err := dialog.Directory().Title("Select Folder").Browse()
+		if err != nil {
+			fmt.Println("Folder selection cancelled.")
+			return
+		}
+		fmt.Println("Select a device on the network : ")
+		devices := acces.GetNetworkMap()
+		for i := 0; i < devices.Size(); i++ {
+			fmt.Printf("[%d] ", i)
+			fmt.Println(devices.Get(i)["hostname"])
+		}
+		index, err := strconv.Atoi(Prompt())
+		if err != nil || index > devices.Size() {
+			log.Fatal("Vous n'avez pas saisi un nombre valide !")
+		}
+
+		// zipping folder content to send it via largage aerien
+		filepath := "multilargage.zip"
+		err = globals.ZipFolder(folder_path, filepath)
+
+		if err != nil {
+			log.Fatal("Error while zipping folder ", err)
+		} else {
+			log.Printf("Successfully zipped folder %s into %s\n", folder_path, filepath)
+		}
+
+		fmt.Println("Sending " + filepath + " to " + devices.Get(index)["hostname"])
+		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"], true)
+
+		// now, the zip file is not useful anymore
+		os.Remove(filepath)
+
+	case "8":
 		var is_allowing bool
 
 		is_allowing = acces.AreLargageAerienAllowed()
@@ -274,8 +315,6 @@ func DisplayMenu() {
 			time.Sleep(time.Millisecond * 500)
 		}
 
-		fmt.Print("\nSaving file to the folder : " + filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien") + "\n\n>> ")
-
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
 	}
@@ -292,8 +331,6 @@ func DisplayMenu() {
 		for PROCESSING_EVENT {
 			time.Sleep(time.Millisecond * 500)
 		}
-
-		fmt.Print("\nSaving file to the folder : " + filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien") + "\n\n>> ")
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)

@@ -76,11 +76,14 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	for (i < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
 
 		new_file_buff, new_err = new_file_reader.ReadByte()
-		log.Println("byte read : ", new_file_buff)
-		if new_file_buff == 0 {
+		//log.Println("byte read : ", new_file_buff)
+
+		// zip files contains 0 so...
+		/*if new_file_buff == 0 {
+
 			new_err = io.EOF
 			break
-		}
+		}*/
 
 		if new_err != nil {
 			log.Fatal("Erreur dans la lecture du fichier : ", err)

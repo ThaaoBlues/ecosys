@@ -5,12 +5,14 @@ go 1.21
 toolchain go1.22.1
 
 require (
+	github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/hashicorp/mdns v1.0.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/miekg/dns v1.1.58 // indirect
+	github.com/sqweek/dialog v0.0.0-20240226140203-065105509627 // indirect
 	github.com/webui-dev/go-webui/v2 v2.4.1 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
 	golang.org/x/mod v0.15.0 // indirect

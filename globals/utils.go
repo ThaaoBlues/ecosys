@@ -1,8 +1,12 @@
 package globals
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
+	"log"
 	"os"
+	"path/filepath"
 	"qsync/delta_binaire"
 	"strconv"
 	"strings"
@@ -80,4 +84,75 @@ func DeSerializeQevent(data string) QEvent {
 
 	}
 
+}
+
+func ZipFolder(source, target string) error {
+	zipFile, err := os.Create(target)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	zipWriter := zip.NewWriter(zipFile)
+
+	err = filepath.WalkDir(source, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Create the correct zip file header
+		info, err := d.Info()
+
+		if err != nil {
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		// Set the header name to be the relative path
+		header.Name, err = filepath.Rel(source, path)
+		if err != nil {
+			return err
+		}
+
+		// If it's a directory, add a trailing slash to the header name
+		if d.IsDir() {
+			header.Name += "/"
+		} else {
+			header.Method = zip.Deflate
+		}
+
+		writer, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		// If it's not a directory, write the file content to the zip file
+		if !d.IsDir() {
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			_, err = io.Copy(writer, file)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	// Ensure the zipWriter is closed only after filepath.WalkDir is done
+	if err != nil {
+		zipWriter.Close()
+		return err
+	}
+
+	log.Println("Closing ZipWriter")
+
+	return zipWriter.Close()
 }
