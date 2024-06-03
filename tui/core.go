@@ -3,7 +3,6 @@ package tui
 import (
 	"fmt"
 	"log"
-	"os"
 	"qsync/backend_api"
 	"qsync/bdd"
 	"qsync/filesystem"
@@ -247,7 +246,7 @@ func HandleMenuQuery(query string) {
 		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"], true)
 
 		// now, the zip file is not useful anymore
-		os.Remove(filepath)
+		//os.Remove(filepath)
 
 	case "8":
 		var is_allowing bool

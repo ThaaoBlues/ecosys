@@ -2,6 +2,7 @@ package delta_binaire
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"io"
 	"log"
@@ -21,12 +22,6 @@ type Delta struct {
 
 func BuilDelta(relative_path string, absolute_path string, old_file_size int64, old_file_content []byte) Delta {
 
-	full_file, err := os.ReadFile(absolute_path)
-	if err != nil {
-		log.Fatal("Error while reading the file from real filesystem to seek changes. : ", err)
-	}
-
-	log.Println("full file : ", full_file)
 	new_file_handler, err := os.Open(absolute_path)
 
 	if err != nil {
@@ -55,7 +50,8 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	}
 	log.Println("needs truncature : ", needs_truncature)
 
-	new_file_reader := io.ByteReader(bufio.NewReader(new_file_handler))
+	old_file_reader := bufio.NewReader(bytes.NewReader(old_file_content))
+	new_file_reader := bufio.NewReader(new_file_handler)
 
 	var new_file_buff byte
 
@@ -78,7 +74,8 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 		new_file_buff, new_err = new_file_reader.ReadByte()
 		//log.Println("byte read : ", new_file_buff)
 
-		// zip files contains 0 so...
+		// zip files contains 0 so we don't need this
+		// NOT USED ANYMORE
 		/*if new_file_buff == 0 {
 
 			new_err = io.EOF
@@ -90,8 +87,12 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 		}
 
 		var old_file_buff byte
+
 		if i < old_file_size {
-			old_file_buff = old_file_content[i]
+			old_file_buff, err = old_file_reader.ReadByte()
+			if err != nil {
+				log.Fatal("Erreur dans la lecture du fichier : ", err)
+			}
 		}
 
 		// new delta instruction
