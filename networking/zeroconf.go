@@ -6,7 +6,6 @@ import (
 	"os"
 	"qsync/bdd"
 	"qsync/globals"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/mdns"
@@ -30,10 +29,16 @@ func (zcs *ZeroConfService) Browse() {
 	for i := 0; i < old_connected_devices.Size(); i++ {
 		acces.SetDeviceConnectionState(old_connected_devices.Get(i), false)
 	}
+
+	acces.CleanNetworkMap()
 	// then, we put all linked and connected devices state to true
 	for i := 0; i < new_connected_devices.Size(); i++ {
 
 		new_device := new_connected_devices.Get(i)
+		if !acces.IsDeviceOnNetworkMap(new_device["ip_addr"]) {
+			acces.AddDeviceToNetworkMap(new_device["device_id"], new_device["ip_addr"], new_device["host"])
+		}
+
 		if acces.IsDeviceLinked(new_device["device_id"]) {
 			log.Println("Detected device : ", new_device)
 			acces.SetDeviceConnectionState(new_device["device_id"], true, new_device["ip_addr"])
@@ -116,30 +121,4 @@ func (zcs *ZeroConfService) Register() {
 
 func (zcs *ZeroConfService) Shutdown() {
 	zcs.Server.Shutdown()
-}
-
-func GetNetworkDevices() globals.GenArray[map[string]string] {
-
-	var devices_list globals.GenArray[map[string]string]
-
-	// Make a channel for results and start listening
-	entriesCh := make(chan *mdns.ServiceEntry, 4)
-	go func() {
-		for entry := range entriesCh {
-			dev := make(map[string]string, 0)
-			dev["host"] = entry.Host + "local"
-			dev["ip_addr"] = entry.AddrV4.String()
-			dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
-			dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
-			devices_list.Add(dev)
-
-		}
-	}()
-
-	// Start the lookup
-	//log.SetOutput(io.Discard)
-	mdns.Lookup("_qsync._tcp.", entriesCh)
-	close(entriesCh)
-
-	return devices_list
 }

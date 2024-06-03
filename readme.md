@@ -514,19 +514,21 @@ TODO
 
 - tester l'ajout/suppression/lancement des applications
 
-- pouvoir recevoir plusieurs fichiers en otdl (app et pc)
-Idée : utiliser un event [MOTDL] pour envoyer un zip
-- Pour l'app : Trouver une manière de check le service type dans onServiceLost
+
+POUR L'APP :
 - Pour l'app : Fix le fichier qui s'ouvre mal avec la popup
 
-- Changer la structure de donnée à envoyer par une structure linéaire avec des places assignées
-- le parsing doit devenir quasi-instantané
-
 - Pour l'app : Faire les synchronisations
+- Probleme, dans la bdd la colonne receiving_update de linked_devices est remplie de null;null;null;null;null;
+- Crash à l'envoi des fichiers à créer (des 2 cotés).
+- fix les fichiers dans le zip de multilargage qui sont vides
+
+
+- POUR PC ET ANDROID :
+	- faire un nettoyage des nlock, btf et autres lors du démarrage
 
 
 
-- 2024/04/28 21:37:43 Error while querying database in SwitchLargageAerienAllowingState() : ambiguous column name: accepte_largage_aerien
 
 
 - trouver un moyen de sécuriser les communications entre appareils.

@@ -127,6 +127,17 @@ func (acces *AccesBdd) InitConnection() {
 		log.Fatal("Error while creating table : ", err)
 	}
 
+	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS reseau(
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		device_id TEXT,
+		hostname TEXT,
+		ip_addr TEXT
+	)`)
+
+	if err != nil {
+		log.Fatal("Error while creating table : ", err)
+	}
+
 	if !acces.IsMyDeviceIdGenerated() {
 		acces.GenerateMyDeviceId()
 	}
@@ -1376,4 +1387,65 @@ func (acces *AccesBdd) SwitchLargageAerienAllowingState() bool {
 	}
 
 	return ret
+}
+
+func (acces *AccesBdd) RemoveDeviceFromNetworkMap(deviceID, ipAddr string) {
+	_, err := acces.db_handler.Exec("DELETE FROM reseau WHERE device_id=? AND ip_addr=?", deviceID, ipAddr)
+	if err != nil {
+		log.Fatal("Error while executing query in RemoveDeviceFromNetworkMap(): ", err)
+	}
+}
+
+func (acces *AccesBdd) AddDeviceToNetworkMap(deviceID, ipAddr, hostname string) {
+	_, err := acces.db_handler.Exec("INSERT INTO reseau(device_id, ip_addr, hostname) VALUES(?, ?, ?)", deviceID, ipAddr, hostname)
+	if err != nil {
+		log.Fatal("Error while executing query in AddDeviceToNetworkMap(): ", err)
+	}
+}
+
+func (acces *AccesBdd) GetNetworkMap() globals.GenArray[map[string]string] {
+	rows, err := acces.db_handler.Query("SELECT device_id, ip_addr, hostname FROM reseau")
+	if err != nil {
+		log.Fatal("Error while executing query in GetNetworkMap(): ", err)
+	}
+	defer rows.Close()
+
+	var ret globals.GenArray[map[string]string]
+	for rows.Next() {
+		var deviceID, ipAddr, hostname string
+		err := rows.Scan(&deviceID, &ipAddr, &hostname)
+		if err != nil {
+			log.Fatal("Error while scanning rows in GetNetworkMap(): ", err)
+		}
+
+		device := map[string]string{
+			"device_id": deviceID,
+			"ip_addr":   ipAddr,
+			"hostname":  hostname,
+		}
+		ret.Add(device)
+	}
+
+	return ret
+}
+
+func (acces *AccesBdd) IsDeviceOnNetworkMap(ipAddr string) bool {
+	row := acces.db_handler.QueryRow("SELECT * FROM reseau WHERE ip_addr=?", ipAddr)
+	var deviceID, ipAddrDB, hostname string
+	err := row.Scan(&deviceID, &ipAddrDB, &hostname)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false
+		}
+		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
+	}
+
+	return true
+}
+
+func (acces *AccesBdd) CleanNetworkMap() {
+	_, err := acces.db_handler.Exec("DELETE FROM reseau")
+	if err != nil {
+		log.Fatal("Error while executing query in CleanNetworkMap(): ", err)
+	}
 }

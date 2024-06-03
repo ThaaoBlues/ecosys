@@ -84,7 +84,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
 
 		var event globals.QEvent
-		event.Flag = "CREATE"
+		event.Flag = "[CREATE]"
 		event.SecureId = acces.SecureId
 		event.FileType = "file"
 		event.FilePath = relative_path
@@ -102,7 +102,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		acces.AddFolderToRetard(relative_path)
 
 		var event globals.QEvent
-		event.Flag = "CREATE"
+		event.Flag = "[CREATE]"
 		event.SecureId = acces.SecureId
 		event.FileType = "folder"
 		event.FilePath = relative_path
@@ -123,7 +123,7 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 		log.Println("BUILT FILE DELTA : ", delta)
 
 		var event globals.QEvent
-		event.Flag = "UPDATE"
+		event.Flag = "[UPDATE]"
 		event.SecureId = acces.SecureId
 		event.FileType = "file"
 		event.FilePath = relative_path
@@ -149,7 +149,7 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 	}
 
 	var event globals.QEvent
-	event.Flag = "REMOVE"
+	event.Flag = "[REMOVE]"
 	event.SecureId = acces.SecureId
 	event.FileType = file_type
 	event.FilePath = relative_path
@@ -183,7 +183,7 @@ func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		// sending move event to connected devices
 
 		var event globals.QEvent
-		event.Flag = "MOVE"
+		event.Flag = "[MOVE]"
 		event.SecureId = acces.SecureId
 		event.FileType = file_type
 		event.FilePath = relative_path
@@ -238,7 +238,7 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		}
 
 		var event globals.QEvent
-		event.Flag = "REMOVE"
+		event.Flag = "[REMOVE]"
 		event.SecureId = acces.SecureId
 		event.FileType = file_type
 		event.FilePath = path
@@ -267,7 +267,7 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		}
 
 		var event globals.QEvent
-		event.Flag = "REMOVE"
+		event.Flag = "[REMOVE]"
 		event.SecureId = acces.SecureId
 		event.FileType = file_type
 		event.FilePath = path

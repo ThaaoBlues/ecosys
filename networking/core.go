@@ -51,7 +51,7 @@ func ConnectToDevice(conn net.Conn) {
 	for padding_buff[0] == 0 {
 		_, err := conn.Read(padding_buff)
 		if err != nil {
-			log.Fatal("Error in ConnectToDevice() while reading header")
+			log.Println("Error in ConnectToDevice() while reading header, request must be malformed.")
 		}
 	}
 
@@ -97,7 +97,7 @@ func ConnectToDevice(conn net.Conn) {
 
 	// append the first char of the event flag as the header shift got it erased
 	// OUI C'EST DU BRICOLAGE OKAY
-	body_buff = append(body_buff, byte('['))
+	body_buff = append([]byte("["), body_buff...)
 	for {
 		buffer := make([]byte, 1024) // You can adjust the buffer size as needed
 		n, err := conn.Read(buffer)
@@ -110,12 +110,12 @@ func ConnectToDevice(conn net.Conn) {
 		body_buff = append(body_buff, buffer[:n]...)
 	}
 
-	log.Println("Request body : ", string(body_buff))
+	//log.Println("Request body : ", string(body_buff))
 
 	var data globals.QEvent = globals.DeSerializeQevent(string(body_buff))
 
 	// check if this is a regular file event of a special request
-	log.Println("DECODED EVENT : ", data)
+	//log.Println("DECODED EVENT : ", data)
 	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":
@@ -141,6 +141,22 @@ func ConnectToDevice(conn net.Conn) {
 		log.Println("Linking device : ", device_id)
 		acces.LinkDevice(device_id, strings.Split(conn.RemoteAddr().String(), ":")[0])
 
+		// now that we are ready, ask for the sauce ;)
+		var queue globals.GenArray[globals.QEvent]
+		var event globals.QEvent
+		event.Flag = "[SETUP_DL]"
+		event.SecureId = secure_id
+
+		queue.Add(event)
+
+		// not used list of device_id
+		var dummy_device globals.GenArray[string]
+		// it still needs to have the size of the number of ip addresses we want to use
+		// so we add the device ip addr as placeholder
+		dummy_device.Add(conn.RemoteAddr().String())
+		SendDeviceEventQueueOverNetwork(dummy_device, secure_id, queue, strings.Split(conn.RemoteAddr().String(), ":")[0])
+		SetEventNetworkLockForDevice(device_id, true)
+
 	case "[UNLINK_DEVICE]":
 		acces.UnlinkDevice(device_id)
 
@@ -150,9 +166,11 @@ func ConnectToDevice(conn net.Conn) {
 		go HandleLargageAerien(data, conn.RemoteAddr().String())
 
 	case "[MOTDL]":
-
+		data.Delta.PatchFile()
+		data.Delta.FilePath = filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", data.FilePath)
+		log.Println("Finished writing zip file")
 		// goroutine because it will later ask and wait approval for the user
-		go HandleLargageAerien(data, conn.RemoteAddr().String())
+		//go HandleLargageAerien(data, conn.RemoteAddr().String())
 
 	default:
 
@@ -168,11 +186,6 @@ func ConnectToDevice(conn net.Conn) {
 
 // used to process a request when it is a regular file event
 func HandleEvent(secure_id string, device_id string, buffer []byte) {
-
-	/*err := json.Unmarshal(buffer, &event)
-	if err != nil {
-		log.Fatal("Error while decoding json data from request buffer in HandleEvent()", err)
-	}*/
 
 	event := globals.DeSerializeQevent(string(buffer))
 
@@ -195,10 +208,10 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 	event.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
 
 	switch event.Flag {
-	case "MOVE":
+	case "[MOVE]":
 		acces.Move(relative_path, new_relative_path, event.FileType)
 		MoveInFilesystem(event.FilePath, event.NewFilePath)
-	case "REMOVE":
+	case "[REMOVE]":
 		if event.FileType == "file" {
 			acces.RmFile(event.FilePath)
 
@@ -208,7 +221,7 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 		RemoveFromFilesystem(event.FilePath)
 
-	case "CREATE":
+	case "[CREATE]":
 
 		log.Println("Creating file : ", event.FilePath)
 		if event.FileType == "file" {
@@ -221,7 +234,7 @@ func HandleEvent(secure_id string, device_id string, buffer []byte) {
 
 		}
 
-	case "UPDATE":
+	case "[UPDATE]":
 
 		acces.IncrementFileVersion(relative_path)
 		event.Delta.PatchFile()
@@ -422,7 +435,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				// only keep the relative path
 
 				var event globals.QEvent
-				event.Flag = "CREATE"
+				event.Flag = "[CREATE]"
 				event.SecureId = secure_id
 				event.FileType = "folder"
 				event.FilePath = relative_path
@@ -434,7 +447,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
 
 				var event globals.QEvent
-				event.Flag = "CREATE"
+				event.Flag = "[CREATE]"
 				event.SecureId = secure_id
 				event.FileType = "file"
 				event.FilePath = relative_path
@@ -485,7 +498,33 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	}
 }
 
-func SendLargageAerien(file_path string, device_ip string) {
+func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
+	// makes sure we are not given a path for some reasons
+	file_name := filepath.Base(data.Delta.FilePath)
+	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"  [y/N]")
+	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
+		// make sure we have the right directory set-up
+		ex, err := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+
+		if err != nil {
+			log.Fatal("Error while trying to check if the largage_aerien folder exsists in HandleLargageAerien() : ", err)
+
+		}
+
+		if !ex {
+			os.Mkdir(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"), 0775)
+		}
+
+		// build the path to the largage_aerien folder
+		data.Delta.FilePath = filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", file_name)
+
+		// write the file. As this is probably a full file, the binary delta is just the file content
+		data.Delta.PatchFile()
+
+	}
+}
+
+func SendLargageAerien(file_path string, device_ip string, multiple bool) {
 
 	var queue globals.GenArray[globals.QEvent]
 	file_name := filepath.Base(file_path)
@@ -494,7 +533,11 @@ func SendLargageAerien(file_path string, device_ip string) {
 	delta := delta_binaire.BuilDelta(file_name, file_path, 0, []byte(""))
 
 	var event globals.QEvent
-	event.Flag = "[OTDL]"
+	if multiple {
+		event.Flag = "[MOTDL]"
+	} else {
+		event.Flag = "[OTDL]"
+	}
 	event.SecureId = "le_ciel_me_tombe_sur_la_tete_000000000000"
 	event.FileType = "file"
 	event.FilePath = file_name

@@ -126,10 +126,10 @@ func HandleMenuQuery(query string) {
 		fmt.Println("Mapping available devices on your local network...")
 
 		// list qsync devices across the network
-		devices := networking.GetNetworkDevices()
+		devices := acces.GetNetworkMap()
 		for i := 0; i < devices.Size(); i++ {
 			fmt.Printf("[%d] ", i)
-			fmt.Println(devices.Get(i))
+			fmt.Println(devices.Get(i)["hostname"])
 		}
 
 		// send a link device request to the one the user choose
@@ -145,7 +145,7 @@ func HandleMenuQuery(query string) {
 		var event globals.QEvent
 		event.Flag = "[LINK_DEVICE]"
 		event.SecureId = acces.SecureId
-		event.FilePath = tasks.Get(index).Path
+		event.FilePath = ""
 
 		var queue globals.GenArray[globals.QEvent]
 		queue.Add(event)
@@ -178,10 +178,10 @@ func HandleMenuQuery(query string) {
 	case "4":
 		// list qsync devices across the network
 
-		devices := networking.GetNetworkDevices()
+		devices := acces.GetNetworkMap()
 		for i := 0; i < devices.Size(); i++ {
 			fmt.Printf("[%d] ", i)
-			fmt.Println(devices.Get(i))
+			fmt.Println(devices.Get(i)["hostname"])
 		}
 
 	case "5":
@@ -195,18 +195,18 @@ func HandleMenuQuery(query string) {
 		filepath := Prompt()
 
 		fmt.Println("Select a device on the network : ")
-		devices := networking.GetNetworkDevices()
+		devices := acces.GetNetworkMap()
 		for i := 0; i < devices.Size(); i++ {
 			fmt.Printf("[%d] ", i)
-			fmt.Println(devices.Get(i))
+			fmt.Println(devices.Get(i)["hostname"])
 		}
 		index, err := strconv.Atoi(Prompt())
 		if err != nil || index > devices.Size() {
 			log.Fatal("Vous n'avez pas saisi un nombre valide !")
 		}
 
-		fmt.Println("Sending " + filepath + " to " + devices.Get(index)["host"])
-		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"])
+		fmt.Println("Sending " + filepath + " to " + devices.Get(index)["hostname"])
+		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"], false)
 
 	case "7":
 		var is_allowing bool
@@ -268,6 +268,25 @@ func DisplayMenu() {
 		// don't give back response, as it is handled by the regular prompt-loop
 		PROCESSING_EVENT = true
 		CURRENT_EVENT_FLAG = "[OTDL]"
+
+		// wait user input in regular prompt system
+		for PROCESSING_EVENT {
+			time.Sleep(time.Millisecond * 500)
+		}
+
+		fmt.Print("\nSaving file to the folder : " + filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien") + "\n\n>> ")
+
+		// let the backend process and suppress the event file
+		time.Sleep(1 * time.Second)
+	}
+
+	callbacks["[MOTDL]"] = func(context string) {
+		// simulate new prompt as the real one is displayed before the text
+		fmt.Print("\n" + context + "\n\n>> ")
+
+		// don't give back response, as it is handled by the regular prompt-loop
+		PROCESSING_EVENT = true
+		CURRENT_EVENT_FLAG = "[MOTDL]"
 
 		// wait user input in regular prompt system
 		for PROCESSING_EVENT {

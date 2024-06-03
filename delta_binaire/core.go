@@ -184,6 +184,7 @@ func (delta Delta) PatchFile() {
 			// convert int8 to byte
 			// all this shit is needed as a byte is unsigned in go
 			// and signed in java
+
 			for _, v := range delta.Instructions[i].Data {
 				_, err = file_writer.Write([]byte{byte(v)})
 				if err != nil {
