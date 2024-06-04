@@ -6,7 +6,16 @@ import (
 	"path/filepath"
 	"qsync/globals"
 	"time"
+
+	"github.com/gen2brain/beeep"
 )
+
+func NotifyDesktop(msg string) {
+	err := beeep.Alert("Qsync", msg, "assets/warning.png")
+	if err != nil {
+		panic(err)
+	}
+}
 
 // IF THE BACKEND IS MULTITHREADED, DO NOT CLOSE APP BEFORE THE USER INPUT HAS BEEN
 // PROCESSED BY BACKEND, THIS FUNCTION DOES NOT MAKES SURE OF IT

@@ -86,7 +86,12 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 			log.Fatal("Erreur dans la lecture du fichier : ", err)
 		}
 
-		var old_file_buff byte
+		//log.Println("reading byte : ", new_file_buff)
+
+		// initialize to a non-zero value as some files actually need zeros in them
+		// and comparing it to non-initialized buffer would act as if the old file already
+		// had zeros
+		var old_file_buff byte = 0xff
 
 		if i < old_file_size {
 			old_file_buff, err = old_file_reader.ReadByte()

@@ -500,7 +500,8 @@ func DisplayMenu() {
 ## INFOS DE COMPILATION ET AUTRES BUGS GOLANG
 - gomobile n'aime pas les passages par valeur de structures
 - gomobile n'aime pas les slice
-- j'abandonne gomobile c'est plus simple de tout réécrire en kotlin
+- j'abandonne gomobile c'est plus simple de tout réécrire en java
+- bordel de merde les parser de json sont lent de fou, j'ai du utiliser ma propre serialisation de données
 
 
 
@@ -514,6 +515,8 @@ TODO
 
 - tester l'ajout/suppression/lancement des applications
 
+- /!\ voir pourquoi les archives zip sont-elles corrompues ?? (l'erreur vient sans doute de la fabrication du delta)
+
 
 POUR L'APP :
 - Pour l'app : Fix le fichier qui s'ouvre mal avec la popup
@@ -522,6 +525,8 @@ POUR L'APP :
 - Probleme, dans la bdd la colonne receiving_update de linked_devices est remplie de null;null;null;null;null;
 - Crash à l'envoi des fichiers à créer (des 2 cotés).
 - fix les fichiers dans le zip de multilargage qui sont vides
+
+
 
 
 - POUR PC ET ANDROID :

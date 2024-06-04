@@ -138,6 +138,7 @@ func ConnectToDevice(conn net.Conn) {
 		// and same secure_id
 		log.Println("Initializing env to welcome the other end folder content")
 		acces.SecureId = secure_id
+
 		path := backend_api.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
 		log.Println("Future sync will be stored at : ", path)
 		acces.CreateSyncFromOtherEnd(path, secure_id)
@@ -478,6 +479,8 @@ func BuildSetupQueue(secure_id string, device_id string) {
 func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	// makes sure we are not given a path for some reasons
 	file_name := filepath.Base(data.Delta.FilePath)
+
+	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
 	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"File would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n")+"  [y/N]")
 	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
@@ -504,6 +507,8 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 	// makes sure we are not given a path for some reasons
 	file_name := filepath.Base(data.Delta.FilePath)
+
+	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
 	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"File would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n")+"  [y/N]")
 	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
