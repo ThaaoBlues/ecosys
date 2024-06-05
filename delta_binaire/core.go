@@ -43,6 +43,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	}
 
 	new_file_size := new_file_stat.Size()
+	log.Println("New file size : ", new_file_size)
 
 	var needs_truncature bool = false
 	if old_file_size > new_file_size {
@@ -84,9 +85,10 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 		if new_err != nil {
 			log.Fatal("Erreur dans la lecture du fichier : ", err)
+
 		}
 
-		//log.Println("reading byte : ", new_file_buff)
+		//log.Println(new_file_buff, int8(new_file_buff))
 
 		// initialize to a non-zero value as some files actually need zeros in them
 		// and comparing it to non-initialized buffer would act as if the old file already
@@ -109,7 +111,15 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 			byte_index_cond = (file_delta[delta_index].ByteIndex != blocking_byte_index)
 		}
 
-		if (new_file_buff != old_file_buff) && (byte_index_cond) {
+		// the comparison does not work if old file is at EOF
+		// because old_file_buff will always be 0xff
+		// so it would skip all the 255 byte
+		// so to counter that we must double check
+
+		if ((new_file_buff != old_file_buff && (i < old_file_size)) || (i >= old_file_size)) && (byte_index_cond) {
+			/*if new_file_buff == 0xff {
+				log.Println("255 !!! :: cast = ", int8(new_file_buff))
+			}*/
 			inst := Delta_instruction{
 				Data:            []int8{int8(new_file_buff)},
 				InstructionType: "ab",
@@ -122,9 +132,10 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 		} else {
 			// continue to fill bytes to delta instruction
-			if new_file_buff != old_file_buff {
+			if (new_file_buff != old_file_buff && i < old_file_size) || (i >= old_file_size) {
 
 				// add the byte we've just read to the data of the delta chunk
+
 				file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff))
 
 				// don't forget to increment byte index
@@ -195,6 +206,7 @@ func (delta Delta) PatchFile() {
 			// and signed in java
 
 			for _, v := range delta.Instructions[i].Data {
+				//log.Println(v, byte(v))
 				_, err = file_writer.Write([]byte{byte(v)})
 				if err != nil {
 					log.Fatal(err)
