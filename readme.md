@@ -515,9 +515,6 @@ TODO
 
 - tester l'ajout/suppression/lancement des applications
 
-- /!\ voir pourquoi les archives zip sont-elles corrompues ?? (l'erreur vient sans doute de la fabrication du delta)
-- Les 0xff (255) convetis en -1 (int signé) sont écrit dans l'insctruction comme des 0
-
 
 POUR L'APP :
 - Pour l'app : Fix le fichier qui s'ouvre mal avec la popup
