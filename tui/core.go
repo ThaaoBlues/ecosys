@@ -233,8 +233,8 @@ func HandleMenuQuery(query string) {
 		}
 
 		// zipping folder content to send it via largage aerien
-		filepath := "multilargage.zip"
-		err = globals.ZipFolder(folder_path, filepath)
+		filepath := "multilargage.tar"
+		err = globals.TarFolder(folder_path, filepath)
 
 		if err != nil {
 			log.Fatal("Error while zipping folder ", err)

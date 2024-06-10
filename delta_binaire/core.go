@@ -116,7 +116,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 		// so it would skip all the 255 byte
 		// so to counter that we must double check
 
-		if ((new_file_buff != old_file_buff && (i < old_file_size)) || (i >= old_file_size)) && (byte_index_cond) {
+		if ((new_file_buff != old_file_buff) || (i >= old_file_size)) && (byte_index_cond) {
 			/*if new_file_buff == 0xff {
 				log.Println("255 !!! :: cast = ", int8(new_file_buff))
 			}*/
@@ -132,7 +132,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 		} else {
 			// continue to fill bytes to delta instruction
-			if (new_file_buff != old_file_buff && i < old_file_size) || (i >= old_file_size) {
+			if (new_file_buff != old_file_buff) || (i >= old_file_size) {
 
 				// add the byte we've just read to the data of the delta chunk
 

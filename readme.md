@@ -522,13 +522,18 @@ POUR L'APP :
 - Pour l'app : Faire les synchronisations
 - Probleme, dans la bdd la colonne receiving_update de linked_devices est remplie de null;null;null;null;null;
 - Crash à l'envoi des fichiers à créer (des 2 cotés).
-- fix les fichiers dans le zip de multilargage qui sont vides
-
+- Pour les applis, ce sera juste une liste 
+- quand on appuis on a une liste d'options (installer, lier à un appareil, )
+- Pour 
 
 
 
 - POUR PC ET ANDROID :
 	- faire un nettoyage des nlock, btf et autres lors du démarrage
+	- finir les synchronisations
+	- faire les applications
+	- Faire un champ 'nom' pour les synchronisations comme ça on affiche le nom de la synchro à la place du chemin + on peut la renommer (dans les options sur android et à l'initialisation sur pc)
+	- faire en sorte que l'app donne son nom à la synchronisation
 
 
 

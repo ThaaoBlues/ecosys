@@ -13,6 +13,8 @@ import (
 	"qsync/globals"
 	"strings"
 	"time"
+
+	"github.com/skratchdot/open-golang/open"
 )
 
 const HEADER_LENGTH int = 83
@@ -170,11 +172,9 @@ func ConnectToDevice(conn net.Conn) {
 		go HandleLargageAerien(data, conn.RemoteAddr().String())
 
 	case "[MOTDL]":
-		/*data.Delta.FilePath = filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", data.FilePath)
-		data.Delta.PatchFile()
-		log.Println("Finished writing zip file")*/
+
 		// goroutine because it will later ask and wait approval for the user
-		go HandleLargageAerien(data, conn.RemoteAddr().String())
+		go HandleMultipleLargageAerien(data, conn.RemoteAddr().String())
 
 	default:
 
@@ -481,7 +481,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	file_name := filepath.Base(data.Delta.FilePath)
 
 	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
-	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"File would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n")+"  [y/N]")
+	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n")+"  [y/N]")
 	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
 		ex, err := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
@@ -500,6 +500,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 
 		// write the file. As this is probably a full file, the binary delta is just the file content
 		data.Delta.PatchFile()
+		open.Run(data.Delta.FilePath)
 
 	}
 }
@@ -509,7 +510,7 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 	file_name := filepath.Base(data.Delta.FilePath)
 
 	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
-	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"File would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n")+"  [y/N]")
+	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n")+"  [y/N]")
 	if user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
 		ex, err := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
@@ -528,6 +529,16 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 
 		// write the file. As this is probably a full file, the binary delta is just the file content
 		data.Delta.PatchFile()
+
+		//unpacking tar file in a randomly generated folder with date
+		now := time.Now()
+		date_str := now.Format("2006-01-02-15h04min-05s")
+
+		folder_name := file_name + "_" + date_str
+		folder_path := filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", folder_name)
+		globals.UntarFolder(data.Delta.FilePath, folder_path)
+
+		open.Run(folder_path)
 
 	}
 }
