@@ -286,14 +286,18 @@ func DisplayMenu() {
 	callbacks["[CHOOSELINKPATH]"] = func(context string) {
 		// simulate new prompt as the real one is displayed before the text
 		fmt.Print("\n" + context + "\n\n>> ")
-		// don't give back response, as it is handled by the regular prompt-loop
-		PROCESSING_EVENT = true
+
+		// here we do not need to override regular tui prompt as we open file explorer
+
 		CURRENT_EVENT_FLAG = "[CHOOSELINKPATH]"
 
-		// wait user input in regular prompt system
-		for PROCESSING_EVENT {
-			time.Sleep(time.Millisecond * 500)
+		path, err := dialog.Directory().Title("Select Folder").Browse()
+		if err != nil {
+			fmt.Println("Folder selection cancelled.")
+			return
 		}
+
+		backend_api.GiveInput(CURRENT_EVENT_FLAG, path)
 
 		// let the backend process and suppress the event file
 

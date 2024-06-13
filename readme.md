@@ -41,6 +41,8 @@ NeedsFormat is a flag telling qsync to replace some parts of the application pat
 > Path separator must be "/"
 
 ## QSync "tout en un" :
+
+### On PC :
 "Tout en un" is the ultimate integration with qsync, you can develop your app and integrate qsync capabilities to sync all the data you want across the user's devices.
 This is really simple, all the files you want to be synchronised must be within the folder specified by the json description of your app, you are free to use it to do whatever you want. Publish your app on our store and QSync will take care of the rest.
 
@@ -89,7 +91,25 @@ examples :
 		"AppIconURL" : "https://example.com/logo300x300.png"
     }
 
+		{
+        "AppName": "AndroidApp",
+        "AppDownloadUrl": "https://play.google.com/",
+        "NeedsInstaller": false,
+        "AppLauncherPath": "com.myapp.androidapp",
+        "AppInstallerPath": "",
+        "AppUninstallerPath": "",
+        "AppSyncDataFolderPath": "android content provider",
+		"AppDescription" : "An example of Android app using Qsync.",
+		"AppIconURL" : "https://example.com/logo300x300.png"
+    }
+
 ```
+
+
+### On android :
+We use ContentProviders to let apps modify content on their assigned folder in the Qsync private directory.
+We list qsync friendly apps on a specific tab in the Qsync app, clicking on it will open its play store page or open the app if already installed.
+Apps are listed as normal synchronisations, just the name is the app's name and the string "(application)" is present to let the user know that this is a sync task used by an app. 
 
 
 #### THOSE ARE RELATIVE PATH : DO NOT PUT YOUR APP FOLDER NAME, JUST PUT ANYTHING BELOW YOUR APP'S ROOT
@@ -106,7 +126,16 @@ If the user do not want to receive it, nothing is wrote as the file is kept in R
 The flag used for the event is "[OTDL]"
 
 ### Multiples largages aeriens 
-Like the usual "Largage Aeriens" but under the flag [MOTDL] and will be unzipped at the end.
+Like the usual "Largage Aeriens" but to send a whole folder under the flag [MOTDL] and will be untar at the end.
+
+
+## Backup mode
+You can activate a backup mode to any synchronisation, it will allow you to delete anything subject to the said synchronisation on your device without the deletion being recorded and sent to others devices.
+It is usefull for cases like backing up your pictures and save space on your smartphone.
+
+
+
+
 
 
 ## base de données
@@ -522,9 +551,11 @@ POUR L'APP :
 - Pour l'app : Faire les synchronisations
 - Probleme, dans la bdd la colonne receiving_update de linked_devices est remplie de null;null;null;null;null;
 - Crash à l'envoi des fichiers à créer (des 2 cotés).
-- Pour les applis, ce sera juste une liste 
-- quand on appuis on a une liste d'options (installer, lier à un appareil, )
-- Pour 
+- lors de la serialisation d'un zip de 14Mo : java.lang.OutOfMemoryError: Failed to allocate a 105539016 byte allocation with 25165824 free bytes and 63MB until OOM 
+La serialisation a une fuite de mémoire ??????
+
+- Pour les applis, ce sera juste une liste d'apps
+- quand on appuis on a une liste d'options (installer (play store), ouvrir, lier à un appareil)
 
 
 
@@ -532,9 +563,11 @@ POUR L'APP :
 	- faire un nettoyage des nlock, btf et autres lors du démarrage
 	- finir les synchronisations
 	- faire les applications
-	- Faire un champ 'nom' pour les synchronisations comme ça on affiche le nom de la synchro à la place du chemin + on peut la renommer (dans les options sur android et à l'initialisation sur pc)
-	- faire en sorte que l'app donne son nom à la synchronisation
-
+	- faire une fonction 'isApp(string secure_id)'
+	- champ si la synchronisation est une application dans le record SyncInfos
+	- afficher si la synchro est une app ou une synchro normale
+	- faire 
+	- faire un mode backup qui met un .bkp et autorise l'utilisateur à supprimer des trucs sans que la suppression ne s'étende aux autres appareils ou soit enregistrée
 
 
 

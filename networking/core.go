@@ -155,13 +155,11 @@ func ConnectToDevice(conn net.Conn) {
 
 		queue.Add(event)
 
-		// not used list of device_id
+		// list of device_id used to set network lock
 		var dummy_device globals.GenArray[string]
-		// it still needs to have the size of the number of ip addresses we want to use
-		// so we add the device ip addr as placeholder
-		dummy_device.Add(conn.RemoteAddr().String())
+
+		dummy_device.Add(device_id)
 		SendDeviceEventQueueOverNetwork(dummy_device, secure_id, queue, strings.Split(conn.RemoteAddr().String(), ":")[0])
-		SetEventNetworkLockForDevice(device_id, true)
 
 	case "[UNLINK_DEVICE]":
 		acces.UnlinkDevice(device_id)
@@ -317,7 +315,7 @@ func SetEventNetworkLockForDevice(device_id string, value bool) {
 	} else {
 
 		err := os.Remove(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
-
+		log.Println("removing network lock after sending event")
 		if err != nil {
 			log.Fatal("Error while removing a network lock file in SetEventNetworkLockForDevice() : ", err)
 		}
@@ -426,6 +424,9 @@ func BuildSetupQueue(secure_id string, device_id string) {
 
 	var queue globals.GenArray[globals.QEvent]
 
+	var devices globals.GenArray[string]
+	devices.Add(device_id)
+
 	err := filepath.Walk(rootPath, func(absolute_path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Fatal("Error accessing path:", absolute_path, err)
@@ -460,15 +461,15 @@ func BuildSetupQueue(secure_id string, device_id string) {
 				queue.Add(event)
 			}
 
+			// We must send events one by one even if it is Network-heavy to not
+			// overflow the ram when multiple files are in the folder
+			SendDeviceEventQueueOverNetwork(devices, acces.SecureId, queue)
+			queue.PopLast()
+
 		}
 
 		return nil
 	})
-
-	//log.Println("setup event queue : ", queue)
-	var devices globals.GenArray[string]
-	devices.Add(device_id)
-	SendDeviceEventQueueOverNetwork(devices, acces.SecureId, queue)
 
 	if err != nil {
 		log.Fatal(err)
