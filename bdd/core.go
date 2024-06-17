@@ -388,16 +388,10 @@ func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 
 		acces.IncrementFileVersion(path)
 
-		// convert detla to json
-		json_data, err := json.Marshal(delta)
+		// convert detla to a serialized representation
+		//and add line in delta table
 
-		if err != nil {
-			log.Fatal("Error while creating json object from delta type : ", err)
-		}
-
-		// add line in delta table
-
-		_, err = acces.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", path, new_version_id, json_data, acces.SecureId)
+		_, err := acces.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", path, new_version_id, delta.Serialize(), acces.SecureId)
 
 		if err != nil {
 			log.Fatal("Error while storing binary delta in database : ", err)
@@ -1169,7 +1163,8 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 
 		event.Flag = MODTYPES_REVERSE[mod_type]
 
-		json.Unmarshal(delta_bytes, &delta)
+		delta.DeSerialize(delta_bytes)
+
 		event.SecureId = secure_id
 		event.FileType = file_type
 		event.FilePath = filepath
@@ -1389,15 +1384,15 @@ func (acces *AccesBdd) SwitchLargageAerienAllowingState() bool {
 	return ret
 }
 
-func (acces *AccesBdd) RemoveDeviceFromNetworkMap(deviceID, ipAddr string) {
-	_, err := acces.db_handler.Exec("DELETE FROM reseau WHERE device_id=? AND ip_addr=?", deviceID, ipAddr)
+func (acces *AccesBdd) RemoveDeviceFromNetworkMap(device_id, ip_addr string) {
+	_, err := acces.db_handler.Exec("DELETE FROM reseau WHERE device_id=? AND ip_addr=?", device_id, ip_addr)
 	if err != nil {
 		log.Fatal("Error while executing query in RemoveDeviceFromNetworkMap(): ", err)
 	}
 }
 
-func (acces *AccesBdd) AddDeviceToNetworkMap(deviceID, ipAddr, hostname string) {
-	_, err := acces.db_handler.Exec("INSERT INTO reseau(device_id, ip_addr, hostname) VALUES(?, ?, ?)", deviceID, ipAddr, hostname)
+func (acces *AccesBdd) AddDeviceToNetworkMap(device_id, ip_addr, hostname string) {
+	_, err := acces.db_handler.Exec("INSERT INTO reseau(device_id, ip_addr, hostname) VALUES(?, ?, ?)", device_id, ip_addr, hostname)
 	if err != nil {
 		log.Fatal("Error while executing query in AddDeviceToNetworkMap(): ", err)
 	}

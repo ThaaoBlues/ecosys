@@ -37,6 +37,7 @@ func (zcs *ZeroConfService) Browse() {
 
 		new_device := new_connected_devices.Get(i)
 		if !acces.IsDeviceOnNetworkMap(new_device["ip_addr"]) {
+			log.Println("device id : ", new_device["device_id"])
 			acces.AddDeviceToNetworkMap(new_device["device_id"], new_device["ip_addr"], new_device["host"])
 		}
 
@@ -132,11 +133,21 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 	entriesCh := make(chan *mdns.ServiceEntry, 4)
 	go func() {
 		for entry := range entriesCh {
+
 			dev := make(map[string]string, 0)
+
 			dev["host"] = entry.Host + "local"
 			dev["ip_addr"] = entry.AddrV4.String()
-			dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
-			dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
+			// as the order of the supplementary fields seem to vary from
+			// a service implementation to another
+			if strings.Split(entry.InfoFields[0], "=")[0] == "version" {
+				dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
+				dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
+			} else {
+				dev["version"] = strings.Split(entry.InfoFields[1], "=")[1]
+				dev["device_id"] = strings.Split(entry.InfoFields[0], "=")[1]
+			}
+
 			devices_list.Add(dev)
 
 		}

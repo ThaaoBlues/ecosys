@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type Delta_instruction struct {
@@ -217,6 +219,59 @@ func (delta Delta) PatchFile() {
 			file_handler.Truncate(delta.Instructions[i].ByteIndex)
 		}
 
+	}
+
+}
+
+func (delta Delta) Serialize() string {
+	instructions := make([]strings.Builder, len(delta.Instructions))
+	var instructions_joiner strings.Builder
+
+	for i, instruction := range delta.Instructions {
+
+		instructions[i].WriteString(instruction.InstructionType)
+		instructions[i].WriteString(",")
+		for _, data := range instruction.Data {
+			instructions[i].WriteString(strconv.Itoa(int(data)))
+			instructions[i].WriteString(",")
+		}
+		instructions[i].WriteString(strconv.FormatInt(instruction.ByteIndex, 10))
+
+		instructions_joiner.WriteString(instructions[i].String())
+
+		// so it does not append a commas at the end of the string
+		if i < (len(delta.Instructions) - 1) {
+			instructions_joiner.WriteString("|")
+		}
+	}
+
+	return instructions_joiner.String()
+}
+
+func (delta Delta) DeSerialize(instructions_string []byte) {
+	instructionParts := bytes.Split(instructions_string, []byte("|"))
+
+	delta.Instructions = make([]Delta_instruction, len(instructionParts))
+
+	for i, instructionStr := range instructionParts {
+
+		instructionData := bytes.Split(instructionStr, []byte(","))
+
+		dataInts := make([]int8, len(instructionData)-2)
+
+		for j := 1; j < len(instructionData)-1; j++ {
+
+			tmp, _ := strconv.Atoi(string(instructionData[j]))
+			dataInts[j-1] = int8(tmp)
+		}
+
+		byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
+
+		delta.Instructions[i] = Delta_instruction{
+			InstructionType: string(instructionData[0]),
+			Data:            dataInts,
+			ByteIndex:       byteIndex,
+		}
 	}
 
 }

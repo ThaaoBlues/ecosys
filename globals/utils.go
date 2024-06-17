@@ -3,6 +3,7 @@ package globals
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"io"
@@ -27,18 +28,32 @@ func Exists(path string) (bool, error) {
 }
 
 func SerializeQevent(event QEvent) string {
-	instructions := make([]string, len(event.Delta.Instructions))
+
+	instructions := make([]strings.Builder, len(event.Delta.Instructions))
+	var instructions_joiner strings.Builder
+
 	for i, instruction := range event.Delta.Instructions {
-		dataStr := make([]string, len(instruction.Data))
-		for j, data := range instruction.Data {
-			dataStr[j] = strconv.Itoa(int(data))
+
+		instructions[i].WriteString(instruction.InstructionType)
+		instructions[i].WriteString(",")
+		for _, data := range instruction.Data {
+			instructions[i].WriteString(strconv.Itoa(int(data)))
+			instructions[i].WriteString(",")
 		}
-		instructions[i] = instruction.InstructionType + "," + strings.Join(dataStr, ",") + "," + strconv.FormatInt(instruction.ByteIndex, 10)
+		instructions[i].WriteString(strconv.FormatInt(instruction.ByteIndex, 10))
+
+		instructions_joiner.WriteString(instructions[i].String())
+
+		// so it does not append a commas at the end of the string
+		if i < (len(event.Delta.Instructions) - 1) {
+			instructions_joiner.WriteString("|")
+		}
 	}
+
 	return fmt.Sprintf("%s;%s;%s;%s;%s;%s;%s",
 		event.Flag,
 		event.FileType,
-		strings.Join(instructions, "|"),
+		instructions_joiner.String(),
 		event.Delta.FilePath,
 		event.FilePath,
 		event.NewFilePath,
@@ -47,41 +62,50 @@ func SerializeQevent(event QEvent) string {
 }
 
 func DeSerializeQevent(data string) QEvent {
-	parts := strings.Split(data, ";")
-
+	parts := bytes.Split(bytes.NewBufferString(data).Bytes(), []byte(";"))
 	// check if instructions are present, as some requests does not needs it
 	if len(parts[2]) > 1 {
-		instructionParts := strings.Split(parts[2], "|")
+
+		instructionParts := bytes.Split(parts[2], []byte("|"))
+
 		instructions := make([]delta_binaire.Delta_instruction, len(instructionParts))
+
 		for i, instructionStr := range instructionParts {
-			instructionData := strings.Split(instructionStr, ",")
+
+			instructionData := bytes.Split(instructionStr, []byte(","))
+
 			dataInts := make([]int8, len(instructionData)-2)
+
 			for j := 1; j < len(instructionData)-1; j++ {
-				val, _ := strconv.Atoi(instructionData[j])
-				dataInts[j-1] = int8(val)
+
+				tmp, _ := strconv.Atoi(string(instructionData[j]))
+				dataInts[j-1] = int8(tmp)
 			}
-			byteIndex, _ := strconv.ParseInt(instructionData[len(instructionData)-1], 10, 64)
+
+			byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
+
 			instructions[i] = delta_binaire.Delta_instruction{
-				InstructionType: instructionData[0],
+				InstructionType: string(instructionData[0]),
 				Data:            dataInts,
 				ByteIndex:       byteIndex,
 			}
+
 		}
 		return QEvent{
-			Flag:        parts[0],
-			FileType:    parts[1],
-			Delta:       delta_binaire.Delta{Instructions: instructions, FilePath: parts[3]},
-			FilePath:    parts[4],
-			NewFilePath: parts[5],
-			SecureId:    parts[6],
+			Flag:        string(parts[0]),
+			FileType:    string(parts[1]),
+			Delta:       delta_binaire.Delta{Instructions: instructions, FilePath: string(parts[3])},
+			FilePath:    string(parts[4]),
+			NewFilePath: string(parts[5]),
+			SecureId:    string(parts[6]),
 		}
 	} else {
 		return QEvent{
-			Flag:        parts[0],
-			FileType:    parts[1],
-			FilePath:    parts[4],
-			NewFilePath: parts[5],
-			SecureId:    parts[6],
+			Flag:        string(parts[0]),
+			FileType:    string(parts[1]),
+			FilePath:    string(parts[4]),
+			NewFilePath: string(parts[5]),
+			SecureId:    string(parts[6]),
 		}
 
 	}
