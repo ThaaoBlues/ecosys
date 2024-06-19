@@ -22,6 +22,24 @@ type Delta struct {
 	FilePath     string
 }
 
+func calculateBufferSize(file_size int64) int {
+	// do not make chunk of more than 10Mb
+	// we stop when we have a chunk size
+	// that is the maximum one
+	// that can still fit 2 times in the file
+
+	var c int = 1
+	if file_size > 10<<10 {
+		c = 10 << 10
+	} else {
+		for (c <= 10<<10) && (c < (int(file_size) >> 2)) {
+			c = c << 1
+		}
+	}
+
+	return c
+}
+
 func BuilDelta(relative_path string, absolute_path string, old_file_size int64, old_file_content []byte) Delta {
 
 	new_file_handler, err := os.Open(absolute_path)
@@ -55,7 +73,10 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 	new_file_reader := bufio.NewReader(new_file_handler)
 
-	var new_file_buff = make([]byte, 1024)
+	var BUFF_SIZE int = calculateBufferSize(new_file_size)
+	log.Println("Calculated adapted buffer size : ", BUFF_SIZE, " bytes")
+
+	var new_file_buff = make([]byte, BUFF_SIZE)
 
 	var file_delta []Delta_instruction
 
