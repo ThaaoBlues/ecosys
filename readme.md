@@ -549,10 +549,7 @@ POUR L'APP :
 - Pour l'app : Fix le fichier qui s'ouvre mal avec la popup
 
 - Pour l'app : Faire les synchronisations
-- Probleme, dans la bdd la colonne receiving_update de linked_devices est remplie de null;null;null;null;null;
-- Crash à l'envoi des fichiers à créer (des 2 cotés).
-- lors de la serialisation d'un zip de 14Mo : java.lang.OutOfMemoryError: Failed to allocate a 105539016 byte allocation with 25165824 free bytes and 63MB until OOM 
-La serialisation a une fuite de mémoire ??????
+
 
 - Pour les applis, ce sera juste une liste d'apps
 - quand on appuis on a une liste d'options (installer (play store), ouvrir, lier à un appareil)
@@ -568,7 +565,7 @@ La serialisation a une fuite de mémoire ??????
 	- afficher si la synchro est une app ou une synchro normale
 	- faire 
 	- faire un mode backup qui met un .bkp et autorise l'utilisateur à supprimer des trucs sans que la suppression ne s'étende aux autres appareils ou soit enregistrée
-
+	- METTRE UNE TAILLE DE BUFFER RELATIVE A new_file_size
 
 
 

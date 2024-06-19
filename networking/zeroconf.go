@@ -37,7 +37,6 @@ func (zcs *ZeroConfService) Browse() {
 
 		new_device := new_connected_devices.Get(i)
 		if !acces.IsDeviceOnNetworkMap(new_device["ip_addr"]) {
-			log.Println("device id : ", new_device["device_id"])
 			acces.AddDeviceToNetworkMap(new_device["device_id"], new_device["ip_addr"], new_device["host"])
 		}
 

@@ -67,3 +67,7 @@ func (array *GenArray[T]) PopLast() {
 func (array *GenArray[T]) Size() int {
 	return len(array.items)
 }
+
+func (array *GenArray[T]) ToSlice() []T {
+	return array.items
+}

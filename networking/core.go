@@ -1,6 +1,7 @@
 package networking
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"net"
@@ -54,6 +55,7 @@ func ConnectToDevice(conn net.Conn) {
 		_, err := conn.Read(padding_buff)
 		if err != nil {
 			log.Println("Error in ConnectToDevice() while reading header, request must be malformed.")
+			return
 		}
 	}
 
@@ -95,26 +97,23 @@ func ConnectToDevice(conn net.Conn) {
 	}
 
 	// read the body of the request and store it in a buffer
-	var body_buff []byte
 
 	// append the first char of the event flag as the header shift got it erased
 	// OUI C'EST DU BRICOLAGE OKAY
-	body_buff = append([]byte("["), body_buff...)
-	for {
-		buffer := make([]byte, 1024) // You can adjust the buffer size as needed
-		n, err := conn.Read(buffer)
-		if err != nil {
-			if err != io.EOF {
-				log.Fatal("Error in ConnectToDevice() while reading body:", err)
-			}
-			break
+	init := []byte("[")
+	body_buff := bytes.NewBuffer(init)
+
+	_, err = body_buff.ReadFrom(conn)
+	if err != nil {
+		if err != io.EOF {
+			log.Fatal("Error in ConnectToDevice() while reading body:", err)
 		}
-		body_buff = append(body_buff, buffer[:n]...)
+		//break
 	}
 
 	//log.Println("Request body : ", string(body_buff))
 
-	var data globals.QEvent = globals.DeSerializeQevent(string(body_buff))
+	var data globals.QEvent = globals.DeSerializeQevent(body_buff.String())
 
 	// check if this is a regular file event of a special request
 	//log.Println("DECODED EVENT : ", data)
@@ -177,7 +176,7 @@ func ConnectToDevice(conn net.Conn) {
 	default:
 
 		// regular file event
-		HandleEvent(secure_id, device_id, body_buff)
+		HandleEvent(secure_id, device_id, data)
 		// send back a modification confirmation, so the other end can remove this machine device_id
 		// from concerned sync task retard entries
 		buff := []byte(acces.GetMyDeviceId() + ";" + acces.SecureId + ";" + "[MODIFICATION_DONE]")
@@ -187,9 +186,7 @@ func ConnectToDevice(conn net.Conn) {
 }
 
 // used to process a request when it is a regular file event
-func HandleEvent(secure_id string, device_id string, buffer []byte) {
-
-	event := globals.DeSerializeQevent(string(buffer))
+func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 
 	// first, we lock the filesystem watcher so it don't notify the changes we are doing
 	// as it would do a ping-pong effect

@@ -53,10 +53,9 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	}
 	log.Println("needs truncature : ", needs_truncature)
 
-	old_file_reader := bufio.NewReader(bytes.NewReader(old_file_content))
 	new_file_reader := bufio.NewReader(new_file_handler)
 
-	var new_file_buff byte
+	var new_file_buff = make([]byte, 1024)
 
 	var file_delta []Delta_instruction
 
@@ -69,21 +68,13 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	// errors related to files manipulations
 	var new_err error
 
-	var i int64 = 0
+	var global_index int64 = 0
 	log.Println("old file size : ", old_file_size)
 	log.Println("old file content : ", old_file_content)
-	for (i < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
 
-		new_file_buff, new_err = new_file_reader.ReadByte()
-		//log.Println("byte read : ", new_file_buff)
+	for (global_index < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
 
-		// zip files contains 0 so we don't need this
-		// NOT USED ANYMORE
-		/*if new_file_buff == 0 {
-
-			new_err = io.EOF
-			break
-		}*/
+		new_buff_fill_size, new_err := new_file_reader.Read(new_file_buff)
 
 		if new_err != nil {
 			log.Fatal("Erreur dans la lecture du fichier : ", err)
@@ -92,65 +83,63 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 		//log.Println(new_file_buff, int8(new_file_buff))
 
-		// initialize to a non-zero value as some files actually need zeros in them
-		// and comparing it to non-initialized buffer would act as if the old file already
-		// had zeros
-		var old_file_buff byte = 0xff
-
-		if i < old_file_size {
-			old_file_buff, err = old_file_reader.ReadByte()
-			if err != nil {
-				log.Fatal("Erreur dans la lecture du fichier : ", err)
-			}
-		}
-
 		// new delta instruction
+		// we are looping throught the newly read block
+		for new_buff_index := 0; new_buff_index < new_buff_fill_size; new_buff_index++ {
 
-		var delta_index int = 0
-		var byte_index_cond bool = true
-		if len(file_delta) > 0 {
-			delta_index = len(file_delta) - 1
-			byte_index_cond = (file_delta[delta_index].ByteIndex != blocking_byte_index)
-		}
-
-		// the comparison does not work if old file is at EOF
-		// because old_file_buff will always be 0xff
-		// so it would skip all the 255 byte
-		// so to counter that we must double check
-
-		if ((new_file_buff != old_file_buff) || (i >= old_file_size)) && (byte_index_cond) {
-			/*if new_file_buff == 0xff {
-				log.Println("255 !!! :: cast = ", int8(new_file_buff))
-			}*/
-			inst := Delta_instruction{
-				Data:            []int8{int8(new_file_buff)},
-				InstructionType: "ab",
-				ByteIndex:       byte_index,
+			var delta_index int = 0
+			var byte_index_cond bool = true
+			if len(file_delta) > 0 {
+				delta_index = len(file_delta) - 1
+				byte_index_cond = (file_delta[delta_index].ByteIndex != blocking_byte_index)
 			}
-			//log.Println("append : ", inst)
-			file_delta = append(file_delta, inst)
 
-			byte_index = byte_index + 1
+			// initialize to a non-zero value as some files actually need zeros in them
+			// and comparing it to non-initialized buffer would act as if the old file already
+			// had zeros
 
-		} else {
-			// continue to fill bytes to delta instruction
-			if (new_file_buff != old_file_buff) || (i >= old_file_size) {
+			// the comparison does not work if old file is at EOF
+			// because old_file_buff will always be 0xff
+			// so it would skip all the 255 byte
+			// so to counter that we must double check
 
-				// add the byte we've just read to the data of the delta chunk
+			var old_file_byte byte = 0xff
+			if global_index < old_file_size {
+				old_file_byte = old_file_content[global_index]
+			}
 
-				file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff))
-
-				// don't forget to increment byte index
-				byte_index = byte_index + 1
+			if ((new_file_buff[new_buff_index] != old_file_byte) || (global_index >= old_file_size)) && (byte_index_cond) {
+				/*if new_file_buff == 0xff {
+					log.Println("255 !!! :: cast = ", int8(new_file_buff))
+				}*/
+				inst := Delta_instruction{
+					Data:            []int8{int8(new_file_buff[new_buff_index])},
+					InstructionType: "ab",
+					ByteIndex:       byte_index,
+				}
+				//log.Println("append : ", inst)
+				file_delta = append(file_delta, inst)
 
 			} else {
-				// same bytes, regular case we just increment counters
-				byte_index = byte_index + 1
-				blocking_byte_index = byte_index
+				// continue to fill bytes to delta instruction
+				if (new_file_buff[new_buff_index] != old_file_byte) || global_index >= old_file_size {
+
+					// add the byte we've just read to the data of the delta chunk
+
+					file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff[new_buff_index]))
+
+					// don't forget to increment byte index
+
+				} else {
+					// same bytes, regular case we just increment counters
+					blocking_byte_index = byte_index
+				}
 			}
+
+			global_index++
 		}
 
-		i++
+		byte_index = byte_index + int64(new_buff_fill_size)
 
 	}
 
@@ -175,8 +164,6 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 		}
 
 	}
-
-	log.Println(file_delta)
 
 	return Delta{Instructions: file_delta, FilePath: relative_path}
 }
@@ -248,14 +235,26 @@ func (delta Delta) Serialize() string {
 	return instructions_joiner.String()
 }
 
-func (delta Delta) DeSerialize(instructions_string []byte) {
-	instructionParts := bytes.Split(instructions_string, []byte("|"))
+func (delta *Delta) DeSerialize(instructions_string []byte) {
+	delta.Instructions = make([]Delta_instruction, 0)
+	var block_index int = 0
+	var i int = 0
+	for i < len(instructions_string) {
 
-	delta.Instructions = make([]Delta_instruction, len(instructionParts))
+		var block_builder strings.Builder
 
-	for i, instructionStr := range instructionParts {
+		for block_index < len(instructions_string) && instructions_string[block_index] != '|' {
+			block_builder.WriteByte(instructions_string[block_index])
+			block_index += 1
+		}
+		if block_builder.Len() == 0 {
+			break
+		}
+		// to skip the final "|" for the next block
+		block_index += 1
 
-		instructionData := bytes.Split(instructionStr, []byte(","))
+		instructionData := bytes.Split(bytes.NewBufferString(block_builder.String()).Bytes(), []byte(","))
+		//instructionData := block_builder.String()
 
 		dataInts := make([]int8, len(instructionData)-2)
 
@@ -267,11 +266,14 @@ func (delta Delta) DeSerialize(instructions_string []byte) {
 
 		byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
 
-		delta.Instructions[i] = Delta_instruction{
-			InstructionType: string(instructionData[0]),
-			Data:            dataInts,
-			ByteIndex:       byteIndex,
-		}
+		delta.Instructions = append(delta.Instructions,
+			Delta_instruction{
+				InstructionType: string(instructionData[0]),
+				Data:            dataInts,
+				ByteIndex:       byteIndex,
+			})
+
+		i += 1
 	}
 
 }

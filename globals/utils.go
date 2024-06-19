@@ -62,39 +62,19 @@ func SerializeQevent(event QEvent) string {
 }
 
 func DeSerializeQevent(data string) QEvent {
+	log.Println("splitting serialized event")
 	parts := bytes.Split(bytes.NewBufferString(data).Bytes(), []byte(";"))
+	log.Println("Event split")
 	// check if instructions are present, as some requests does not needs it
 	if len(parts[2]) > 1 {
 
-		instructionParts := bytes.Split(parts[2], []byte("|"))
-
-		instructions := make([]delta_binaire.Delta_instruction, len(instructionParts))
-
-		for i, instructionStr := range instructionParts {
-
-			instructionData := bytes.Split(instructionStr, []byte(","))
-
-			dataInts := make([]int8, len(instructionData)-2)
-
-			for j := 1; j < len(instructionData)-1; j++ {
-
-				tmp, _ := strconv.Atoi(string(instructionData[j]))
-				dataInts[j-1] = int8(tmp)
-			}
-
-			byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
-
-			instructions[i] = delta_binaire.Delta_instruction{
-				InstructionType: string(instructionData[0]),
-				Data:            dataInts,
-				ByteIndex:       byteIndex,
-			}
-
-		}
+		var delta delta_binaire.Delta
+		delta.DeSerialize(parts[2])
+		delta.FilePath = string(parts[3])
 		return QEvent{
 			Flag:        string(parts[0]),
 			FileType:    string(parts[1]),
-			Delta:       delta_binaire.Delta{Instructions: instructions, FilePath: string(parts[3])},
+			Delta:       delta,
 			FilePath:    string(parts[4]),
 			NewFilePath: string(parts[5]),
 			SecureId:    string(parts[6]),
