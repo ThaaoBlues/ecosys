@@ -28,7 +28,7 @@ func calculateBufferSize(file_size int64) int {
 	// that is the maximum one
 	// that can still fit 2 times in the file
 
-	var c int = 1
+	var c int = 10
 	if file_size > 10<<10 {
 		c = 10 << 10
 	} else {
