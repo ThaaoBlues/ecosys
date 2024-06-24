@@ -26,10 +26,11 @@ type AccesBdd struct {
 
 // SyncInfos represents synchronization information with a path and its secure ID.
 type SyncInfos struct {
-	Path     string
-	SecureId string
-	IsApp    bool
-	Name     string
+	Path       string
+	SecureId   string
+	IsApp      bool
+	Name       string
+	BackupMode bool
 }
 
 type LinkDevice struct {
@@ -89,7 +90,8 @@ func (acces *AccesBdd) InitConnection() {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		secure_id TEXT,
 		linked_devices_id TEXT DEFAULT "",
-		root TEXT
+		root TEXT,
+		backup_mode BOOLEAN DEFAULT 0
 	)`)
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
@@ -1112,7 +1114,7 @@ func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 	// used to get all sync task secure_id and root path listed
 	// returns a custom type containing the two values as string
 
-	rows, err := acces.db_handler.Query("SELECT secure_id,root FROM sync")
+	rows, err := acces.db_handler.Query("SELECT secure_id,root,backup_mode FROM sync")
 
 	if err != nil {
 		log.Fatal("Error while querying database from ListSyncAllTasks() : ", err)
@@ -1123,7 +1125,7 @@ func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 
 	for rows.Next() {
 		var info SyncInfos
-		rows.Scan(&info.SecureId, &info.Path)
+		rows.Scan(&info.SecureId, &info.Path, &info.BackupMode)
 
 		if acces.IsApp(info.SecureId) {
 			config := acces.GetAppConfig(info.SecureId)
@@ -1459,4 +1461,16 @@ func (acces *AccesBdd) CleanNetworkMap() {
 	if err != nil {
 		log.Fatal("Error while executing query in CleanNetworkMap(): ", err)
 	}
+}
+
+func (acces *AccesBdd) IsSyncInBackupMode() bool {
+	row := acces.db_handler.QueryRow("SELECT backup_mode FROM sync WHERE secure_id=?", acces.SecureId)
+	var bcp_mode bool = false
+	err := row.Scan(&bcp_mode)
+	if err != nil {
+		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
+	}
+
+	return bcp_mode
+
 }

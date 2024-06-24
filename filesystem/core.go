@@ -58,7 +58,11 @@ func StartWatcher(rootPath string) {
 				case event.Has(fsnotify.Write):
 					handleWriteEvent(&acces, event.Name, relative_path)
 				case event.Has(fsnotify.Remove):
-					handleRemoveEvent(&acces, event.Name, relative_path)
+					// backup mode allow to store files on another machine while
+					// still freeing up space on the device if we want
+					if !acces.IsSyncInBackupMode() {
+						handleRemoveEvent(&acces, event.Name, relative_path)
+					}
 				case event.Has(fsnotify.Rename):
 					handleRenameEvent(&acces, event.Name, relative_path)
 				default:
