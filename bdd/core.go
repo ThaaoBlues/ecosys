@@ -28,6 +28,8 @@ type AccesBdd struct {
 type SyncInfos struct {
 	Path     string
 	SecureId string
+	IsApp    bool
+	Name     string
 }
 
 type LinkDevice struct {
@@ -1122,11 +1124,25 @@ func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 	for rows.Next() {
 		var info SyncInfos
 		rows.Scan(&info.SecureId, &info.Path)
+
+		if acces.IsApp(info.SecureId) {
+			config := acces.GetAppConfig(info.SecureId)
+			info.Name = config.AppName
+			info.IsApp = true
+		}
 		list.Add(info)
 	}
 
 	return list
 
+}
+
+func (acces *AccesBdd) IsApp(secure_id string) bool {
+	// used to determine if a gived secure_id is associated with a sync task used by an application
+
+	_, err := acces.db_handler.Query("SELECT * FROM apps WHERE secure_id=?", secure_id)
+
+	return err != sql.ErrNoRows
 }
 
 func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*globals.GenArray[*globals.QEvent] {
@@ -1296,7 +1312,7 @@ func (acces *AccesBdd) AddToutEnUn(data *globals.ToutEnUnConfig) {
 }
 
 func (acces *AccesBdd) AddGrapin(data *globals.GrapinConfig) {
-	_, err := acces.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,uninstaller_path) VALUES(?,?,?,\"grapin\",secure_id,?)", data.AppName, "[GRAPIN]", 1, acces.SecureId, "[GRAPIN]")
+	_, err := acces.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"grapin\",?,?)", data.AppName, "[GRAPIN]", 1, acces.SecureId, "[GRAPIN]")
 
 	if err != nil {
 		log.Fatal("Error while updating database in AddGrapin() : ", err)
@@ -1329,11 +1345,11 @@ func (acces *AccesBdd) ListInstalledApps() globals.GenArray[*globals.MinGenConfi
 }
 
 // this function get details of a specifi app by its ID
-func (acces *AccesBdd) GetAppConfig(app_id int) globals.MinGenConfig {
+func (acces *AccesBdd) GetAppConfig(secure_id string) globals.MinGenConfig {
 
 	var config globals.MinGenConfig
 
-	row := acces.db_handler.QueryRow("SELECT name,id,path,type,uninstaller_peth FROM apps WHERE id=?", app_id)
+	row := acces.db_handler.QueryRow("SELECT name,id,path,type,uninstaller_path FROM apps WHERE secure_id=?", secure_id)
 
 	err := row.Scan(&config)
 	if (err != nil) && (err != sql.ErrNoRows) {
@@ -1345,9 +1361,9 @@ func (acces *AccesBdd) GetAppConfig(app_id int) globals.MinGenConfig {
 }
 
 // this function get details of a specifi app by its ID
-func (acces *AccesBdd) DeleteApp(app_id int) {
+func (acces *AccesBdd) DeleteApp(secure_id string) {
 
-	_, err := acces.db_handler.Exec("DELETE FROM apps WHERE id=?", app_id)
+	_, err := acces.db_handler.Exec("DELETE FROM apps WHERE secure_id=?", secure_id)
 
 	if (err != nil) && (err != sql.ErrNoRows) {
 		log.Fatal("Error while querying database in GetAppConfig() : ", err)

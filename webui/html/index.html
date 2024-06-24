@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QSync Web GUI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f3f3;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .menu {
+            display: flex;
+            flex-direction: line;
+            align-items: center;
+        }
+
+        .button-list {
+            margin-top: 5vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            border-radius: 15px;
+            width: 33vw;
+            float: left;
+            margin-left: 5vw;
+        }
+        .menu button, .button-list button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .cote-a-cote{
+            
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QSync Web GUI</h1>
+        <h1 id="no-internet-alert">No internet connection</h1>
+        <div class="menu">
+            <button onclick="startQSync()">Start QSync</button>
+            <button onclick="createSyncTask()">Create a Sync Task</button>
+            <button onclick="openMagasin()">Open Magasin</button>
+            <button onclick="toggleLargageAerien()">Toggle Largage Aerien</button>
+        </div>
+        <div class="cote-a-cote">
+            <div class="button-list" id="devices">
+                <h2>Devices on your network</h2>
+            </div>
+            <div class="button-list" id="synchronisations">
+                <h2>Active tasks on your device</h2>
+            </div>
+        </div>
+        <div class="cote-a-cote">
+            <div class="" id="contenu-largages"></div>
+            <div class="" id="liste-apps"></div>
+        </div>
+
+    </div>
+    <div id="response" hidden></div>
+
+    <script>
+        async function sendRequest(url, method = 'GET', data = null) {
+            let options = { method };
+            if (data) {
+                options.body = JSON.stringify(data);
+                options.headers = { 'Content-Type': 'application/json' };
+            }
+            const response = await fetch(url, options);
+            return response.json();
+        }
+
+        function updateResponse(message) {
+            document.getElementById('response').innerText = message;
+        }
+
+        async function startQSync() {
+            const response = await sendRequest('/start');
+            updateResponse(response.message);
+        }
+
+        async function createSyncTask() {
+            const path = prompt('Enter the path for the new sync task:');
+            if (path) {
+                const response = await sendRequest(`/create?path=${encodeURIComponent(path)}`);
+                updateResponse(response.message);
+            }
+        }
+
+        async function linkDevice(task,device) {
+
+            let data = task;
+            data.IpAddr = device.IpAddr;
+            data.DeviceId = device.DeviceId;
+
+            const response = await sendRequest(`/link`,'POST',data);
+            updateResponse(response.message);
+        
+        }
+
+        async function listTasks() {
+            const response = await sendRequest('/list-tasks');
+            updateResponse(JSON.stringify(response, null, 2));
+            const tasksDiv = document.getElementById('synchronisations');
+            tasksDiv.innerHTML = '<h2>Active tasks on your device</h2>';
+            response.forEach((task, index) => {
+                const button = document.createElement('button');
+                if(task.IsApp){
+                    button.innerText = '( application )'+task.Name;
+                }else{
+                    button.innerText = task.Path;
+                }
+
+                button.onclick = () => OpenTasksActionsMenu(task);
+                tasksDiv.appendChild(button);
+            });
+        }
+
+        async function listDevices() {
+            const response = await sendRequest('/list-devices');
+            const devicesDiv = document.getElementById('devices');
+            devicesDiv.innerHTML = '<h2>Devices on your network</h2>';
+            response.forEach((device, index) => {
+                const button = document.createElement('button');
+                button.innerText = device.hostname;
+                button.onclick = () => OpenNetworkDeviceActionsMenu(device);
+                devicesDiv.appendChild(button);
+            });
+        }
+
+        async function openMagasin() {
+            const response = await sendRequest('/open-magasin');
+            updateResponse(response.message);
+        }
+
+
+        async function toggleLargageAerien() {
+            const response = await sendRequest('/toggle-largage');
+            updateResponse(response.message);
+        }
+
+        async function sendLargage(device,folder=false) {
+            //const choice = confirm('Do you want to send a whole folder ? (Cancel for file)');
+            let data = device;
+            data.is_folder = folder;
+            
+            const response = await sendRequest('/ask-file-path?is_folder='+folder)
+            data.filepath = response.Path;
+           
+            if(data.filepath != "[CANCELLED]"){
+                const response = await sendRequest('/send-largage', 'POST', data);
+                updateResponse(response.message);
+            }
+
+        }
+
+        function OpenNetworkDeviceActionsMenu(device){
+            //sendLargage(device)
+        
+        }
+
+        function OpenTasksActionsMenu(task){
+            device = {IpAddr:"127.0.0.1",DeviceId:"DHGFHYITUJ"}
+            linkDevice(task,device)
+        }
+
+        async function CheckInternetConnection(){
+            const response = await sendRequest('/check-internet');
+            console.log(response);
+            document.getElementById("no-internet-alert").hidden = (response.ConnectionState== "false");
+        
+        }
+
+
+        // first call to not wait 5s at launch
+        listDevices()
+        listTasks()
+        CheckInternetConnection()
+
+        setInterval(listDevices, 5000); // Update the device list every 5 seconds
+        setInterval(listTasks, 5000); // Update the tasks list every 5 seconds
+        setInterval(CheckInternetConnection,5000);
+    </script>
+</body>
+</html>

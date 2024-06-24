@@ -7,7 +7,6 @@ import (
 	"qsync/bdd"
 	"qsync/filesystem"
 	"qsync/globals"
-	"qsync/magasin"
 	"qsync/networking"
 	"strconv"
 	"time"
@@ -189,10 +188,8 @@ func HandleMenuQuery(query string) {
 		}
 
 	case "5":
-		// open QSync store
-		go magasin.StartServer()
 		time.Sleep(1 * time.Second)
-		magasin.OpenUrlInWebBrowser("http://127.0.0.1:8275")
+		globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
 	case "6":
 

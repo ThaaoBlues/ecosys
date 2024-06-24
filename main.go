@@ -6,7 +6,8 @@ import (
 	"path/filepath"
 	"qsync/globals"
 	"qsync/networking"
-	"qsync/tui"
+
+	"qsync/webui"
 )
 
 func main() {
@@ -17,12 +18,15 @@ func main() {
 
 	log.SetOutput(log_file)
 
-	// register this device
-	go zc.Register()
-	// keep an up to date list of linked devices that are on our network
-	go zc.UpdateDevicesConnectionStateLoop()
-	// loop accepting and treating requests from other devices
-	go networking.NetWorkLoop()
+	if networking.IsNetworkAvailable() {
+		// register this device
+		go zc.Register()
+		// keep an up to date list ofmtf linked devices that are on our network
+		go zc.UpdateDevicesConnectionStateLoop()
+		// loop accepting and treating requests from other devices
+		go networking.NetWorkLoop()
+
+	}
 
 	// as in this main function we are always on desktop
 	// assume the directory where qsync the executable is
@@ -34,6 +38,9 @@ func main() {
 	exPath := filepath.Dir(ex)
 	globals.SetQsyncWriteableDirectory(exPath)
 
-	tui.DisplayMenu()
+	//tui.DisplayMenu()
+
+	webui.StartWebUI()
+	globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
 }

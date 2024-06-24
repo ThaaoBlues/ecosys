@@ -569,3 +569,11 @@ func SendLargageAerien(file_path string, device_ip string, multiple bool) {
 	dummy_device.Add(device_ip)
 	SendDeviceEventQueueOverNetwork(dummy_device, "le_ciel_me_tombe_sur_la_tete_000000000000", queue, device_ip)
 }
+
+func IsNetworkAvailable() bool {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err == nil {
+		conn.Close()
+	}
+	return err == nil
+}
