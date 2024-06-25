@@ -43,7 +43,47 @@
             cursor: pointer;
         }
         .cote-a-cote{
-            
+            display: flex;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .popup {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            width: 300px;
+            text-align: center;
+            flex-direction: column;
+        }
+        .popup button {
+            margin: 10px 0;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .popup .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -72,6 +112,11 @@
 
     </div>
     <div id="response" hidden></div>
+
+    <div class="overlay" id="popupOverlay">
+        <div class="popup" id="popupContent">
+        </div>
+    </div>
 
     <script>
         async function sendRequest(url, method = 'GET', data = null) {
@@ -154,7 +199,6 @@
         }
 
         async function sendLargage(device,folder=false) {
-            //const choice = confirm('Do you want to send a whole folder ? (Cancel for file)');
             let data = device;
             data.is_folder = folder;
             
@@ -168,8 +212,61 @@
 
         }
 
+
+
+        async function sendText(device) {
+
+            let data = device;
+            data.text = document.getElementById("custom-text").value;
+            console.log(data.text);
+
+            const response = await sendRequest('/send-text', 'POST', data);
+        
+        }
+
+        function openSendTextOverlay(device){
+            const popup = document.getElementById('popupContent');
+
+            let title = document.createElement("h1");
+            title.innerText = "Send Text";
+            popup.appendChild(title);
+
+            let textarea = document.createElement("textarea");
+            textarea.setAttribute("id","custom-text");
+            popup.appendChild(textarea);
+
+            let btn = document.createElement("button");
+            btn.onclick = function (){sendText(device); closePopup();};
+            btn.innerText = "Send";
+            popup.appendChild(btn);
+
+            showPopup()
+        }
+
         function OpenNetworkDeviceActionsMenu(device){
-            //sendLargage(device)
+
+            const popup = document.getElementById('popupContent');
+
+
+            let title = document.createElement("h1");
+            title.innerText = "Device Actions";
+            popup.appendChild(title);
+
+            let btn = document.createElement("button");
+            btn.onclick = function (){sendLargage(device,false)};
+            btn.innerText = "Send a file";
+            popup.appendChild(btn);
+
+            btn = document.createElement("button");
+            btn.onclick = function(){sendLargage(device,true)};
+            btn.innerText = "Send a folder";
+            popup.appendChild(btn);
+
+            btn = document.createElement("button");
+            btn.onclick = function(){closePopup();openSendTextOverlay(device);};
+            btn.innerText = "Send some text";
+            popup.appendChild(btn);
+            showPopup();
         
         }
 
@@ -185,6 +282,33 @@
         
         }
 
+        function showPopup() {
+            const overlay = document.getElementById('popupOverlay');
+            overlay.classList.add('active');
+        }
+
+        function closePopup() {
+            const overlay = document.getElementById('popupOverlay');
+            overlay.classList.remove('active');
+            // clean the popup content
+            const popup = document.getElementById('popupContent');
+
+            popup.innerHTML = "";
+
+            let close = document.createElement("span");
+            close.innerHTML = "&times;";
+            close.onclick = closePopup;
+            close.className = "close-btn";
+            popup.appendChild(close);
+        }
+
+        window.onclick = function(event) {
+            const overlay = document.getElementById('popupOverlay');
+            if (event.target === overlay) {
+                closePopup();
+            }
+        }
+
 
         // first call to not wait 5s at launch
         listDevices()
@@ -194,6 +318,54 @@
         setInterval(listDevices, 5000); // Update the device list every 5 seconds
         setInterval(listTasks, 5000); // Update the tasks list every 5 seconds
         setInterval(CheckInternetConnection,5000);
+    </script>
+
+
+    <script>
+
+        const socket = new WebSocket('ws://localhost:8275/ws');
+
+        socket.onopen = function(event) {
+           //alert("connected");
+        };
+
+        socket.onmessage = function(event) {
+            const parts = event.data.split("|")
+            const flag = parts[0];
+            const msg = parts[1];
+            switch(flag){
+                case "[OTDL]":
+                    let rep = confirm(msg);
+                    sendMessage(rep);     
+                    break;
+
+                case "[MOTDL]":
+                    rep = confirm(msg);
+                    sendMessage(rep);    
+                    break;
+                case "[CHOOSELINKPATH]":
+                    rep = confirm(msg);
+                    // don't send anything here, the backend will open a folder picker
+                    break;
+
+                case "success":
+                    break;
+            }
+
+        };
+
+        socket.onerror = function(event) {
+        };
+
+        socket.onclose = function(event) {
+        };
+
+
+
+        function sendMessage(message) {
+            socket.send(message);
+        }
+                
     </script>
 </body>
 </html>

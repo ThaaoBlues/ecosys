@@ -23,16 +23,16 @@ type Delta struct {
 }
 
 func calculateBufferSize(file_size int64) int {
-	// do not make chunk of more than 10Mb
+	// do not make chunk of more than 100Mo
 	// we stop when we have a chunk size
 	// that is the maximum one
 	// that can still fit 2 times in the file
 
-	var c int = 10
-	if file_size > 10<<10 {
-		c = 10 << 10
+	var c int = 100
+	if file_size > 100<<10 {
+		c = 100 << 10
 	} else {
-		for (c <= 10<<10) && (c < (int(file_size) >> 2)) {
+		for (c <= 100<<10) && (c < (int(file_size) >> 2)) {
 			c = c << 1
 		}
 	}
