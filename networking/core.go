@@ -498,7 +498,10 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 
 		// write the file. As this is probably a full file, the binary delta is just the file content
 		data.Delta.PatchFile()
-		open.Run(data.Delta.FilePath)
+		err = open.Run(data.Delta.FilePath)
+		if err != nil {
+			open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+		}
 
 	}
 }

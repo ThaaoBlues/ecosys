@@ -19,6 +19,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/sqweek/dialog"
 )
 
@@ -53,6 +54,7 @@ func StartWebUI() {
 	router.HandleFunc("/send-text", sendText).Methods("POST")
 	router.HandleFunc("/ask-file-path", askFilePath).Methods("GET")
 	router.HandleFunc("/check-internet", checkInternetConnection).Methods("GET")
+	router.HandleFunc("/open-largages-folder", openLargagesFolder).Methods("GET")
 	router.HandleFunc("/ws", websocketMsgHandler)
 	http.Handle("/", router)
 
@@ -357,15 +359,17 @@ func sendLargage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println(requestData)
+	tarfile_path := filepath.Join(globals.QSyncWriteableDirectory, "multilargage.tar")
+
 	if requestData.IsFolder {
-		filepath := "multilargage.tar"
-		err := globals.TarFolder(requestData.FilePath, filepath)
+		err := globals.TarFolder(requestData.FilePath, tarfile_path)
 		if err != nil {
 			log.Fatal("Error while taring folder ", err)
 		}
 	}
 
-	networking.SendLargageAerien(requestData.FilePath, requestData.Device["ip_addr"], false)
+	networking.SendLargageAerien(tarfile_path, requestData.Device["ip_addr"], requestData.IsFolder)
 	json.NewEncoder(w).Encode(MenuResponse{Message: "File sent"})
 
 }
@@ -439,4 +443,9 @@ func checkInternetConnection(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(boolResponse)
 
+}
+
+func openLargagesFolder(w http.ResponseWriter, r *http.Request) {
+	open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+	json.NewEncoder(w).Encode(MenuResponse{Message: "success"})
 }

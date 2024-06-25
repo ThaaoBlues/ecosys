@@ -96,6 +96,7 @@
             <button onclick="createSyncTask()">Create a Sync Task</button>
             <button onclick="openMagasin()">Open Magasin</button>
             <button onclick="toggleLargageAerien()">Toggle Largage Aerien</button>
+            <button onclick="openLargagesFolder()">Open Largage Aerien folder</button>
         </div>
         <div class="cote-a-cote">
             <div class="button-list" id="devices">
@@ -162,29 +163,37 @@
             updateResponse(JSON.stringify(response, null, 2));
             const tasksDiv = document.getElementById('synchronisations');
             tasksDiv.innerHTML = '<h2>Active tasks on your device</h2>';
-            response.forEach((task, index) => {
-                const button = document.createElement('button');
-                if(task.IsApp){
-                    button.innerText = '( application )'+task.Name;
-                }else{
-                    button.innerText = task.Path;
-                }
 
-                button.onclick = () => OpenTasksActionsMenu(task);
-                tasksDiv.appendChild(button);
-            });
+            if(response != null){
+
+                response.forEach((task, index) => {
+                    const button = document.createElement('button');
+                    if(task.IsApp){
+                        button.innerText = '( application )'+task.Name;
+                    }else{
+                        button.innerText = task.Path;
+                    }
+
+                    button.onclick = () => OpenTasksActionsMenu(task);
+                    tasksDiv.appendChild(button);
+                });
+
+            }
         }
 
         async function listDevices() {
             const response = await sendRequest('/list-devices');
             const devicesDiv = document.getElementById('devices');
             devicesDiv.innerHTML = '<h2>Devices on your network</h2>';
-            response.forEach((device, index) => {
-                const button = document.createElement('button');
-                button.innerText = device.hostname;
-                button.onclick = () => OpenNetworkDeviceActionsMenu(device);
-                devicesDiv.appendChild(button);
-            });
+            if(response != null){
+                response.forEach((device, index) => {
+                    const button = document.createElement('button');
+                    button.innerText = device.hostname;
+                    button.onclick = () => OpenNetworkDeviceActionsMenu(device);
+                    devicesDiv.appendChild(button);
+                });
+            }
+
         }
 
         async function openMagasin() {
@@ -204,6 +213,7 @@
             
             const response = await sendRequest('/ask-file-path?is_folder='+folder)
             data.filepath = response.Path;
+            console.log(data.filepath)
            
             if(data.filepath != "[CANCELLED]"){
                 const response = await sendRequest('/send-largage', 'POST', data);
@@ -277,7 +287,6 @@
 
         async function CheckInternetConnection(){
             const response = await sendRequest('/check-internet');
-            console.log(response);
             document.getElementById("no-internet-alert").hidden = (response.ConnectionState== "false");
         
         }
@@ -307,6 +316,12 @@
             if (event.target === overlay) {
                 closePopup();
             }
+        }
+
+
+        async function openLargagesFolder(){
+            const response = await sendRequest('/open-largages-folder');
+
         }
 
 
