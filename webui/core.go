@@ -99,13 +99,14 @@ func StartWebUI() {
 
 	callbacks["[MOTDL]"] = func(context string) {
 		// send context throught websocket
-		broadcast <- []byte(context)
+
+		broadcast <- []byte("[OTDL]|" + context)
 
 		// wait user input from web gui
 
 		data := <-user_response
 
-		backend_api.GiveInput("[OTDL]|", string(data))
+		backend_api.GiveInput("[MOTDL]", string(data))
 
 		// give back success message to front-end
 		broadcast <- []byte("success")

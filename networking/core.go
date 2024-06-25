@@ -254,12 +254,10 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 		device_id := connected_devices.Get(i)
 		for i := 0; i < event_queue.Size(); i++ {
 			event := event_queue.Get(i)
-			log.Println("SENDING EVENT : ", event)
 
 			SetEventNetworkLockForDevice(device_id, true)
 
 			formatted_event := globals.SerializeQevent(event)
-			log.Println("formatted event : ", formatted_event)
 
 			var acces bdd.AccesBdd
 			acces.InitConnection()

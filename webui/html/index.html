@@ -263,12 +263,12 @@
             popup.appendChild(title);
 
             let btn = document.createElement("button");
-            btn.onclick = function (){sendLargage(device,false)};
+            btn.onclick = function (){closePopup(); sendLargage(device,false)};
             btn.innerText = "Send a file";
             popup.appendChild(btn);
 
             btn = document.createElement("button");
-            btn.onclick = function(){sendLargage(device,true)};
+            btn.onclick = function(){closePopup(); sendLargage(device,true)};
             btn.innerText = "Send a folder";
             popup.appendChild(btn);
 

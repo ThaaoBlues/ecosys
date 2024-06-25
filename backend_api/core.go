@@ -106,7 +106,6 @@ func WaitEventLoop(callbacks map[string]func(context string)) {
 			if file.Name()[len(file.Name())-4:] == ".btf" {
 
 				event_flag := file.Name()[:len(file.Name())-4]
-
 				context_buff, err := os.ReadFile(file.Name())
 				if err != nil {
 					log.Fatal("Error while reading event fie in WaitEventLoop() : ", err)
