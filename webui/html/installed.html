@@ -157,13 +157,13 @@
         function launchApp(appName) {
             // Function to launch the app
             alert("Launching " + appName + "...");
-            fetch("/LaunchApp?AppId="+appId);
+            fetch("/launch-app?AppId="+appId);
         }
 
         function deleteApp(appName,appId) {
             // Function to delete the app
             alert("Deleting " + appName + "...");
-            fetch("/DeleteApp?AppId="+appId);
+            fetch("/delete-app?AppId="+appId);
         }
     </script>
 </body>

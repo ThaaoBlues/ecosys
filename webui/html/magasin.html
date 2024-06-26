@@ -191,7 +191,7 @@
         installButton.textContent = 'Install app';
         installButton.className = 'install-button'; // You can add a class to style the button
         installButton.onclick = function() {
-            fetch('/InstallerToutEnUn', {
+            fetch('/install-tout-en-un', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -239,7 +239,7 @@
         installButton.className = 'install-button'; // You can add a class to style the button
 
         installButton.onclick = function() {
-            fetch('/InstallerGrapin', {
+            fetch('/install-grapin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

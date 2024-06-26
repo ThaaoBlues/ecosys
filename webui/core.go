@@ -58,6 +58,11 @@ func StartWebUI() {
 	router.HandleFunc("/remove-task", removeTask).Methods("GET")
 	router.HandleFunc("/toggle-backup-mode", toggleBackupMode).Methods("GET")
 	router.HandleFunc("/js/translations.js", serveJsFile).Methods("GET")
+	router.HandleFunc("/install-tout-en-un", installAppHandler).Methods("GET")
+	router.HandleFunc("/install-grapin", installGrapinHandler).Methods("GET")
+	router.HandleFunc("/launch-app", launchAppHandler).Methods("GET")
+	router.HandleFunc("/delete-app", deleteAppHandler).Methods("GET")
+	router.HandleFunc("/test_configs.json", testFileHandler).Methods("GET")
 
 	router.HandleFunc("/ws", websocketMsgHandler)
 	http.Handle("/", router)
