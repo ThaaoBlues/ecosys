@@ -1142,9 +1142,22 @@ func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 func (acces *AccesBdd) IsApp(secure_id string) bool {
 	// used to determine if a gived secure_id is associated with a sync task used by an application
 
-	_, err := acces.db_handler.Query("SELECT * FROM apps WHERE secure_id=?", secure_id)
+	rows, err := acces.db_handler.Query("SELECT * FROM apps WHERE secure_id=?", secure_id)
+	if err != nil {
+		// Handle the error properly
+		log.Fatal("Error in bdd.IsApp()", err)
+		return false
+	}
+	defer rows.Close()
 
-	return err != sql.ErrNoRows
+	// Check if any rows were returned
+	if rows.Next() {
+		// At least one row was returned
+		return true
+	} else {
+		// No rows were returned
+		return false
+	}
 }
 
 func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*globals.GenArray[*globals.QEvent] {
@@ -1472,5 +1485,13 @@ func (acces *AccesBdd) IsSyncInBackupMode() bool {
 	}
 
 	return bcp_mode
+
+}
+func (acces *AccesBdd) ToggleBackupMode() {
+	_, err := acces.db_handler.Exec("UPDATE sync SET backup_mode = NOT backup_mode WHERE secure_id=?", acces.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
+	}
 
 }

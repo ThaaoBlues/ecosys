@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="js/translations.js"></script>
     <title>QSync Web GUI</title>
     <style>
         body {
@@ -20,12 +21,14 @@
             text-align: center;
         }
         .menu {
-            display: flex;
-            flex-direction: line;
             align-items: center;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
         }
 
         .button-list {
+            box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
             margin-top: 5vh;
             display: flex;
             flex-direction: column;
@@ -36,10 +39,12 @@
             float: left;
             margin-left: 5vw;
         }
+        button{
+            font-size: 18px;
+        }
         .menu button, .button-list button {
             padding: 10px 20px;
             margin: 10px;
-            font-size: 16px;
             cursor: pointer;
         }
         .cote-a-cote{
@@ -72,12 +77,14 @@
             position: relative;
             width: 300px;
             text-align: center;
-            flex-direction: column;
         }
         .popup button {
             margin: 10px 0;
             padding: 10px 20px;
             cursor: pointer;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         .popup .close-btn {
             position: absolute;
@@ -89,21 +96,21 @@
 </head>
 <body>
     <div class="container">
-        <h1>QSync Web GUI</h1>
+        <h1 id="title">QSync Web GUI</h1>
         <h1 id="no-internet-alert">No internet connection</h1>
         <div class="menu">
-            <button onclick="startQSync()">Start QSync</button>
-            <button onclick="createSyncTask()">Create a Sync Task</button>
-            <button onclick="openMagasin()">Open Magasin</button>
-            <button onclick="toggleLargageAerien()">Toggle Largage Aerien</button>
-            <button onclick="openLargagesFolder()">Open Largage Aerien folder</button>
+            <button id="start-btn" onclick="startQSync()">Start QSync</button>
+            <button id="create-sync-btn" onclick="createSyncTask()">Create a Sync Task</button>
+            <button id="open-magasin-btn" onclick="openMagasin()">Open Magasin</button>
+            <button id="toggle-largage-btn" onclick="toggleLargageAerien()">Toggle Largage Aerien</button>
+            <button id="open-largages-btn" onclick="openLargagesFolder()">Open Largage Aerien folder</button>
         </div>
         <div class="cote-a-cote">
             <div class="button-list" id="devices">
-                <h2>Devices on your network</h2>
+                <h2 id="devices-title">Devices on your network</h2>
             </div>
             <div class="button-list" id="synchronisations">
-                <h2>Active tasks on your device</h2>
+                <h2 id="tasks-title">Active tasks on your device</h2>
             </div>
         </div>
         <div class="cote-a-cote">
@@ -118,8 +125,28 @@
         <div class="popup" id="popupContent">
         </div>
     </div>
+    
 
     <script>
+
+        var currentLang = 'fr';
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('title').innerText = translations[lang].title;
+            document.getElementById('no-internet-alert').innerText = translations[lang].noInternet;
+            document.getElementById('start-btn').innerText = translations[lang].startQSync;
+            document.getElementById('create-sync-btn').innerText = translations[lang].createSyncTask;
+            document.getElementById('open-magasin-btn').innerText = translations[lang].openMagasin;
+            document.getElementById('toggle-largage-btn').innerText = translations[lang].toggleLargageAerien;
+            document.getElementById('open-largages-btn').innerText = translations[lang].openLargagesFolder;
+            document.getElementById('devices-title').innerText = translations[lang].devicesTitle;
+            document.getElementById('tasks-title').innerText = translations[lang].tasksTitle;
+        }
+
+
+
+        
         async function sendRequest(url, method = 'GET', data = null) {
             let options = { method };
             if (data) {
@@ -140,10 +167,14 @@
         }
 
         async function createSyncTask() {
-            const path = prompt('Enter the path for the new sync task:');
-            if (path) {
-                const response = await sendRequest(`/create?path=${encodeURIComponent(path)}`);
-                updateResponse(response.message);
+
+            var response = await sendRequest('/ask-file-path?is_folder='+true);
+
+            if (response.Path) {
+                response = await sendRequest(`/create?path=${encodeURIComponent(response.Path)}`);
+                if(response.Message == "success"){
+                    alert(translations[currentLang].alertTaskCreated+response.Path);
+                }
             }
         }
 
@@ -162,19 +193,25 @@
             const response = await sendRequest('/list-tasks');
             updateResponse(JSON.stringify(response, null, 2));
             const tasksDiv = document.getElementById('synchronisations');
-            tasksDiv.innerHTML = '<h2>Active tasks on your device</h2>';
+            tasksDiv.innerHTML = "";
+
+            let title = document.createElement("h2");
+            title.innerText = translations[currentLang].tasksTitle;
+            tasksDiv.appendChild(title)
+
 
             if(response != null){
 
                 response.forEach((task, index) => {
                     const button = document.createElement('button');
-                    if(task.IsApp){
+                    console.log(task);
+                    if(task.IsApp == "true"){
                         button.innerText = '( application )'+task.Name;
                     }else{
                         button.innerText = task.Path;
                     }
 
-                    button.onclick = () => OpenTasksActionsMenu(task);
+                    button.onclick = () => openTasksActionsMenu(task);
                     tasksDiv.appendChild(button);
                 });
 
@@ -184,12 +221,19 @@
         async function listDevices() {
             const response = await sendRequest('/list-devices');
             const devicesDiv = document.getElementById('devices');
-            devicesDiv.innerHTML = '<h2>Devices on your network</h2>';
+
+            devicesDiv.innerHTML = "";
+
+            let title = document.createElement("h2");
+            title.innerText = translations[currentLang].devicesTitle;
+            devicesDiv.appendChild(title)
+
+
             if(response != null){
                 response.forEach((device, index) => {
                     const button = document.createElement('button');
                     button.innerText = device.hostname;
-                    button.onclick = () => OpenNetworkDeviceActionsMenu(device);
+                    button.onclick = () => openNetworkDeviceActionsMenu(device);
                     devicesDiv.appendChild(button);
                 });
             }
@@ -198,13 +242,11 @@
 
         async function openMagasin() {
             const response = await sendRequest('/open-magasin');
-            updateResponse(response.message);
         }
 
 
         async function toggleLargageAerien() {
             const response = await sendRequest('/toggle-largage');
-            updateResponse(response.message);
         }
 
         async function sendLargage(device,folder=false) {
@@ -213,11 +255,9 @@
             
             const response = await sendRequest('/ask-file-path?is_folder='+folder)
             data.filepath = response.Path;
-            console.log(data.filepath)
            
             if(data.filepath != "[CANCELLED]"){
                 const response = await sendRequest('/send-largage', 'POST', data);
-                updateResponse(response.message);
             }
 
         }
@@ -228,7 +268,6 @@
 
             let data = device;
             data.text = document.getElementById("custom-text").value;
-            console.log(data.text);
 
             const response = await sendRequest('/send-text', 'POST', data);
         
@@ -238,7 +277,7 @@
             const popup = document.getElementById('popupContent');
 
             let title = document.createElement("h1");
-            title.innerText = "Send Text";
+            title.innerText = translations[currentLang].sendTextTitle;
             popup.appendChild(title);
 
             let textarea = document.createElement("textarea");
@@ -247,45 +286,120 @@
 
             let btn = document.createElement("button");
             btn.onclick = function (){sendText(device); closePopup();};
-            btn.innerText = "Send";
+            btn.innerText = translations[currentLang].send;
             popup.appendChild(btn);
 
             showPopup()
         }
 
-        function OpenNetworkDeviceActionsMenu(device){
+        function openNetworkDeviceActionsMenu(device){
 
             const popup = document.getElementById('popupContent');
 
 
             let title = document.createElement("h1");
-            title.innerText = "Device Actions";
+            title.innerText = translations[currentLang].deviceActions;
             popup.appendChild(title);
 
             let btn = document.createElement("button");
             btn.onclick = function (){closePopup(); sendLargage(device,false)};
-            btn.innerText = "Send a file";
+            btn.innerText = translations[currentLang].sendFile;
             popup.appendChild(btn);
 
             btn = document.createElement("button");
             btn.onclick = function(){closePopup(); sendLargage(device,true)};
-            btn.innerText = "Send a folder";
+            btn.innerText = translations[currentLang].sendFolder;
             popup.appendChild(btn);
 
             btn = document.createElement("button");
             btn.onclick = function(){closePopup();openSendTextOverlay(device);};
-            btn.innerText = "Send some text";
+            btn.innerText = translations[currentLang].sendText;
             popup.appendChild(btn);
             showPopup();
         
         }
 
-        function OpenTasksActionsMenu(task){
-            device = {IpAddr:"127.0.0.1",DeviceId:"DHGFHYITUJ"}
-            linkDevice(task,device)
+        function openTasksActionsMenu(task){
+            const popup = document.getElementById('popupContent');
+
+
+            let title = document.createElement("h1");
+            title.innerText = translations[currentLang].taskActions;
+            popup.appendChild(title);
+
+            let btn = document.createElement("button");
+            btn.onclick = function (){closePopup();chooseDeviceAndLinkIt(task);}
+            btn.innerText = translations[currentLang].syncAnotherDevice;
+            popup.appendChild(btn);
+
+            btn = document.createElement("button");
+            btn.onclick = function(){closePopup();removeTask(task);};
+            btn.innerText = translations[currentLang].removeTask;
+            popup.appendChild(btn);
+
+            btn = document.createElement("button");
+            btn.onclick = function(){closePopup();toggleBackupMode(task);};
+            if(task.BackupMode){
+                btn.innerText = translations[currentLang].disableBackupMode;
+            }else{
+                btn.innerText = translations[currentLang].enableBackupMode;
+            }
+            popup.appendChild(btn);
+            showPopup();
+            
         }
 
-        async function CheckInternetConnection(){
+        async function chooseDeviceAndLinkIt(task){
+
+            const popup = document.getElementById('popupContent');
+
+
+            let title = document.createElement("h1");
+            title.innerText = "Choose a device to synchronize";
+            popup.appendChild(title);
+
+            const response = await sendRequest('/list-devices');
+
+            if(response != null){
+                response.forEach((device, index) => {
+                    const button = document.createElement('button');
+                    button.innerText = device.hostname;
+                    button.onclick = function (){
+                        linkDevice(task,device);
+                        closePopup();
+                    }
+                    popup.appendChild(button);
+                });
+            }
+
+            showPopup();
+
+
+            
+        }
+
+        async function removeTask(task){
+            const response = await sendRequest('/remove-task?secure_id='+task.SecureId);
+        
+            if(response.message == "success"){
+                alert("The sync task has been removed.");
+            }else{
+                alert("An error occured while removing the sync task.")
+            }
+        }
+
+        async function toggleBackupMode(task){
+            const response = await sendRequest('/toggle-backup-mode?secure_id='+task.SecureId);
+            console.log(response);
+            if(response.message == "success"){
+                alert("Success !");
+            }else{
+                alert("An error occured while enabling/disabling backup mode for this sync task.")
+            }
+        }
+
+
+        async function checkInternetConnection(){
             const response = await sendRequest('/check-internet');
             document.getElementById("no-internet-alert").hidden = (response.ConnectionState== "false");
         
@@ -325,14 +439,23 @@
         }
 
 
-        // first call to not wait 5s at launch
-        listDevices()
-        listTasks()
-        CheckInternetConnection()
+        addEventListener("DOMContentLoaded", (event) => {
+            console.log(navigator.language);
+            updateLanguage(navigator.language);
 
-        setInterval(listDevices, 5000); // Update the device list every 5 seconds
-        setInterval(listTasks, 5000); // Update the tasks list every 5 seconds
-        setInterval(CheckInternetConnection,5000);
+            // first call to not wait 5s at launch
+            listDevices();
+            listTasks();
+            checkInternetConnection();
+
+
+            setInterval(listDevices, 5000); // Update the device list every 5 seconds
+            setInterval(listTasks, 5000); // Update the tasks list every 5 seconds
+            setInterval(checkInternetConnection,5000);
+
+            
+        });
+
     </script>
 
 

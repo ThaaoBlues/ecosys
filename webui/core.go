@@ -55,6 +55,10 @@ func StartWebUI() {
 	router.HandleFunc("/ask-file-path", askFilePath).Methods("GET")
 	router.HandleFunc("/check-internet", checkInternetConnection).Methods("GET")
 	router.HandleFunc("/open-largages-folder", openLargagesFolder).Methods("GET")
+	router.HandleFunc("/remove-task", removeTask).Methods("GET")
+	router.HandleFunc("/toggle-backup-mode", toggleBackupMode).Methods("GET")
+	router.HandleFunc("/js/translations.js", serveJsFile).Methods("GET")
+
 	router.HandleFunc("/ws", websocketMsgHandler)
 	http.Handle("/", router)
 
@@ -157,7 +161,7 @@ func websocketMsgHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func InstallAppHandler(w http.ResponseWriter, r *http.Request) {
+func installAppHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := magasin.InstallApp(r.Body)
 	if err != nil {
@@ -165,13 +169,13 @@ func InstallAppHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func InstallGrapinHandler(w http.ResponseWriter, r *http.Request) {
+func installGrapinHandler(w http.ResponseWriter, r *http.Request) {
 	err := magasin.InstallGrapin(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 }
-func InstalledAppsHandler(w http.ResponseWriter, r *http.Request) {
+func installedAppsHandler(w http.ResponseWriter, r *http.Request) {
 
 	html, err := os.ReadFile("./webui/html/installed.html")
 
@@ -195,7 +199,7 @@ func InstalledAppsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func LaunchAppHandler(w http.ResponseWriter, r *http.Request) {
+func launchAppHandler(w http.ResponseWriter, r *http.Request) {
 
 	app_id := r.URL.Query().Get("AppId")
 
@@ -214,7 +218,7 @@ func LaunchAppHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func DeleteAppHandler(w http.ResponseWriter, r *http.Request) {
+func deleteAppHandler(w http.ResponseWriter, r *http.Request) {
 
 	app_id := r.URL.Query().Get("AppId")
 
@@ -235,7 +239,7 @@ func DeleteAppHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func TestFileHandler(w http.ResponseWriter, r *http.Request) {
+func testFileHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./webui/test_configs.json")
 }
 
@@ -449,4 +453,28 @@ func checkInternetConnection(w http.ResponseWriter, r *http.Request) {
 func openLargagesFolder(w http.ResponseWriter, r *http.Request) {
 	open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 	json.NewEncoder(w).Encode(MenuResponse{Message: "success"})
+}
+
+func removeTask(w http.ResponseWriter, r *http.Request) {
+	secure_id := r.URL.Query().Get("secure_id")
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	acces.SecureId = secure_id
+	acces.RmSync()
+	json.NewEncoder(w).Encode(MenuResponse{Message: "success"})
+
+}
+func toggleBackupMode(w http.ResponseWriter, r *http.Request) {
+	secure_id := r.URL.Query().Get("secure_id")
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	acces.SecureId = secure_id
+	acces.ToggleBackupMode()
+	json.NewEncoder(w).Encode(MenuResponse{Message: "success"})
+}
+
+func serveJsFile(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join(globals.QSyncWriteableDirectory, "webui/js/translations.js")
+
+	http.ServeFile(w, r, path)
 }
