@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -153,7 +152,7 @@ func getLatestReleaseTag(owner, repo string) (string, error) {
 
 // Function to read the version from a local file
 func readLocalVersionFile(filePath string) (string, error) {
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
