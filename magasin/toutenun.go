@@ -65,11 +65,7 @@ func InstallApp(data io.ReadCloser) error {
 	log.Println("qsync root path : ", self_path)
 
 	apps_path := filepath.Join(self_path, "apps")
-	ex, err := globals.Exists(apps_path)
-
-	if err != nil {
-		log.Fatal("An error occured while checking if a path exists in InstallApp()", err)
-	}
+	ex := globals.Exists(apps_path)
 
 	if !ex {
 		os.Mkdir(apps_path, fs.ModePerm)
@@ -79,14 +75,10 @@ func InstallApp(data io.ReadCloser) error {
 	new_app_root_path := filepath.Join(apps_path, sanitized_app_name)
 	json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
 
-	ex, err = globals.Exists(new_app_root_path)
+	ex = globals.Exists(new_app_root_path)
 
 	if !ex {
 		os.Mkdir(new_app_root_path, fs.ModePerm)
-	}
-
-	if err != nil {
-		log.Fatal("An error occured while checking if a path exists in InstallApp()", err)
 	}
 
 	// pre-determined installer name so there are no problem ( on linux .exe does not do anything but required on windows)
@@ -104,7 +96,7 @@ func InstallApp(data io.ReadCloser) error {
 
 	// and last but not least, if the installed did not create it, create the sync folder
 	app_sync_folder := filepath.Join(new_app_root_path, json_data.AppSyncDataFolderPath)
-	ex, err = globals.Exists(app_sync_folder)
+	ex = globals.Exists(app_sync_folder)
 	log.Println("making app sync directory : ", app_sync_folder)
 
 	if !ex {

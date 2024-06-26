@@ -124,6 +124,24 @@ func StartWebUI() {
 		time.Sleep(1 * time.Second)
 	}
 
+	callbacks["[ALERT_USER]"] = func(context string) {
+		// send context throught websocket
+
+		broadcast <- []byte("[ALERT_USER]|" + context)
+
+		// wait user input from web gui
+
+		data := "prout"
+
+		backend_api.GiveInput("[ALERT_USER]", string(data))
+
+		// give back success message to front-end
+		broadcast <- []byte("success")
+
+		// let the backend process and suppress the event file
+		time.Sleep(1 * time.Second)
+	}
+
 	go backend_api.WaitEventLoop(callbacks)
 
 	fmt.Println("Server started at :8275")

@@ -12,11 +12,14 @@ As you may know, android has some very strict policies on apps data, so it canno
 ## QSync "Magasin" :
 We project to make a store where anyone can publish and/or download QSync addons (named "grapins" in all my frenchness bc it grabs apps data ) and QSync apps (named "tout en un" or 'all in one' in english).
 
+### To sync apps from one device to another, the best is to install the app on both and then take one to link on the other via qsync synchronisations list. 
+
 # How do I know that Qsync already has linked my app from another device ?
 Wether you are on android or on desktop, when you download an app you can everything is made for you, from the creation of the folder where you put the files you want to sync to the registration of your app in qsync database. The only thing you must do is on android, as the usage of an alternative app store is not user friendly, you must start qsync app from a specific intent to let it know that the user installed an app that works with qsync. This procedure is specified in the android_app.md file
 
 ## More details on how to write an android app that works with Qsync in the android_app.md file
 ## The following description is usefull for everyone but the examples are for desktop apps
+
 
 ## QSync "grapins" :
 Addons are really simple but may evolve as time passes. You must provide a json object with those informations :
@@ -377,15 +380,8 @@ POUR L'APP :
 
 
 - POUR PC ET ANDROID :
-	- faire un nettoyage des nlock, btf et autres lors du démarrage
 	- finir les synchronisations
 	- faire les applications
-	- faire une fonction 'isApp(string secure_id)'
-	- champ si la synchronisation est une application dans le record SyncInfos
-	- afficher si la synchro est une app ou une synchro normale
-	- faire 
-	- faire un mode backup qui met un .bkp et autorise l'utilisateur à supprimer des trucs sans que la suppression ne s'étende aux autres appareils ou soit enregistrée
-	- METTRE UNE TAILLE DE BUFFER RELATIVE A new_file_size
 
 
 

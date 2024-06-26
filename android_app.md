@@ -1,5 +1,16 @@
 # How do I let Qsync know that I want to work with it ?
-You have to send an intent to qsync, containing the application JSON string :
+You have to send an intent to qsync. Qsync will then handle the creation of the sync task and app's folder.
+```java
+Intent sendIntent = new Intent();
+sendIntent.setAction(Intent.ACTION_SYNC);
+sendIntent.putExtra("action_flag", "[INSTALL_APP]");
+sendIntent.putExtra("app_name", "your_app_name");
+sendIntent.setType("text/plain");
+
+if (sendIntent.resolveActivity(getPackageManager()) != null) {
+    startActivity(sendIntent);
+}
+```
 
 
 

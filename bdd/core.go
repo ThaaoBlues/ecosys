@@ -91,7 +91,7 @@ func (acces *AccesBdd) InitConnection() {
 		secure_id TEXT,
 		linked_devices_id TEXT DEFAULT "",
 		root TEXT,
-		backup_mode BOOLEAN DEFAULT 0
+			backup_mode BOOLEAN DEFAULT 0
 	)`)
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
@@ -1494,4 +1494,12 @@ func (acces *AccesBdd) ToggleBackupMode() {
 		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
 	}
 
+}
+
+func (acces *AccesBdd) UpdateSyncId(root_path string, secure_id string) {
+	_, err := acces.db_handler.Exec("UPDATE sync SET secure_id = ? WHERE root=?", secure_id, root_path)
+
+	if err != nil {
+		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
+	}
 }

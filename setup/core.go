@@ -207,6 +207,41 @@ func Setup() {
 	f.WriteString(VERSION)
 	f.Close()
 
-	DownloadWebuiFiles()
+	if !globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "webui")) {
+		DownloadWebuiFiles()
+	}
 
+}
+
+func CleanupTempFiles() {
+	// Get the current directory
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Read the directory contents
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Iterate through the files
+	for _, file := range files {
+		if !file.IsDir() {
+			// Check if the file has the .btf or .nlock extension
+			if strings.HasSuffix(file.Name(), ".btf") || strings.HasSuffix(file.Name(), ".nlock") {
+				// Get the full path of the file
+				filePath := filepath.Join(dir, file.Name())
+
+				// Remove the file
+				err := os.Remove(filePath)
+				if err != nil {
+					log.Printf("Failed to remove file: %s, error: %v\n", file.Name(), err)
+				} else {
+					fmt.Printf("Removed file: %s\n", file.Name())
+				}
+			}
+		}
+	}
 }

@@ -140,9 +140,28 @@ func ConnectToDevice(conn net.Conn) {
 		log.Println("Initializing env to welcome the other end folder content")
 		acces.SecureId = secure_id
 
-		path := backend_api.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
-		log.Println("Future sync will be stored at : ", path)
-		acces.CreateSyncFromOtherEnd(path, secure_id)
+		var path string
+		if data.FileType == "[APPLICATION]" {
+			path = filepath.Join(globals.QSyncWriteableDirectory, "apps", data.FilePath)
+
+			// check if the app is downloaded
+			if !globals.Exists(path) {
+				_ = backend_api.AskInput("[ALERT_USER]",
+					"Please install "+data.FilePath+" from the magasin on this machine before linking the app from another device.",
+				)
+				return
+			} else {
+				// replace the original secure_id generated for the app
+				// by the one from the other device so we can link them
+				acces.UpdateSyncId(path, secure_id)
+			}
+
+		} else {
+			path = backend_api.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
+			log.Println("Future sync will be stored at : ", path)
+			acces.CreateSyncFromOtherEnd(path, secure_id)
+		}
+
 		log.Println("Linking device : ", device_id)
 		acces.LinkDevice(device_id, strings.Split(conn.RemoteAddr().String(), ":")[0])
 
@@ -480,12 +499,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n"))
 	if user_response == "1" || user_response == "true" || user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
-		ex, err := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
-
-		if err != nil {
-			log.Fatal("Error while trying to check if the largage_aerien folder exsists in HandleLargageAerien() : ", err)
-
-		}
+		ex := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
 		if !ex {
 			os.Mkdir(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"), 0775)
@@ -496,7 +510,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 
 		// write the file. As this is probably a full file, the binary delta is just the file content
 		data.Delta.PatchFile()
-		err = open.Run(data.Delta.FilePath)
+		err := open.Run(data.Delta.FilePath)
 		if err != nil {
 			open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 		}
@@ -512,12 +526,7 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n"))
 	if user_response == "1" || user_response == "true" || user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
 		// make sure we have the right directory set-up
-		ex, err := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
-
-		if err != nil {
-			log.Fatal("Error while trying to check if the largage_aerien folder exsists in HandleLargageAerien() : ", err)
-
-		}
+		ex := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
 		if !ex {
 			os.Mkdir(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"), 0775)
