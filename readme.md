@@ -137,60 +137,6 @@ You can activate a backup mode to any synchronisation, it will allow you to dele
 It is usefull for cases like backing up your pictures and save space on your smartphone.
 
 
-
-
-## base de données
-- on cartographie le systeme de fichiers visés et l'enregistre une première fois
-- on met tout en mode création dans la bdd
-- dans la table, il y a plusieurs versions d'un mme fichier suivant l'état de synchronisation d'autres appareils
-- si un appareil est en retard de n versions, on lui envoie les deltas 1 par 1 en supprimant de la bdd le delta de la version qui vient d'etre patch si aucun autre appareil n'est aussi en retard. On ne stoque que la dernière version du fichier de manière complète dans la bdd (utilisée pour attached de nouvelles machines ou simplement calculer le delta de la dernière version), les versions spécifiques aux appareils en retard n'ont que le delta binaire correspondant de stoqué.
-
-
-table retard
----------------------------------------------------------------------------
-ID | version_id | file_path       | mod_type | devices_to_patch          | type   |
-1  | 123        | "test/test.log" | "p"      | "238532123;2347668378"    | "file" |
-
-mod_types : 
-- c -> creation, just send the entire file directly from user's filesystem, no need of delta
-- d -> delete, remove the file from the other's device filesystem
-- p -> patch, only modification types that needs a delta to patch the remote file.
-
-devices_to_patch :
-- liste d'identifiants uniques des ordinateurs à patch, chaque id unique est conservé sur la machine concernée et envoyé à la demande de syncronisation ou d'attachement
-
-
-table delta (if mod type is p)
------------------------------------------------------------------------
-ID | path                | version_id | delta         |
-1  |   "test/test.log"   |124         | [{},{},{}]    |
-
-table filesystem
------------------------------------------------------------------------
-ID | path            | version_id | type    | size | secure_id                  | data                 |
-1  | "test"          |   0        |"folder" | 0    | "hx9x3587545ag675gqs891g"  | NULL                 |
-2  | "test/test.log" |   124      | "file"  | 1738 | "hx9x3587545ag675gqs891g"  | the content in bytes |
-
-
-
-
-table sync
------------------------------------------------------------------------
-ID | secure_id                 | linked_devices_id     | root      |
-1  | "hx9x3587545ag675gqs891g" | "238532123;234766837" | "C:/test" |
-
-table linked_devices
------------------------------------------------------------------------
-ID | device_id | is_connected | receiving_update                |
-1  | 238532123 | true         | {"hx9x3587545ag675gqs891g":true}|
-2  | 234766837 | false        |{"hx9x3587545ag675gqs891g":false}|
-
-
-secure_id : identifiant du système de fichiers concerné par la tache de syncronisation
-
-
-
-
 ## communications :
 
 - Each device uses mDNS with a unique device_id as additionnal data
@@ -220,6 +166,8 @@ The typical request must look like :
 
 3354HJfjysqgydfk6778Yhgqdsièfoiuhkj(device_id);2556ZJfjgfotydfk6778Yhdddsaèfoiuhkj(secure_id);[OTDL](flag);file(filetype);ab(delta instruction),112(data),114,111,117,116,10,0;test(deltafilepath);test(filepath);(newfilepath);(secure_id->redundancy field not used)
 
+> /!\ these fields are repurposed in some events to transport usefull values when their primary purpose is not usefull
+
 
 
 [IN CASE OF A FILE EVENT]
@@ -231,13 +179,6 @@ The typical request must look like :
 - if not :
 
 - we loop throught the linked_device table join the sync table and check if a device that is connected is linked for this sync task
-
-
-- If yes, we send an Hello packet
-
-- If the Hello packet succeed,
-
-- If no disconnection is done while transferring data, 
 
 - We are sending him the update
 
@@ -318,6 +259,7 @@ As example, here is a program that shows a bit how it is working :
 
 * [OTDL]/[MODTL](.btf) trigerred when user has to choose to accept or not an incoming largage aerien
 
+* [ALERT_USER](.btf) used to alert the user of something
 
 ## INFOS DE COMPILATION ET AUTRES BUGS GOLANG
 - gomobile n'aime pas les passages par valeur de structures
@@ -325,63 +267,29 @@ As example, here is a program that shows a bit how it is working :
 - j'abandonne gomobile c'est plus simple de tout réécrire en java
 - bordel de merde les parser de json sont lent de fou, j'ai du utiliser ma propre serialisation de données
 
-## Example of usage of qsync is shown as a basic synchronisation app with 'main.go' and 'tui/core.go' file:
-
-> main.go
-```go
-package main
-
-import (
-	"qsync/networking"
-	"qsync/tui"
-)
-
-func main() {
-
-	var zc networking.ZeroConfService
-
-	// register this device
-	go zc.Register()
-	// keep an up to date list of linked devices that are on our network
-	go zc.UpdateDevicesConnectionStateLoop()
-	// loop accepting and treating requests from other devices
-	go networking.NetWorkLoop()
-
-	tui.DisplayMenu()
-
-}
-
-
-```
-
-
 
 
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
-TODO
+TODO (voir mes notes, sec)
 
-- changer les passages de struct par valeur par des passages par addresse
-
+POUR PC :
+- Mettre la palette de couleurs sur le magasin
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 
 - tester l'ajout/suppression/lancement des applications
 
 
 POUR L'APP :
-- Pour l'app : Fix le fichier qui s'ouvre mal avec la popup
-
-- Pour l'app : Faire les synchronisations
-
-
+- Fix le fichier qui s'ouvre mal avec la popup
+- Tester intensivement la synchronisation
+- faire le magasin
 - Pour les applis, ce sera juste une liste d'apps
 - quand on appuis on a une liste d'options (installer (play store), ouvrir, lier à un appareil)
+- faire une popup qui invite à télécharger sur ses autres appareils
+- mettre un texte quand la list d'appareils est vide
 
 
-
-- POUR PC ET ANDROID :
-	- finir les synchronisations
-	- faire les applications
 
 
 
