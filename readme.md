@@ -242,7 +242,7 @@ POUR PC :
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
 - tester l'ajout/suppression/lancement des applications
-
+- peut-etre utiliser des popup natives pour la confirmation des largages aeriens à la place de la webui
 
 POUR L'APP :
 - Fix le fichier qui s'ouvre mal avec la popup
