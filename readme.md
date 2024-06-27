@@ -1,7 +1,8 @@
 # QSYNC
 Qsync is a engine made to provide files synchronisation in real time or not between linked devices.
 It automatically detects linked devices on the same network and make sync the wanted folders transparently. 
-In the long term, the goal is to provide a support for a symbiosis between devices and applications states so one can use any of its devices indistinctl.
+Qsync also support one-time files transferts (called "Largage Aerien" in reference to AirDrop).
+In the long term, the goal is to provide a support for a symbiosis between devices and applications states so one can use any of its devices indistinctly.
 
 On desktop os :
 We may achieve this goal by making a qsync addons market where people puts json files with details about how each files is stored in each OS of a specific app. This would allow qsync to adapt and synchronise existing apps. 
@@ -276,7 +277,7 @@ TODO (voir mes notes, sec)
 POUR PC :
 - Mettre la palette de couleurs sur le magasin
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
-
+- Finir et tester le launcher/setup
 - tester l'ajout/suppression/lancement des applications
 
 
