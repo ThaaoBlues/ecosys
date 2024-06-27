@@ -186,98 +186,105 @@
         var toutEnUnContainer = document.getElementById('ToutEnUn');
         toutEnUnConfigs.forEach(config => {
 
-            if(config.)
-            var card = document.createElement('div');
-            card.className = 'card';
+            if(config.SupportedPlatforms.indexOf(os) > -1){
+                var card = document.createElement('div');
+                card.className = 'card';
 
-            var image = document.createElement('img');
-            image.src = config.AppIconURL;
-            image.alt = 'App Image';
+                var image = document.createElement('img');
+                image.src = config.AppIconURL;
+                image.alt = 'App Image';
 
-            var cardContent = document.createElement('div');
-            cardContent.className = 'card-content';
+                var cardContent = document.createElement('div');
+                cardContent.className = 'card-content';
 
-            var cardTitle = document.createElement('div');
-            cardTitle.className = 'card-title';
-            cardTitle.textContent = config.AppName;
+                var cardTitle = document.createElement('div');
+                cardTitle.className = 'card-title';
+                cardTitle.textContent = config.AppName;
 
-            var cardDescription = document.createElement('div');
-            cardDescription.className = 'card-description';
-            cardDescription.textContent = config.AppDescription;
+                var cardDescription = document.createElement('div');
+                cardDescription.className = 'card-description';
+                cardDescription.textContent = config.AppDescription;
 
-            var installButton = document.createElement('button');
-            installButton.textContent = 'Install app';
-            installButton.className = 'install-button'; // You can add a class to style the button
-            installButton.onclick = function() {
-                fetch('/install-tout-en-un', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(config),
-                })
-                .then(response => response.json())
-                .then(data => console.log(data))
-                .catch((error) => console.error('Error:', error));
-            };
+                var installButton = document.createElement('button');
+                installButton.textContent = 'Install app';
+                installButton.className = 'install-button'; // You can add a class to style the button
+                installButton.onclick = function() {
+                    fetch('/install-tout-en-un', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(config),
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch((error) => console.error('Error:', error));
+                };
 
-            cardContent.appendChild(cardTitle);
-            cardContent.appendChild(cardDescription);
-            cardContent.appendChild(installButton); // Add the button to the card content
+                cardContent.appendChild(cardTitle);
+                cardContent.appendChild(cardDescription);
+                cardContent.appendChild(installButton); // Add the button to the card content
 
-            card.appendChild(image);
-            card.appendChild(cardContent);
+                card.appendChild(image);
+                card.appendChild(cardContent);
 
-            toutEnUnContainer.appendChild(card);
+                toutEnUnContainer.appendChild(card);
+            }
+            
         });
 
         // Generate HTML content for Grapins section
         var grapinsContainer = document.getElementById('Grapins');
         grapinConfigs.forEach(config => {
-            var card = document.createElement('div');
-            card.className = 'card';
 
-            var image = document.createElement('img');
-            image.src = 'https://via.placeholder.com/300';
-            image.alt = 'App Image';
+            if(config.SupportedPlatforms.indexOf(os) > -1){
 
-            var cardContent = document.createElement('div');
-            cardContent.className = 'card-content';
+                var card = document.createElement('div');
+                card.className = 'card';
 
-            var cardTitle = document.createElement('div');
-            cardTitle.className = 'card-title';
-            cardTitle.textContent = config.AppName;
+                var image = document.createElement('img');
+                image.src = 'https://via.placeholder.com/300';
+                image.alt = 'App Image';
 
-            var cardDescription = document.createElement('div');
-            cardDescription.className = 'card-description';
-            cardDescription.textContent = `Description of ${config.AppName}.`;
+                var cardContent = document.createElement('div');
+                cardContent.className = 'card-content';
 
-            var installButton = document.createElement('button');
-            installButton.textContent = 'Install Grapin';
-            installButton.className = 'install-button'; // You can add a class to style the button
+                var cardTitle = document.createElement('div');
+                cardTitle.className = 'card-title';
+                cardTitle.textContent = config.AppName;
 
-            installButton.onclick = function() {
-                fetch('/install-grapin', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(config),
-                })
-                .then(response => response.json())
-                .then(data => console.log(data))
-                .catch((error) => console.error('Error:', error));
-            };
+                var cardDescription = document.createElement('div');
+                cardDescription.className = 'card-description';
+                cardDescription.textContent = `Description of ${config.AppName}.`;
+
+                var installButton = document.createElement('button');
+                installButton.textContent = 'Install Grapin';
+                installButton.className = 'install-button'; // You can add a class to style the button
+
+                installButton.onclick = function() {
+                    fetch('/install-grapin', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(config),
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch((error) => console.error('Error:', error));
+                };
 
 
-            cardContent.appendChild(cardTitle);
-            cardContent.appendChild(cardDescription);
-            cardContent.appendChild(installButton); // Add the button to the card content
+                cardContent.appendChild(cardTitle);
+                cardContent.appendChild(cardDescription);
+                cardContent.appendChild(installButton); // Add the button to the card content
 
-            card.appendChild(image);
-            card.appendChild(cardContent);
+                card.appendChild(image);
+                card.appendChild(cardContent);
 
-            grapinsContainer.appendChild(card);
+                grapinsContainer.appendChild(card);
+
+            }
     });
 }
 
