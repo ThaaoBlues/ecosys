@@ -1,0 +1,41 @@
+{
+    "tout_en_un_configs": [
+      {
+        "AppName": "App 1",
+        "AppDownloadUrl": "https://example.com/app1/download",
+        "NeedsInstaller": true,
+        "AppLauncherPath": "/path/to/app1/executable",
+        "AppInstallerPath": "/path/to/app1/installer",
+        "AppUninstallerPath": "/path/to/app1/uninstaller",
+        "AppSyncDataFolderPath": "/path/to/app1/data",
+        "AppDescription":"premier test de config.",
+        "AppIconURL":"https://via.placeholder.com/300"
+      },
+      {
+        "AppName": "Tout en un test",
+        "AppDownloadUrl": "https://freetestdata.com/wp-content/uploads/2023/11/7.7-KB.txt",
+        "NeedsInstaller": false,
+        "AppLauncherPath": "launcher.sh",
+        "AppInstallerPath": "",
+        "AppUninstallerPath": "",
+        "AppSyncDataFolderPath": "sync_data",
+        "AppDescription":"seconf test de config.",
+        "AppIconURL":"https://via.placeholder.com/300"
+      }
+    ],
+    "grapin_configs": [
+      {
+        "AppName": "Grapin App 1",
+        "AppSyncDataFolderPath": "/path/to/grapin_app1/data",
+        "NeedsFormat": true,
+        "SupportedPlatforms": ["Windows", "Linux", "MacOS"]
+      },
+      {
+        "AppName": "Grapin App 2",
+        "AppSyncDataFolderPath": "/path/to/grapin_app2/data",
+        "NeedsFormat": false,
+        "SupportedPlatforms": ["Linux"]
+      }
+    ]
+  }
+  
