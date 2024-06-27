@@ -289,7 +289,8 @@ POUR L'APP :
 - quand on appuis on a une liste d'options (installer (play store), ouvrir, lier à un appareil)
 - faire une popup qui invite à télécharger sur ses autres appareils
 - mettre un texte quand la list d'appareils est vide
-
+- trouver un moyen de s'assurer qu'une application accedant à son dossier dans le fileProvider est bien légitime
+- faire plusieurs apps de base (agenda, notes ...)
 
 
 
