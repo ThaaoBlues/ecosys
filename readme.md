@@ -8,7 +8,7 @@ On desktop os :
 We may achieve this goal by making a qsync addons market where people puts json files with details about how each files is stored in each OS of a specific app. This would allow qsync to adapt and synchronise existing apps. 
 
 On Android : 
-As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. We are thinking about a way to overcome this.
+As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. To know more about how we can still use files to sync applications data, see [android_app.md](https://github.com/ThaaoBlues/qsync/blob/master/android_app.md)
 
 ## QSync "Magasin" :
 We project to make a store where anyone can publish and/or download QSync addons (named "grapins" in all my frenchness bc it grabs apps data ) and QSync apps (named "tout en un" or 'all in one' in english).
