@@ -1,3 +1,12 @@
+/*
+ * @file            delta_binaire/core.go
+ * @description
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2024-04-19 14:18:54
+ * @lastModified    2024-06-27 17:23:28
+ * Copyright ©Théo Mougnibas All rights reserved
+ */
+
 package delta_binaire
 
 import (

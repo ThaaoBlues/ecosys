@@ -1,3 +1,12 @@
+/*
+ * @file            webui/core.go
+ * @description
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2024-06-24 18:47:41
+ * @lastModified    2024-06-27 17:24:42
+ * Copyright ©Théo Mougnibas All rights reserved
+ */
+
 package webui
 
 import (

@@ -1,3 +1,12 @@
+/*
+ * @file            security/core.go
+ * @description
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2024-03-02 19:14:18
+ * @lastModified    2024-06-27 17:24:18
+ * Copyright ©Théo Mougnibas All rights reserved
+ */
+
 package security
 
 import (

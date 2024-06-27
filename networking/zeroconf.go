@@ -1,3 +1,12 @@
+/*
+ * @file            networking/zeroconf.go
+ * @description
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2023-09-11 14:08:11
+ * @lastModified    2024-06-27 17:22:37
+ * Copyright ©Théo Mougnibas All rights reserved
+ */
+
 package networking
 
 import (

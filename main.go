@@ -1,3 +1,12 @@
+/*
+ * @file            main.go
+ * @description
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2023-09-11 14:08:11
+ * @lastModified    2024-06-27 17:21:29
+ * Copyright ©Théo Mougnibas All rights reserved
+ */
+
 package main
 
 import (

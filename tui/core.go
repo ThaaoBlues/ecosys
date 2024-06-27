@@ -1,3 +1,12 @@
+/*
+ * @file            tui/core.go
+ * @description
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2023-09-11 18:22:28
+ * @lastModified    2024-06-27 17:24:29
+ * Copyright ©Théo Mougnibas All rights reserved
+ */
+
 package tui
 
 import (

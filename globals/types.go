@@ -1,3 +1,12 @@
+/*
+ * @file            globals/types.go
+ * @description
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2024-03-24 15:15:33
+ * @lastModified    2024-06-27 17:23:58
+ * Copyright ©Théo Mougnibas All rights reserved
+ */
+
 package globals
 
 import "qsync/delta_binaire"
