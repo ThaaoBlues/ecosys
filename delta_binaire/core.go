@@ -149,14 +149,12 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 					file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff[new_buff_index]))
 
-					// don't forget to increment byte index
-
 				} else {
 					// same bytes, regular case we just increment counters
 					blocking_byte_index = byte_index
 				}
 			}
-
+			// don't forget to increment byte index
 			global_index++
 		}
 

@@ -23,8 +23,10 @@ func main() {
 	globals.SetQsyncWriteableDirectory(exPath)
 
 	setup.CleanupTempFiles()
-	setup.Setup()
-	setup.CheckUpdates()
+	if networking.IsNetworkAvailable() {
+		//setup.Setup()
+		//setup.CheckUpdates()
+	}
 
 	var zc networking.ZeroConfService
 	log_file, _ := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0777)

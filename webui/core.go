@@ -408,6 +408,8 @@ func sendText(w http.ResponseWriter, r *http.Request) {
 		Text   string            `json:"text"`
 	}
 
+	log.Println(requestData)
+
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

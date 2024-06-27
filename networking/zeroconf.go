@@ -139,15 +139,18 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 			dev["ip_addr"] = entry.AddrV4.String()
 			// as the order of the supplementary fields seem to vary from
 			// a service implementation to another
-			if strings.Split(entry.InfoFields[0], "=")[0] == "version" {
-				dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
-				dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
-			} else {
-				dev["version"] = strings.Split(entry.InfoFields[1], "=")[1]
-				dev["device_id"] = strings.Split(entry.InfoFields[0], "=")[1]
-			}
 
-			devices_list.Add(dev)
+			// avoid malformed fields
+			if len(strings.Split(entry.InfoFields[0], "=")) > 1 {
+				if strings.Split(entry.InfoFields[0], "=")[0] == "version" {
+					dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
+					dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
+				} else {
+					dev["version"] = strings.Split(entry.InfoFields[1], "=")[1]
+					dev["device_id"] = strings.Split(entry.InfoFields[0], "=")[1]
+				}
+				devices_list.Add(dev)
+			}
 
 		}
 	}()

@@ -167,6 +167,37 @@ h1 {
     margin-top: 2vh;
 
 }
+.grow-wrap {
+  /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
+  display: grid;
+}
+.grow-wrap::after {
+  /* Note the weird space! Needed to preventy jumpy behavior */
+  content: attr(data-replicated-value) " ";
+
+  /* This is how textarea text behaves */
+  white-space: pre-wrap;
+
+  /* Hidden from view, clicks, and screen readers */
+  visibility: hidden;
+}
+.grow-wrap > textarea {
+  /* You could leave this, but after a user resizes, then it ruins the auto sizing */
+  resize: none;
+
+  /* Firefox shows scrollbar on growth, you can hide like this. */
+  overflow: hidden;
+}
+.grow-wrap > textarea,
+.grow-wrap::after {
+  /* Identical styling required!! */
+  border: 1px solid black;
+  padding: 0.5rem;
+  font: inherit;
+
+  /* Place on top of each other */
+  grid-area: 1 / 1 / 2 / 2;
+}
 
 
 
@@ -315,7 +346,8 @@ h1 {
                 response.forEach((device, index) => {
                     const button = document.createElement('button');
                     button.innerText = device.hostname;
-                    button.onclick = () => openNetworkDeviceActionsMenu(device);
+                    console.log(device);
+                    button.onclick = () => openNetworkDeviceActionsMenu(Object.assign({}, device));
                     devicesDiv.appendChild(button);
                 });
             }
@@ -348,9 +380,10 @@ h1 {
 
         async function sendText(device) {
 
-            let data = device;
+            let data = {};
+            data.device = device;
             data.text = document.getElementById("custom-text").value;
-
+            console.log("sending text to :",data);
             const response = await sendRequest('/send-text', 'POST', data);
         
         }
@@ -361,10 +394,17 @@ h1 {
             let title = document.createElement("h1");
             title.innerText = translations[currentLang].sendTextTitle;
             popup.appendChild(title);
+            let wrapper = document.createElement("wrapper");
+            wrapper.className = "grow-wrap";
 
             let textarea = document.createElement("textarea");
             textarea.setAttribute("id","custom-text");
-            popup.appendChild(textarea);
+            textarea.oninput = function () {
+                textarea.parentNode.dataset.replicatedValue = textarea.value;
+            };
+            wrapper.appendChild(textarea);
+
+            popup.appendChild(wrapper);
 
             let btn = document.createElement("button");
             btn.onclick = function (){sendText(device); closePopup();};
