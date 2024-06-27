@@ -9,7 +9,9 @@
         "AppUninstallerPath": "/path/to/app1/uninstaller",
         "AppSyncDataFolderPath": "/path/to/app1/data",
         "AppDescription":"premier test de config.",
-        "AppIconURL":"https://via.placeholder.com/300"
+        "AppIconURL":"https://via.placeholder.com/300",
+        "SupportedPlatforms": ["Windows", "Linux","Android"]
+
       },
       {
         "AppName": "Tout en un test",
@@ -20,7 +22,22 @@
         "AppUninstallerPath": "",
         "AppSyncDataFolderPath": "sync_data",
         "AppDescription":"seconf test de config.",
-        "AppIconURL":"https://via.placeholder.com/300"
+        "AppIconURL":"https://via.placeholder.com/300",
+        "SupportedPlatforms": ["Windows", "Linux"]
+
+      },
+      {
+        "AppName": "Tout en un test Android",
+        "AppDownloadUrl": "https://play.google.com/...",
+        "NeedsInstaller": false,
+        "AppLauncherPath": "",
+        "AppInstallerPath": "",
+        "AppUninstallerPath": "",
+        "AppSyncDataFolderPath": "",
+        "AppDescription":"second test de config pour Android.",
+        "AppIconURL":"https://via.placeholder.com/300",
+        "SupportedPlatforms": ["Android"]
+
       }
     ],
     "grapin_configs": [
@@ -28,7 +45,7 @@
         "AppName": "Grapin App 1",
         "AppSyncDataFolderPath": "/path/to/grapin_app1/data",
         "NeedsFormat": true,
-        "SupportedPlatforms": ["Windows", "Linux", "MacOS"]
+        "SupportedPlatforms": ["Windows", "Linux"]
       },
       {
         "AppName": "Grapin App 2",

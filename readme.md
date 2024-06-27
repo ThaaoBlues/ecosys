@@ -36,7 +36,7 @@ type GrapinConfig struct {
 }
 ```
 
-The supported platform must be within ["Linux","Windows","Android"]
+The supported platform must be within ["Linux","Win32","Android"]
 NeedsFormat is a flag telling qsync to replace some parts of the application path contextually such as :
 * %username% for the user's name
 * %version% for an app specific version ( In first versions qsync will just walk in the parent folder and take the first child. This behavior could change if someone find a better one.)
@@ -66,48 +66,11 @@ type ToutEnUnConfig struct {
 	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
 	AppDescription        string // well that's the app's descriptions
 	AppIconURL            string
+	SupportedPlatforms    []string
+
 }
 ```
-
-
-examples :
-```json
-	{
-        "AppName": "myapp1",
-        "AppDownloadUrl": "https://example.com/myapp/installer.exe",
-        "NeedsInstaller": true,
-        "AppLauncherPath": "bin/launcher.exe",
-        "AppInstallerPath": "installer.exe",
-        "AppUninstallerPath": "bin/uninstaller.exe",
-        "AppSyncDataFolderPath": "data/sync",
-		"AppDescription" : "An example of full packed application.",
-		"AppIconURL" : "https://example.com/logo300x300.png"
-    }
-	{
-        "AppName": "myapp2",
-        "AppDownloadUrl": "https://example.com/myapp/portable.exe",
-        "NeedsInstaller": false,
-        "AppLauncherPath": "launcher.exe",
-        "AppInstallerPath": "",
-        "AppUninstallerPath": "bin/uninstaller.exe",
-        "AppSyncDataFolderPath": "data/sync",
-		"AppDescription" : "An example of full packed application without installator.",
-		"AppIconURL" : "https://example.com/logo300x300.png"
-    }
-
-		{
-        "AppName": "AndroidApp",
-        "AppDownloadUrl": "https://play.google.com/",
-        "NeedsInstaller": false,
-        "AppLauncherPath": "com.myapp.androidapp",
-        "AppInstallerPath": "",
-        "AppUninstallerPath": "",
-        "AppSyncDataFolderPath": "android content provider",
-		"AppDescription" : "An example of Android app using Qsync.",
-		"AppIconURL" : "https://example.com/logo300x300.png"
-    }
-
-```
+> For examples, see [magasin_database.json](https://raw.githubusercontent.com/ThaaoBlues/qsync/master/magasin_database.json)
 
 
 ### On android :
