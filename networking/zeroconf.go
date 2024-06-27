@@ -141,7 +141,7 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 			// a service implementation to another
 
 			// avoid malformed fields
-			if len(strings.Split(entry.InfoFields[0], "=")) > 1 {
+			if len(entry.InfoFields) > 1 {
 				if strings.Split(entry.InfoFields[0], "=")[0] == "version" {
 					dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
 					dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
