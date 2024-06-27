@@ -10,7 +10,7 @@
         "AppSyncDataFolderPath": "/path/to/app1/data",
         "AppDescription":"premier test de config.",
         "AppIconURL":"https://via.placeholder.com/300",
-        "SupportedPlatforms": ["Windows", "Linux","Android"]
+        "SupportedPlatforms": ["Windows", "Linux"]
 
       },
       {
@@ -28,7 +28,7 @@
       },
       {
         "AppName": "Tout en un test Android",
-        "AppDownloadUrl": "https://play.google.com/...",
+        "AppDownloadUrl": "https://play.google.com/store/apps/details?id=com.supercell.squad",
         "NeedsInstaller": false,
         "AppLauncherPath": "",
         "AppInstallerPath": "",
