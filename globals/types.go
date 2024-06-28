@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-03-24 15:15:33
- * @lastModified    2024-06-27 19:25:33
+ * @lastModified    2024-06-28 13:31:10
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -58,7 +58,6 @@ type GenArrayInterface[T any] interface {
 	PopLast() GenArray[T]
 }
 
-// TODO solve this with generics
 type GenArray[T any] struct {
 	items []T
 }

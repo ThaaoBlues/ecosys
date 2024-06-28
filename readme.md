@@ -245,11 +245,10 @@ POUR PC :
 - peut-etre utiliser des popup natives pour la confirmation des largages aeriens à la place de la webui
 
 POUR L'APP :
+- Faire la creation de dossier
+- 
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
-- faire le magasin
-- Pour les applis, ce sera juste une liste d'apps
-- quand on appuis on a une liste d'options (installer (play store), ouvrir, lier à un appareil)
 - faire une popup qui invite à télécharger sur ses autres appareils
 - mettre un texte quand la list d'appareils est vide
 - trouver un moyen de s'assurer qu'une application accedant à son dossier dans le fileProvider est bien légitime

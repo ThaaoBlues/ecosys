@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-06-27 17:23:28
+ * @lastModified    2024-06-28 12:42:39
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -221,7 +221,6 @@ func (delta Delta) PatchFile() {
 			// convert int8 to byte
 			// all this shit is needed as a byte is unsigned in go
 			// and signed in java
-
 			for _, v := range delta.Instructions[i].Data {
 				//log.Println(v, byte(v))
 				_, err = file_writer.Write([]byte{byte(v)})

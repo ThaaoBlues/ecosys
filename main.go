@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-27 17:21:29
+ * @lastModified    2024-06-28 12:01:04
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -55,7 +55,10 @@ func main() {
 
 	//tui.DisplayMenu()
 
-	webui.StartWebUI()
+	go webui.StartWebUI()
 	globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
+	for {
+
+	}
 }

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-27 17:23:17
+ * @lastModified    2024-06-28 22:19:06
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1173,7 +1173,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 
 	// as the device can be late on many tasks, we must create an hash table with all
 	// the differents delta on all differents tasks he's late on
-	var queue map[string]*globals.GenArray[*globals.QEvent] = make(map[string]*globals.GenArray[*globals.QEvent])
+	var queue map[string]*globals.GenArray[*globals.QEvent] = make(map[string]*globals.GenArray[*globals.QEvent], 0)
 
 	log.Println("Building missed files event queue from retard...")
 	rows, err := acces.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
@@ -1193,10 +1193,10 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 		var file_type string
 
 		MODTYPES_REVERSE := map[string]string{
-			"c": "CREATE",
-			"d": "REMOVE",
-			"p": "UPDATE",
-			"m": "MOVE",
+			"c": "[CREATE]",
+			"d": "[REMOVE]",
+			"p": "[UPDATE]",
+			"m": "[MOVE]",
 		}
 
 		rows.Scan(&secure_id, &delta_bytes, &mod_type, &filepath, &file_type)
@@ -1212,6 +1212,10 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 
 		log.Println("ADDING EVENT : ", event)
 
+		if queue[secure_id] == nil {
+			var genA globals.GenArray[*globals.QEvent]
+			queue[secure_id] = &genA
+		}
 		queue[secure_id].Add(&event)
 	}
 
@@ -1231,10 +1235,10 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 		var file_type string
 
 		MODTYPES_REVERSE := map[string]string{
-			"c": "CREATE",
-			"d": "REMOVE",
-			"p": "UPDATE",
-			"m": "MOVE",
+			"c": "[CREATE]",
+			"d": "[REMOVE]",
+			"p": "[UPDATE]",
+			"m": "[MOVE]",
 		}
 
 		rows.Scan(&secure_id, &mod_type, &filepath, &file_type)
@@ -1245,7 +1249,10 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 		event.FilePath = filepath
 
 		log.Println("ADDING EVENT : ", event)
-
+		if queue[secure_id] == nil {
+			var genA globals.GenArray[*globals.QEvent]
+			queue[secure_id] = &genA
+		}
 		queue[secure_id].Add(&event)
 	}
 
