@@ -245,8 +245,7 @@ POUR PC :
 - peut-etre utiliser des popup natives pour la confirmation des largages aeriens à la place de la webui
 
 POUR L'APP :
-- Faire la creation de dossier
-- 
+- voir pourquoi rien ne passe dans la table de retard (la liste de offlineDevices est-elle vide ?)
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - faire une popup qui invite à télécharger sur ses autres appareils

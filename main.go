@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-28 12:01:04
+ * @lastModified    2024-06-28 22:26:34
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -13,6 +13,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"qsync/bdd"
+	"qsync/filesystem"
 	"qsync/globals"
 	"qsync/networking"
 	"qsync/setup"
@@ -57,6 +59,16 @@ func main() {
 
 	go webui.StartWebUI()
 	globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
+
+	//start qsync
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	defer acces.CloseConnection()
+
+	tasks := acces.ListSyncAllTasks()
+	for i := 0; i < tasks.Size(); i++ {
+		filesystem.StartWatcher(tasks.Get(i).Path)
+	}
 
 	for {
 

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-06-27 17:24:42
+ * @lastModified    2024-06-28 22:26:04
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -52,7 +52,7 @@ func StartWebUI() {
 
 	router.HandleFunc("/", serveIndex).Methods("GET")
 	router.HandleFunc("/magasin", magasinHandler).Methods("GET")
-	router.HandleFunc("/start", startQSync).Methods("GET")
+	//router.HandleFunc("/start", startQSync).Methods("GET")
 	router.HandleFunc("/create", createSyncTask).Methods("GET")
 	router.HandleFunc("/link", linkDevice).Methods("POST")
 	router.HandleFunc("/list-tasks", listTasks).Methods("GET")
