@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-28 22:26:34
+ * @lastModified    2024-06-29 15:28:16
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -45,15 +45,16 @@ func main() {
 
 	log.SetOutput(log_file)
 
-	if networking.IsNetworkAvailable() {
-		// register this device
-		go zc.Register()
-		// keep an up to date list ofmtf linked devices that are on our network
-		go zc.UpdateDevicesConnectionStateLoop()
-		// loop accepting and treating requests from other devices
-		go networking.NetWorkLoop()
+	/*if networking.IsNetworkAvailable() {
 
-	}
+
+	}*/
+	// register this device
+	go zc.Register()
+	// keep an up to date list ofmtf linked devices that are on our network
+	go zc.UpdateDevicesConnectionStateLoop()
+	// loop accepting and treating requests from other devices
+	go networking.NetWorkLoop()
 
 	//tui.DisplayMenu()
 

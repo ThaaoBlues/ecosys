@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-06-27 17:24:06
+ * @lastModified    2024-06-29 18:20:11
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -72,10 +72,11 @@ func SerializeQevent(event QEvent) string {
 	)
 }
 
-func DeSerializeQevent(data string) QEvent {
+func DeSerializeQevent(data string, secure_id string) QEvent {
 	log.Println("splitting serialized event")
 	parts := bytes.Split(bytes.NewBufferString(data).Bytes(), []byte(";"))
 	log.Println("Event split")
+	//log.Println(parts)
 	// check if instructions are present, as some requests does not needs it
 	if len(parts[2]) > 1 {
 
@@ -88,7 +89,7 @@ func DeSerializeQevent(data string) QEvent {
 			Delta:       delta,
 			FilePath:    string(parts[4]),
 			NewFilePath: string(parts[5]),
-			SecureId:    string(parts[6]),
+			SecureId:    secure_id,
 		}
 	} else {
 		return QEvent{
@@ -96,7 +97,7 @@ func DeSerializeQevent(data string) QEvent {
 			FileType:    string(parts[1]),
 			FilePath:    string(parts[4]),
 			NewFilePath: string(parts[5]),
-			SecureId:    string(parts[6]),
+			SecureId:    secure_id,
 		}
 
 	}

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-27 17:22:53
+ * @lastModified    2024-06-29 18:20:39
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -69,7 +69,7 @@ func ConnectToDevice(conn net.Conn) {
 	}
 
 	_, err := conn.Read(header_buff)
-	log.Println("HEADER BUFF", header_buff)
+	//log.Println("HEADER BUFF", header_buff)
 
 	// as the padding got the first element of the header, we must shift the header slice by one
 	header_buff = append([]byte{padding_buff[0]}, header_buff...)
@@ -122,7 +122,7 @@ func ConnectToDevice(conn net.Conn) {
 
 	//log.Println("Request body : ", string(body_buff))
 
-	var data globals.QEvent = globals.DeSerializeQevent(body_buff.String())
+	var data globals.QEvent = globals.DeSerializeQevent(body_buff.String(), secure_id)
 
 	// check if this is a regular file event of a special request
 	//log.Println("DECODED EVENT : ", data)
@@ -130,6 +130,20 @@ func ConnectToDevice(conn net.Conn) {
 
 	case "[MODIFICATION_DONE]":
 		SetEventNetworkLockForDevice(device_id, false)
+
+	case "[BEGIN_UPDATE]":
+
+		if acces.IsDeviceLinked(device_id) {
+			log.Println("LOCKING FILESYSTEM")
+			acces.SetFileSystemPatchLockState(device_id, true)
+		}
+
+	case "[END_OF_UPDATE]":
+		/*if acces.IsDeviceLinked(device_id) {
+			log.Println("UNLOCKING FILESYSTEM")
+			acces.SetFileSystemPatchLockState(device_id, false)
+		}*/
+
 	case "[SETUP_DL]":
 		if acces.IsDeviceLinked(device_id) {
 			log.Println("GOT FLAG, BUILDING SETUP QUEUE...")
@@ -218,7 +232,7 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 
 	// first, we lock the filesystem watcher so it don't notify the changes we are doing
 	// as it would do a ping-pong effect
-
+	//log.Println(event)
 	var acces bdd.AccesBdd
 	acces.SecureId = secure_id
 
@@ -269,8 +283,66 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 		log.Fatal("Qsync network loop received an unknown event type : ", event)
 	}
 
+	//wait [END_OF_UPDATE] event so if multiple files are to be treated at the same time
+	// there are no problem
 	acces.SetFileSystemPatchLockState(device_id, false)
 
+}
+
+func SendStartUpdateEvent(secure_id string, ip_addr string) {
+
+	var update_start_event globals.QEvent
+
+	update_start_event.Flag = "[BEGIN_UPDATE]"
+	update_start_event.SecureId = secure_id
+
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	// /!\ the device_id we send is our own so the other end can identify ourselves
+	write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + globals.SerializeQevent(update_start_event))
+
+	conn, err := net.Dial("tcp", ip_addr+":8274")
+
+	if err != nil {
+		log.Fatal("Error while dialing "+ip_addr+" from SendDeviceEventQueueOverNetwork() : ", err)
+	}
+	_, err = conn.Write(write_buff)
+
+	if err != nil {
+		log.Fatal("Error while writing to "+ip_addr+" from SendDeviceEventQueueOverNetwork() : ", err)
+	}
+
+	conn.Close()
+
+	acces.CloseConnection()
+}
+
+func SendStopUpdateEvent(secure_id string, ip_addr string) {
+
+	var update_stop_event globals.QEvent
+
+	update_stop_event.Flag = "[END_OF_UPDATE]"
+	update_stop_event.SecureId = secure_id
+
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	// /!\ the device_id we send is our own so the other end can identify ourselves
+	write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + globals.SerializeQevent(update_stop_event))
+
+	conn, err := net.Dial("tcp", ip_addr+":8274")
+
+	if err != nil {
+		log.Fatal("Error while dialing "+ip_addr+" from SendDeviceEventQueueOverNetwork() : ", err)
+	}
+	_, err = conn.Write(write_buff)
+
+	if err != nil {
+		log.Fatal("Error while writing to "+ip_addr+" from SendDeviceEventQueueOverNetwork() : ", err)
+	}
+
+	conn.Close()
+
+	acces.CloseConnection()
 }
 
 func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string], secure_id string, event_queue globals.GenArray[globals.QEvent], ip_addr ...string) {
@@ -280,22 +352,28 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 
 	for i := 0; i < connected_devices.Size(); i++ {
 		device_id := connected_devices.Get(i)
+
+		var acces bdd.AccesBdd
+		acces.InitConnection()
+
+		if len(ip_addr) == 0 {
+			ip_addr = append(ip_addr, acces.GetDeviceIP(device_id))
+		}
+
+		//SendStartUpdateEvent(secure_id, ip_addr[0])
+
 		for i := 0; i < event_queue.Size(); i++ {
+
 			event := event_queue.Get(i)
 
 			SetEventNetworkLockForDevice(device_id, true)
 
 			formatted_event := globals.SerializeQevent(event)
 
-			var acces bdd.AccesBdd
-			acces.InitConnection()
 			acces.SecureId = secure_id
 
 			// we let the possibility to specify the address in the function arguments
 			// as in the case of a [LINK_DEVICE] request, we don't have the IP address registered in the db
-			if len(ip_addr) == 0 {
-				ip_addr = append(ip_addr, acces.GetDeviceIP(device_id))
-			}
 
 			// /!\ the device_id we send is our own so the other end can identify ourselves
 			write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + string(formatted_event))
@@ -320,7 +398,12 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			for GetEventNetworkLockForDevice(device_id) {
 				time.Sleep(1 * time.Second)
 			}
+
 		}
+
+		//SendStopUpdateEvent(secure_id, ip_addr[0])
+		acces.CloseConnection()
+
 	}
 
 }

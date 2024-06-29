@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-06-28 12:42:39
+ * @lastModified    2024-06-29 16:00:45
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -283,22 +283,24 @@ func (delta *Delta) DeSerialize(instructions_string []byte) {
 		instructionData := bytes.Split(bytes.NewBufferString(block_builder.String()).Bytes(), []byte(","))
 		//instructionData := block_builder.String()
 
-		dataInts := make([]int8, len(instructionData)-2)
+		if len(instructionData) > 2 {
+			dataInts := make([]int8, len(instructionData)-2)
+			for j := 1; j < len(instructionData)-1; j++ {
 
-		for j := 1; j < len(instructionData)-1; j++ {
+				tmp, _ := strconv.Atoi(string(instructionData[j]))
+				dataInts[j-1] = int8(tmp)
+			}
 
-			tmp, _ := strconv.Atoi(string(instructionData[j]))
-			dataInts[j-1] = int8(tmp)
+			byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
+
+			delta.Instructions = append(delta.Instructions,
+				Delta_instruction{
+					InstructionType: string(instructionData[0]),
+					Data:            dataInts,
+					ByteIndex:       byteIndex,
+				})
+
 		}
-
-		byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
-
-		delta.Instructions = append(delta.Instructions,
-			Delta_instruction{
-				InstructionType: string(instructionData[0]),
-				Data:            dataInts,
-				ByteIndex:       byteIndex,
-			})
 
 		i += 1
 	}

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-27 17:23:38
+ * @lastModified    2024-06-29 16:18:13
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -104,6 +104,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.Delta = delta
 
 		queue.Add(event)
+
 		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
 
 	} else {

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-27 17:22:37
+ * @lastModified    2024-06-29 15:48:27
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -123,7 +123,7 @@ func (zcs *ZeroConfService) Register() {
 	}
 	service, _ := mdns.NewMDNSService(host, "_qsync._tcp.", "", "", 8274, []net.IP{GetOutboundIP()}, info)
 
-	// Create the mDNS server, defer shutdown
+	// Create the mDNS server
 	server, _ := mdns.NewServer(&mdns.Config{Zone: service})
 
 	zcs.Server = server

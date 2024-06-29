@@ -237,6 +237,9 @@ As example, here is a program that shows a bit how it is working :
 
 TODO (voir mes notes, sec)
 
+POUR TOUT :
+- différencier la lock du filesystem en fonction de la taches pour ne pas tout bloquer
+
 POUR PC :
 - Mettre la palette de couleurs sur le magasin
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)

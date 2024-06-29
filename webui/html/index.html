@@ -249,7 +249,7 @@ h1 {
             currentLang = lang;
             document.getElementById('title').innerText = translations[lang].title;
             document.getElementById('no-internet-alert').innerText = translations[lang].noInternet;
-            document.getElementById('start-btn').innerText = translations[lang].startQSync;
+            //document.getElementById('start-btn').innerText = translations[lang].startQSync;
             document.getElementById('create-sync-btn').innerText = translations[lang].createSyncTask;
             document.getElementById('open-magasin-btn').innerText = translations[lang].openMagasin;
             document.getElementById('toggle-largage-btn').innerText = translations[lang].toggleLargageAerien;
@@ -344,6 +344,7 @@ h1 {
 
             if(response != null){
                 response.forEach((device, index) => {
+                    console.log(device);
                     const button = document.createElement('button');
                     button.innerText = device.hostname;
                     console.log(device);
