@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-28 22:19:06
+ * @lastModified    2024-06-29 22:34:14
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1045,6 +1045,41 @@ func (acces *AccesBdd) GetOnlineDevices() globals.GenArray[string] {
 
 	if err != nil {
 		log.Fatal("Error while querying database from GetOnlineDevices() : ", err)
+	}
+	defer rows.Close()
+
+	var online_devices globals.GenArray[string]
+
+	for rows.Next() {
+		var device LinkDevice
+		rows.Scan(&device.SecureId, &device.IsConnected)
+
+		if device.IsConnected {
+			online_devices.Add(device.SecureId)
+		}
+	}
+
+	return online_devices
+}
+
+func (acces *AccesBdd) GetSyncOnlineDevices() globals.GenArray[string] {
+	linked_devices := acces.GetSyncLinkedDevices()
+
+	var str_ids string = ""
+	for i := 0; i < linked_devices.Size(); i++ {
+		str_ids += linked_devices.Get(i) + ","
+	}
+	// remove the last colon
+	str_ids = str_ids[:len(str_ids)-1]
+
+	query := "SELECT device_id,is_connected FROM linked_devices WHERE device_id IN ('"
+	query += str_ids
+	query += "')"
+
+	rows, err := acces.db_handler.Query(query)
+
+	if err != nil {
+		log.Fatal("Error while querying database from GetSyncOfflineDevices() : ", err)
 	}
 	defer rows.Close()
 

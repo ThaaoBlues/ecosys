@@ -249,13 +249,13 @@ POUR PC :
 
 POUR L'APP :
 - voir pourquoi rien ne passe dans la table de retard (la liste de offlineDevices est-elle vide ?)
+- Envoyer les Qevents à chaque detection dans handler
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - faire une popup qui invite à télécharger sur ses autres appareils
 - mettre un texte quand la list d'appareils est vide
 - trouver un moyen de s'assurer qu'une application accedant à son dossier dans le fileProvider est bien légitime
 - faire plusieurs apps de base (agenda, notes ...)
-
 
 
 

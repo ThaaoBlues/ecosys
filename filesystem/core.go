@@ -1,11 +1,11 @@
 /*
  * @file            filesystem/core.go
- * @description
+ * @description     
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-29 16:18:13
+ * @lastModified    2024-06-29 22:35:36
  * Copyright ©Théo Mougnibas All rights reserved
- */
+*/
 
 package filesystem
 
@@ -105,7 +105,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 		queue.Add(event)
 
-		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 
 	} else {
 		// add a watcher into this new folder
@@ -123,7 +123,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 		queue.Add(event)
 
-		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices()*, acces.SecureId, queue)
 	}
 }
 
@@ -145,7 +145,7 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 
 		queue.Add(event)
 
-		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 	}
 }
 
@@ -170,7 +170,7 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 	queue.Add(event)
 
-	networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
+	networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 }
 
 func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path string) {
@@ -204,7 +204,7 @@ func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.NewFilePath = new_relative_path
 
 		queue.Add(event)
-		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 	}
 }
 
@@ -260,7 +260,7 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		var queue globals.GenArray[globals.QEvent]
 		queue.Add(event)
 
-		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 
 	}
 
@@ -289,7 +289,7 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 		var queue globals.GenArray[globals.QEvent]
 		queue.Add(event)
 
-		networking.SendDeviceEventQueueOverNetwork(acces.GetOnlineDevices(), acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 
 		return ""
 	}
