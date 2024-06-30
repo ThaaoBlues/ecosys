@@ -3,7 +3,7 @@
  * @description     
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-29 22:35:36
+ * @lastModified    2024-06-30 15:43:47
  * Copyright ©Théo Mougnibas All rights reserved
 */
 
@@ -57,28 +57,33 @@ func StartWatcher(rootPath string) {
 	for {
 		select {
 		case event := <-watcher.Events:
-			if !acces.IsThisFileSystemBeingPatched() { // Check if the filesystem is not locked
 				log.Println("NEW FILESYSTEM EVENT (rootPath="+rootPath+" ) : ", event)
 				// get only the relative path
 				relative_path := strings.Replace(event.Name, rootPath, "", 1)
 				switch {
 				case event.Has(fsnotify.Create):
+					// in the case of a directory being sent to us by another end, we still
+					// have to partly process the event to add it to the watcher :)
 					handleCreateEvent(&acces, event.Name, relative_path, watcher)
 				case event.Has(fsnotify.Write):
-					handleWriteEvent(&acces, event.Name, relative_path)
+					if !acces.IsThisFileSystemBeingPatched() {
+						handleWriteEvent(&acces, event.Name, relative_path)
+					}
 				case event.Has(fsnotify.Remove):
 					// backup mode allow to store files on another machine while
 					// still freeing up space on the device if we want
-					if !acces.IsSyncInBackupMode() {
+					if !acces.IsSyncInBackupMode() && !acces.IsThisFileSystemBeingPatched(){
 						handleRemoveEvent(&acces, event.Name, relative_path)
 					}
 				case event.Has(fsnotify.Rename):
-					handleRenameEvent(&acces, event.Name, relative_path)
+					if !acces.IsThisFileSystemBeingPatched(){
+						handleRenameEvent(&acces, event.Name, relative_path)
+					}
 				default:
 					log.Println("Unhandled event (maybe in later versions ) : ", event)
 
 				}
-			}
+			
 		case err := <-watcher.Errors:
 			log.Println("Error:", err)
 		}
@@ -89,7 +94,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 	var queue globals.GenArray[globals.QEvent]
 
-	if acces.IsFile(absolute_path) {
+	if acces.IsFile(absolute_path) && !acces.IsThisFileSystemBeingPatched(){
 
 		acces.CreateFile(relative_path, absolute_path, "[ADD_TO_RETARD]")
 
@@ -111,19 +116,23 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		// add a watcher into this new folder
 		log.Println("Adding " + absolute_path + " to the directories to watch.")
 		watcher.Add(absolute_path)
-		// notify changes as usual
-		acces.CreateFolder(relative_path)
-		acces.AddFolderToRetard(relative_path)
 
-		var event globals.QEvent
-		event.Flag = "[CREATE]"
-		event.SecureId = acces.SecureId
-		event.FileType = "folder"
-		event.FilePath = relative_path
+		if !acces.IsThisFileSystemBeingPatched(){
+			// notify changes as usual
+			acces.CreateFolder(relative_path)
+			acces.AddFolderToRetard(relative_path)
 
-		queue.Add(event)
+			var event globals.QEvent
+			event.Flag = "[CREATE]"
+			event.SecureId = acces.SecureId
+			event.FileType = "folder"
+			event.FilePath = relative_path
 
-		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices()*, acces.SecureId, queue)
+			queue.Add(event)
+
+			networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices()*, acces.SecureId, queue)
+		}
+		
 	}
 }
 

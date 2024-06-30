@@ -249,7 +249,7 @@ POUR PC :
 
 POUR L'APP :
 - voir pourquoi rien ne passe dans la table de retard (la liste de offlineDevices est-elle vide ?)
-- Envoyer les Qevents à chaque detection dans handler
+- la liste des SyncOnlineDevices est aussi vide ??? pourquoi ???
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - faire une popup qui invite à télécharger sur ses autres appareils
