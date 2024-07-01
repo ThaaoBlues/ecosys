@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-06-29 16:00:45
+ * @lastModified    2024-07-01 16:52:03
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -47,6 +47,18 @@ func calculateBufferSize(file_size int64) int {
 	}
 
 	return c
+}
+
+func byteBufferToInt8Slice(buff []byte) []int8 {
+
+	size := len(buff)
+	ret := make([]int8, size)
+
+	for i := 0; i < size; i++ {
+		ret[i] = int8(buff[i])
+	}
+
+	return ret
 }
 
 func BuilDelta(relative_path string, absolute_path string, old_file_size int64, old_file_content []byte) Delta {
@@ -102,6 +114,8 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	log.Println("old file size : ", old_file_size)
 	log.Println("old file content : ", old_file_content)
 
+	var instruction_buffer bytes.Buffer
+
 	for (global_index < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
 
 		new_buff_fill_size, new_err := new_file_reader.Read(new_file_buff)
@@ -115,10 +129,13 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 		// new delta instruction
 		// we are looping throught the newly read block
+
+		// var instructions_buffer bytes.Buffer;
 		for new_buff_index := 0; new_buff_index < new_buff_fill_size; new_buff_index++ {
 
 			var delta_index int = 0
 			var byte_index_cond bool = true
+
 			if len(file_delta) > 0 {
 				delta_index = len(file_delta) - 1
 				byte_index_cond = (file_delta[delta_index].ByteIndex != blocking_byte_index)
@@ -139,15 +156,17 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 			}
 
 			if ((new_file_buff[new_buff_index] != old_file_byte) || (global_index >= old_file_size)) && (byte_index_cond) {
-				/*if new_file_buff == 0xff {
-					log.Println("255 !!! :: cast = ", int8(new_file_buff))
-				}*/
+
+				//instruction_buffer.WriteByte(new_file_buff[new_buff_index])
+
 				inst := Delta_instruction{
-					Data:            []int8{int8(new_file_buff[new_buff_index])},
+					Data:            []int8{0},
 					InstructionType: "ab",
 					ByteIndex:       byte_index,
 				}
 				//log.Println("append : ", inst)
+
+				instruction_buffer.WriteByte(new_file_buff[new_buff_index])
 				file_delta = append(file_delta, inst)
 
 			} else {
@@ -155,12 +174,38 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 				if (new_file_buff[new_buff_index] != old_file_byte) || global_index >= old_file_size {
 
 					// add the byte we've just read to the data of the delta chunk
+					instruction_buffer.WriteByte(new_file_buff[new_buff_index])
 
-					file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff[new_buff_index]))
+					// check if we are at end of read buffer block and flush the write buffer
+					// this operation removes the need to clone a byte array to extend it at each new byte in a block
+					// This block is necessary as if we weren't using this, the last differences chunk being
+					// processed ad each read buffer block would not be written to its delta Instruction
+					if instruction_buffer.Len() > 0 && (new_buff_index == new_buff_fill_size-1) {
+
+						file_delta[len(file_delta)-1].Data = byteBufferToInt8Slice(instruction_buffer.Bytes())
+						instruction_buffer.Reset()
+
+						// prepare a new block for the next buffer, with the good index
+
+						blocking_byte_index = global_index + 1
+
+					}
+
+					//file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff[new_buff_index]))
 
 				} else {
 					// same bytes, regular case we just increment counters
-					blocking_byte_index = byte_index
+
+					// check if we are at the end of a block change ( i.e the data stream has bytes in it )
+					// as if this is just a random byte in a chunk of unchanged bytes the buffer would be empty
+					// this operation removes the need to clone a byte array to extend it at each new byte in a block
+
+					if instruction_buffer.Len() > 0 {
+						file_delta[len(file_delta)-1].Data = byteBufferToInt8Slice(instruction_buffer.Bytes())
+						instruction_buffer.Reset()
+					}
+
+					blocking_byte_index = byte_index + 1
 				}
 			}
 			// don't forget to increment byte index
@@ -283,24 +328,22 @@ func (delta *Delta) DeSerialize(instructions_string []byte) {
 		instructionData := bytes.Split(bytes.NewBufferString(block_builder.String()).Bytes(), []byte(","))
 		//instructionData := block_builder.String()
 
-		if len(instructionData) > 2 {
-			dataInts := make([]int8, len(instructionData)-2)
-			for j := 1; j < len(instructionData)-1; j++ {
+		dataInts := make([]int8, len(instructionData)-2)
 
-				tmp, _ := strconv.Atoi(string(instructionData[j]))
-				dataInts[j-1] = int8(tmp)
-			}
+		for j := 1; j < len(instructionData)-1; j++ {
 
-			byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
-
-			delta.Instructions = append(delta.Instructions,
-				Delta_instruction{
-					InstructionType: string(instructionData[0]),
-					Data:            dataInts,
-					ByteIndex:       byteIndex,
-				})
-
+			tmp, _ := strconv.Atoi(string(instructionData[j]))
+			dataInts[j-1] = int8(tmp)
 		}
+
+		byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
+
+		delta.Instructions = append(delta.Instructions,
+			Delta_instruction{
+				InstructionType: string(instructionData[0]),
+				Data:            dataInts,
+				ByteIndex:       byteIndex,
+			})
 
 		i += 1
 	}

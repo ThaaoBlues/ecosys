@@ -1,11 +1,11 @@
 /*
  * @file            filesystem/core.go
- * @description     
+ * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-30 15:43:47
+ * @lastModified    2024-07-01 15:26:33
  * Copyright ©Théo Mougnibas All rights reserved
-*/
+ */
 
 package filesystem
 
@@ -57,33 +57,33 @@ func StartWatcher(rootPath string) {
 	for {
 		select {
 		case event := <-watcher.Events:
-				log.Println("NEW FILESYSTEM EVENT (rootPath="+rootPath+" ) : ", event)
-				// get only the relative path
-				relative_path := strings.Replace(event.Name, rootPath, "", 1)
-				switch {
-				case event.Has(fsnotify.Create):
-					// in the case of a directory being sent to us by another end, we still
-					// have to partly process the event to add it to the watcher :)
-					handleCreateEvent(&acces, event.Name, relative_path, watcher)
-				case event.Has(fsnotify.Write):
-					if !acces.IsThisFileSystemBeingPatched() {
-						handleWriteEvent(&acces, event.Name, relative_path)
-					}
-				case event.Has(fsnotify.Remove):
-					// backup mode allow to store files on another machine while
-					// still freeing up space on the device if we want
-					if !acces.IsSyncInBackupMode() && !acces.IsThisFileSystemBeingPatched(){
-						handleRemoveEvent(&acces, event.Name, relative_path)
-					}
-				case event.Has(fsnotify.Rename):
-					if !acces.IsThisFileSystemBeingPatched(){
-						handleRenameEvent(&acces, event.Name, relative_path)
-					}
-				default:
-					log.Println("Unhandled event (maybe in later versions ) : ", event)
-
+			log.Println("NEW FILESYSTEM EVENT (rootPath="+rootPath+" ) : ", event)
+			// get only the relative path
+			relative_path := strings.Replace(event.Name, rootPath, "", 1)
+			switch {
+			case event.Has(fsnotify.Create):
+				// in the case of a directory being sent to us by another end, we still
+				// have to partly process the event to add it to the watcher :)
+				handleCreateEvent(&acces, event.Name, relative_path, watcher)
+			case event.Has(fsnotify.Write):
+				if !acces.IsThisFileSystemBeingPatched() {
+					handleWriteEvent(&acces, event.Name, relative_path)
 				}
-			
+			case event.Has(fsnotify.Remove):
+				// backup mode allow to store files on another machine while
+				// still freeing up space on the device if we want
+				if !acces.IsThisFileSystemBeingPatched() {
+					handleRemoveEvent(&acces, event.Name, relative_path)
+				}
+			case event.Has(fsnotify.Rename):
+				if !acces.IsThisFileSystemBeingPatched() {
+					handleRenameEvent(&acces, event.Name, relative_path)
+				}
+			default:
+				log.Println("Unhandled event (maybe in later versions ) : ", event)
+
+			}
+
 		case err := <-watcher.Errors:
 			log.Println("Error:", err)
 		}
@@ -94,7 +94,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 	var queue globals.GenArray[globals.QEvent]
 
-	if acces.IsFile(absolute_path) && !acces.IsThisFileSystemBeingPatched(){
+	if acces.IsFile(absolute_path) && !acces.IsThisFileSystemBeingPatched() {
 
 		acces.CreateFile(relative_path, absolute_path, "[ADD_TO_RETARD]")
 
@@ -117,7 +117,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		log.Println("Adding " + absolute_path + " to the directories to watch.")
 		watcher.Add(absolute_path)
 
-		if !acces.IsThisFileSystemBeingPatched(){
+		if !acces.IsThisFileSystemBeingPatched() {
 			// notify changes as usual
 			acces.CreateFolder(relative_path)
 			acces.AddFolderToRetard(relative_path)
@@ -130,9 +130,9 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 			queue.Add(event)
 
-			networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices()*, acces.SecureId, queue)
+			networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 		}
-		
+
 	}
 }
 
@@ -171,15 +171,18 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		file_type = "folder"
 	}
 
-	var event globals.QEvent
-	event.Flag = "[REMOVE]"
-	event.SecureId = acces.SecureId
-	event.FileType = file_type
-	event.FilePath = relative_path
+	if !acces.IsSyncInBackupMode() {
+		var event globals.QEvent
+		event.Flag = "[REMOVE]"
+		event.SecureId = acces.SecureId
+		event.FileType = file_type
+		event.FilePath = relative_path
 
-	queue.Add(event)
+		queue.Add(event)
 
-	networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
+		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
+	}
+
 }
 
 func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path string) {

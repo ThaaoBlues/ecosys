@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-29 18:20:39
+ * @lastModified    2024-07-01 15:28:25
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -244,43 +244,49 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 	// utiliser directement la variable
 	// avant ce bloc, event.FilePath est un chemin relatif vers le fichier.
 	relative_path := event.FilePath
-	new_relative_path := event.NewFilePath
-	event.Delta.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
-	event.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
 
-	switch event.Flag {
-	case "[MOVE]":
-		acces.Move(relative_path, new_relative_path, event.FileType)
-		MoveInFilesystem(event.FilePath, event.NewFilePath)
-	case "[REMOVE]":
-		if event.FileType == "file" {
-			acces.RmFile(event.FilePath)
+	// as in backup mode, files can be supressed freely
+	// the remote device can still have a file that no longer exists
+	// in this filesystem
+	if !(acces.IsSyncInBackupMode() && !acces.IsFile(relative_path)) {
+		new_relative_path := event.NewFilePath
+		event.Delta.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
+		event.FilePath = path.Join(acces.GetRootSyncPath(), event.FilePath)
 
-		} else {
-			acces.RmFolder(event.FilePath)
-		}
+		switch event.Flag {
+		case "[MOVE]":
+			acces.Move(relative_path, new_relative_path, event.FileType)
+			MoveInFilesystem(event.FilePath, event.NewFilePath)
+		case "[REMOVE]":
+			if event.FileType == "file" {
+				acces.RmFile(event.FilePath)
 
-		RemoveFromFilesystem(event.FilePath)
+			} else {
+				acces.RmFolder(event.FilePath)
+			}
 
-	case "[CREATE]":
+			RemoveFromFilesystem(event.FilePath)
 
-		log.Println("Creating file : ", event.FilePath)
-		if event.FileType == "file" {
+		case "[CREATE]":
+
+			log.Println("Creating file : ", event.FilePath)
+			if event.FileType == "file" {
+				event.Delta.PatchFile()
+				acces.CreateFile(relative_path, filepath.Join(acces.GetRootSyncPath(), relative_path), "[SENT_FROM_OTHER_DEVICE]")
+
+			} else {
+				os.Mkdir(event.FilePath, 0755)
+				acces.CreateFolder(relative_path)
+
+			}
+
+		case "[UPDATE]":
+
+			acces.IncrementFileVersion(relative_path)
 			event.Delta.PatchFile()
-			acces.CreateFile(relative_path, filepath.Join(acces.GetRootSyncPath(), relative_path), "[SENT_FROM_OTHER_DEVICE]")
-
-		} else {
-			os.Mkdir(event.FilePath, 0755)
-			acces.CreateFolder(relative_path)
-
+		default:
+			log.Fatal("Qsync network loop received an unknown event type : ", event)
 		}
-
-	case "[UPDATE]":
-
-		acces.IncrementFileVersion(relative_path)
-		event.Delta.PatchFile()
-	default:
-		log.Fatal("Qsync network loop received an unknown event type : ", event)
 	}
 
 	//wait [END_OF_UPDATE] event so if multiple files are to be treated at the same time

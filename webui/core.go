@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-06-28 22:26:04
+ * @lastModified    2024-07-01 15:54:35
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -386,9 +386,9 @@ func toggleLargageAerien(w http.ResponseWriter, r *http.Request) {
 
 func sendLargage(w http.ResponseWriter, r *http.Request) {
 	var requestData struct {
-		FilePath string            `json:"filepath"`
-		Device   map[string]string `json:"device"`
-		IsFolder bool              `json:"is_folder"`
+		FilePath string `json:"filepath"`
+		IpAddr   string `json:"ip_addr"`
+		IsFolder bool   `json:"is_folder"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
@@ -397,16 +397,20 @@ func sendLargage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println(requestData)
-	tarfile_path := filepath.Join(globals.QSyncWriteableDirectory, "multilargage.tar")
 
 	if requestData.IsFolder {
+		tarfile_path := filepath.Join(globals.QSyncWriteableDirectory, "multilargage.tar")
+
 		err := globals.TarFolder(requestData.FilePath, tarfile_path)
 		if err != nil {
 			log.Fatal("Error while taring folder ", err)
 		}
+		networking.SendLargageAerien(tarfile_path, requestData.IpAddr, requestData.IsFolder)
+	} else {
+		networking.SendLargageAerien(requestData.FilePath, requestData.IpAddr, requestData.IsFolder)
+
 	}
 
-	networking.SendLargageAerien(tarfile_path, requestData.Device["ip_addr"], requestData.IsFolder)
 	json.NewEncoder(w).Encode(MenuResponse{Message: "File sent"})
 
 }
