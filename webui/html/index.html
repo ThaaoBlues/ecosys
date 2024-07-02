@@ -317,13 +317,14 @@ h1 {
             if(response != null){
 
                 response.forEach((task, index) => {
+                    console.log(task);
                     const button = document.createElement('button');
-                    if(task.IsApp == "true"){
-                        button.innerText = '( application )'+task.Name;
+                    if(task.IsApp){
+                        button.innerText = '( application ) '+task.Name;
                     }else{
                         button.innerText = task.Path;
                     }
-
+                    
                     button.onclick = () => openTasksActionsMenu(task);
                     tasksDiv.appendChild(button);
                 });
@@ -344,10 +345,8 @@ h1 {
 
             if(response != null){
                 response.forEach((device, index) => {
-                    console.log(device);
                     const button = document.createElement('button');
                     button.innerText = device.hostname;
-                    console.log(device);
                     button.onclick = () => openNetworkDeviceActionsMenu(Object.assign({}, device));
                     devicesDiv.appendChild(button);
                 });
@@ -384,7 +383,6 @@ h1 {
             let data = {};
             data.device = device;
             data.text = document.getElementById("custom-text").value;
-            console.log("sending text to :",data);
             const response = await sendRequest('/send-text', 'POST', data);
         
         }
@@ -451,6 +449,14 @@ h1 {
             popup.appendChild(title);
 
             let btn = document.createElement("button");
+            if(task.IsApp){
+                btn.onclick = function (){closePopup();openApp(task);}
+                btn.innerText = translations[currentLang].openApp;
+                popup.appendChild(btn);
+            }
+
+
+            btn = document.createElement("button");
             btn.onclick = function (){closePopup();chooseDeviceAndLinkIt(task);}
             btn.innerText = translations[currentLang].syncAnotherDevice;
             popup.appendChild(btn);
@@ -513,7 +519,6 @@ h1 {
 
         async function toggleBackupMode(task){
             const response = await sendRequest('/toggle-backup-mode?secure_id='+task.SecureId);
-            console.log(response);
             if(response.message == "success"){
                 alert("Success !");
             }else{
@@ -524,7 +529,6 @@ h1 {
 
         async function checkInternetConnection(){
             const response = await sendRequest('/check-internet');
-            console.log(response);
             document.getElementById("no-internet-alert").hidden = response.ConnectionState;
         
         }
@@ -559,6 +563,12 @@ h1 {
 
         async function openLargagesFolder(){
             const response = await sendRequest('/open-largages-folder');
+
+        }
+
+
+        async function openApp(task){
+            const response = await sendRequest('/launch-app?AppId='+task.AppId);
 
         }
 

@@ -21,7 +21,8 @@ const translations = {
         chooseDevice: "Choose a device to synchronize",
         sendTextTitle: "Send Text",
         send: "Send",
-        alertTaskCreated : "A sync task has been created on the folder : \n"
+        alertTaskCreated : "A sync task has been created on the folder : \n",
+        openApp : "Open Application"
     },
     fr: {
         title: "Interface Web QSync",
@@ -45,7 +46,9 @@ const translations = {
         chooseDevice: "Choisir un appareil à synchroniser",
         sendTextTitle: "Envoyer du texte",
         send: "Envoyer",
-        alertTaskCreated : "Une tache de synchronisation a été associée au dossier : \n"
+        alertTaskCreated : "Une tache de synchronisation a été associée au dossier : \n",
+        openApp : "Ouvrir l'Application"
+
     },
     hi: {
         title: "क्यूसिंक वेब जीयूआई",
@@ -69,7 +72,8 @@ const translations = {
         chooseDevice: "सिंक करने के लिए एक डिवाइस चुनें",
         sendTextTitle: "टेक्स्ट भेजें",
         send: "भेजें",
-        alertTaskCreated : "फोल्डर पर एक सिंक कार्य बनाया गया है: \n"
+        alertTaskCreated : "फोल्डर पर एक सिंक कार्य बनाया गया है: \n",
+        openApp : "Ouvrir l'Application"
     },
     bn: {
         title: "কিউসিঙ্ক ওয়েব জিইউআই",
@@ -93,7 +97,8 @@ const translations = {
         chooseDevice: "সিঙ্ক করার জন্য একটি ডিভাইস চয়ন করুন",
         sendTextTitle: "পাঠ্য পাঠান",
         send: "পাঠান",
-        alertTaskCreated : "ফোল্ডারে একটি সিঙ্ক কাজ তৈরি করা হয়েছে: \n"
+        alertTaskCreated : "ফোল্ডারে একটি সিঙ্ক কাজ তৈরি করা হয়েছে: \n",
+        openApp : "Ouvrir l'Application"
     },
     te: {
         title: "క్యుసింక్ వెబ్ జీయూఐ",
@@ -117,7 +122,8 @@ const translations = {
         chooseDevice: "సింక్ చేయడానికి పరికరాన్ని ఎంచుకోండి",
         sendTextTitle: "వచనం పంపండి",
         send: "పంపు",
-        alertTaskCreated : "ఫోల్డర్‌లో సింక్ టాస్క్ సృష్టించబడింది: \n"
+        alertTaskCreated : "ఫోల్డర్‌లో సింక్ టాస్క్ సృష్టించబడింది: \n",
+        openApp : "Ouvrir l'Application"
     },
     mr: {
         title: "क्यूसिंक वेब जीयूआय",
@@ -141,7 +147,8 @@ const translations = {
         chooseDevice: "समक्रमित करण्यासाठी एक उपकरण निवडा",
         sendTextTitle: "मजकूर पाठवा",
         send: "पाठवा",
-        alertTaskCreated : "फोल्डरवर एक समक्रमित कार्य तयार केले आहे: \n"
+        alertTaskCreated : "फोल्डरवर एक समक्रमित कार्य तयार केले आहे: \n",
+        openApp : "Ouvrir l'Application"
     },
     ta: {
         title: "க்யூசின்க் இணைய வழி GUI",
@@ -165,7 +172,8 @@ const translations = {
         chooseDevice: "சின்க் செய்ய ஒரு சாதனத்தை தேர்வுசெய்",
         sendTextTitle: "உரை அனுப்பு",
         send: "அனுப்பு",
-        alertTaskCreated : "கோப்புறையில் ஒரு சின்க் பணி உருவாக்கப்பட்டுள்ளது: \n"
+        alertTaskCreated : "கோப்புறையில் ஒரு சின்க் பணி உருவாக்கப்பட்டுள்ளது: \n",
+        openApp : "Ouvrir l'Application"
     },
     de: {
         title: "QSync Web-GUI",
@@ -189,7 +197,8 @@ const translations = {
         chooseDevice: "Wählen Sie ein Gerät zum Synchronisieren",
         sendTextTitle: "Text senden",
         send: "Senden",
-        alertTaskCreated : "Eine Synchronisierungsaufgabe wurde im Ordner erstellt: \n"
+        alertTaskCreated : "Eine Synchronisierungsaufgabe wurde im Ordner erstellt: \n",
+        openApp : "Ouvrir l'Application"
     },
     es: {
         title: "Interfaz Web de QSync",
@@ -213,7 +222,8 @@ const translations = {
         chooseDevice: "Elija un dispositivo para sincronizar",
         sendTextTitle: "Enviar texto",
         send: "Enviar",
-        alertTaskCreated : "Se ha creado una tarea de sincronización en la carpeta: \n"
+        alertTaskCreated : "Se ha creado una tarea de sincronización en la carpeta: \n",
+        openApp : "Ouvrir l'Application"
     },
     it: {
         title: "Interfaccia Web QSync",
@@ -237,7 +247,8 @@ const translations = {
         chooseDevice: "Scegli un dispositivo da sincronizzare",
         sendTextTitle: "Invia testo",
         send: "Invia",
-        alertTaskCreated : "È stata creata un'attività di sincronizzazione nella cartella: \n"
+        alertTaskCreated : "È stata creata un'attività di sincronizzazione nella cartella: \n",
+        openApp : "Ouvrir l'Application"
     },
     pt: {
         title: "Interface Web QSync",
@@ -261,7 +272,8 @@ const translations = {
         chooseDevice: "Escolha um dispositivo para sincronizar",
         sendTextTitle: "Enviar texto",
         send: "Enviar",
-        alertTaskCreated : "Uma tarefa de sincronização foi criada na pasta: \n"
+        alertTaskCreated : "Uma tarefa de sincronização foi criada na pasta: \n",
+        openApp : "Ouvrir l'Application"
     },
     nl: {
         title: "QSync Web GUI",
@@ -285,6 +297,7 @@ const translations = {
         chooseDevice: "Kies een apparaat om te synchroniseren",
         sendTextTitle: "Stuur tekst",
         send: "Sturen",
-        alertTaskCreated : "Er is een synchronisatietaak gemaakt in de map: \n"
+        alertTaskCreated : "Er is een synchronisatietaak gemaakt in de map: \n",
+        openApp : "Ouvrir l'Application"
     }
 };

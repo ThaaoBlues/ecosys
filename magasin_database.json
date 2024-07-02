@@ -4,7 +4,7 @@
         "AppName": "Test calendrier",
         "AppDownloadUrl": "http://127.0.0.1:8000/main",
         "NeedsInstaller": false,
-        "AppLauncherPath": "main",
+        "AppLauncherPath": "calendrier.exe",
         "AppInstallerPath": "",
         "AppUninstallerPath": "",
         "AppSyncDataFolderPath": "calendrier",

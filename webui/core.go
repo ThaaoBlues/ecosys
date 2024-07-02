@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-02 11:54:48
+ * @lastModified    2024-07-02 17:29:56
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -260,6 +260,9 @@ func launchAppHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	json.NewEncoder(w).Encode(MenuResponse{Message: "success"})
+
 }
 
 func deleteAppHandler(w http.ResponseWriter, r *http.Request) {

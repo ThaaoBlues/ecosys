@@ -52,6 +52,7 @@ This is really simple, all the files you want to be synchronised must be within 
 
 By default, the app will be installed to <qsync_installation_root>/apps/<app_name>
 If the folder where the files to sync is not created after we check (and started if any) the installer, qsync will create it.
+/!\ The folder name you will provide as sync task root is relative to <qsync_installation_root>/apps/<app_name>
 
 You can specify informations about your app in a json format matching :
 All the path asked are relative to your app's root
@@ -60,13 +61,14 @@ type ToutEnUnConfig struct {
 	AppName               string // well... the app's name ?
 	AppDownloadUrl        string // the url where to download the app
 	NeedsInstaller        bool   // if we need to run the binary installer
-	AppLauncherPath       string // the path to the main executable of your app
+	AppExecutableName       string // the name of to the main executable of your app, 
+	// if the app does not have an installer, it will be <app_name.exe> (spaces replaced by '_')
 	AppInstallerPath      string // the installer path
 	AppUninstallerPath    string // the uninstaller path
-	AppSyncDataFolderPath string // the folder where the data to synchronize is stored
+	AppSyncDataFolderPath string // the folder where the data to synchronize is stored, relative to you app's root
 	AppDescription        string // well that's the app's descriptions
 	AppIconURL            string
-	SupportedPlatforms    []string
+	SupportedPlatforms    []string // ['Android','Linux','Windows'...]
 
 }
 ```

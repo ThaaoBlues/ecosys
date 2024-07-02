@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-29 22:34:14
+ * @lastModified    2024-07-02 17:05:51
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1370,7 +1370,14 @@ func (acces *AccesBdd) NeedsUpdate(device_id string) bool {
 
 // ajoute une application tout en un dans la table exprès
 func (acces *AccesBdd) AddToutEnUn(data *globals.ToutEnUnConfig) {
-	_, err := acces.db_handler.Exec("INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"toutenun\",?,?)", data.AppName, data.AppLauncherPath, 1, acces.SecureId, data.AppUninstallerPath)
+	_, err := acces.db_handler.Exec(
+		"INSERT INTO apps (name,path,version_id,type,secure_id,uninstaller_path) VALUES(?,?,?,\"toutenun\",?,?)",
+		data.AppName,
+		data.AppLauncherPath,
+		1,
+		acces.SecureId,
+		data.AppUninstallerPath,
+	)
 
 	if err != nil {
 		log.Fatal("Error while updating database in AddToutEnUn() : ", err)
@@ -1415,9 +1422,12 @@ func (acces *AccesBdd) GetAppConfig(secure_id string) globals.MinGenConfig {
 
 	var config globals.MinGenConfig
 
-	row := acces.db_handler.QueryRow("SELECT name,id,path,type,uninstaller_path FROM apps WHERE secure_id=?", secure_id)
+	row := acces.db_handler.QueryRow(
+		"SELECT name,id,path,type,secure_id,uninstaller_path FROM apps WHERE secure_id=?",
+		secure_id,
+	)
 
-	err := row.Scan(&config)
+	err := row.Scan(&config.AppName, &config.AppId, &config.BinPath, &config.Type, &config.SecureId, &config.UninstallerPath)
 	if (err != nil) && (err != sql.ErrNoRows) {
 		log.Fatal("Error while querying database in GetAppConfig() : ", err)
 	}
