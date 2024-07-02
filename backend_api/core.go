@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-03-02 19:14:18
- * @lastModified    2024-06-27 17:23:08
+ * @lastModified    2024-07-02 11:39:54
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gen2brain/beeep"
+	"github.com/ncruces/zenity"
 )
 
 func NotifyDesktop(msg string) {
@@ -129,4 +130,20 @@ func WaitEventLoop(callbacks map[string]func(context string)) {
 		time.Sleep(1 * time.Second)
 	}
 
+}
+
+// showConfirmationPrompt displays a native confirmation prompt with the specified message.
+// It returns true if the user confirms, and false otherwise.
+func ShowConfirmationPrompt(message string) bool {
+	err := zenity.Question(
+		message,
+		zenity.Title("Confirmation"),
+		zenity.CancelLabel("No"),
+	)
+
+	return err == nil
+}
+
+func ShowAlert(message string) {
+	_ = zenity.Warning(message, zenity.Title("Information"))
 }

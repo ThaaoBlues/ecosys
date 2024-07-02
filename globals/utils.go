@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-06-29 18:20:11
+ * @lastModified    2024-07-02 12:03:42
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -328,4 +328,41 @@ func OpenUrlInWebBrowser(url string) error {
 	}
 	args = append(args, url)
 	return exec.Command(cmd, args...).Start()
+}
+
+// Known executable file signatures
+var signatures = map[string][]byte{
+	"ELF":     {0x7F, 'E', 'L', 'F'},    // Linux/Unix ELF
+	"PE":      {'M', 'Z'},               // Windows PE (Portable Executable)
+	"Mach-O":  {0xFE, 0xED, 0xFA, 0xCE}, // macOS Mach-O (32-bit)
+	"Mach-O2": {0xFE, 0xED, 0xFA, 0xCF}, // macOS Mach-O (64-bit)
+	"Mach-O3": {0xCA, 0xFE, 0xBA, 0xBE}, // macOS universal binary
+	"Mach-O4": {0xCE, 0xFA, 0xED, 0xFE}, // macOS 32-bit, opposite endian
+	"Mach-O5": {0xCF, 0xFA, 0xED, 0xFE}, // macOS 64-bit, opposite endian
+}
+
+func IsExecutable(filePath string) bool {
+	file, err := os.Open(filePath)
+
+	// don't take risks, assume executable first
+	ret := true
+	if err != nil {
+		return ret
+	}
+	defer file.Close()
+
+	header := make([]byte, 4) // Read the first 4 bytes
+	_, err = io.ReadFull(file, header)
+	if err != nil {
+		return ret
+	}
+
+	ret = false
+	for _, signature := range signatures {
+		if bytes.HasPrefix(header, signature) {
+			ret = true
+		}
+	}
+
+	return ret
 }

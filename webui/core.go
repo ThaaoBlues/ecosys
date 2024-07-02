@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-01 15:54:35
+ * @lastModified    2024-07-02 11:54:48
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -23,6 +23,7 @@ import (
 	"qsync/globals"
 	"qsync/magasin"
 	"qsync/networking"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -81,17 +82,27 @@ func StartWebUI() {
 
 	callbacks["[CHOOSELINKPATH]"] = func(context string) {
 		// send context throught websocket
-		broadcast <- []byte("[CHOOSELINKPATH]|" + context)
+		//broadcast <- []byte("[CHOOSELINKPATH]|" + context)
 
-		path, err := dialog.Directory().Title("Select Folder").Browse()
-		if err != nil {
-			fmt.Println("Folder selection cancelled.")
-			return
+		data := backend_api.ShowConfirmationPrompt("Accept the link request ?")
+
+		if data {
+			data = backend_api.ShowConfirmationPrompt(context)
+
+			if data {
+
+				path, err := dialog.Directory().Title("Select Folder").Browse()
+				if err != nil {
+					fmt.Println("Folder selection cancelled.")
+					return
+				}
+				backend_api.GiveInput("[CHOOSELINKPATH]", path)
+			}
+
 		}
-		backend_api.GiveInput("[CHOOSELINKPATH]", path)
 
 		// give back success message to front-end
-		broadcast <- []byte("success")
+		//broadcast <- []byte("success")
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
@@ -100,16 +111,17 @@ func StartWebUI() {
 	// air dropping something
 	callbacks["[OTDL]"] = func(context string) {
 		// send context throught websocket
-		broadcast <- []byte("[OTDL]|" + context)
+		//broadcast <- []byte("[OTDL]|" + context)
 
 		// wait user input from web gui
 
-		data := <-user_response
+		//data := <-user_response
 
-		backend_api.GiveInput("[OTDL]", string(data))
+		data := backend_api.ShowConfirmationPrompt(context)
+		backend_api.GiveInput("[OTDL]", strconv.FormatBool(data))
 
 		// give back success message to front-end
-		broadcast <- []byte("success")
+		//broadcast <- []byte("success")
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
@@ -118,16 +130,17 @@ func StartWebUI() {
 	callbacks["[MOTDL]"] = func(context string) {
 		// send context throught websocket
 
-		broadcast <- []byte("[OTDL]|" + context)
+		//broadcast <- []byte("[OTDL]|" + context)
 
 		// wait user input from web gui
 
-		data := <-user_response
+		//data := <-user_response
 
-		backend_api.GiveInput("[MOTDL]", string(data))
+		data := backend_api.ShowConfirmationPrompt(context)
+		backend_api.GiveInput("[MOTDL]", strconv.FormatBool(data))
 
 		// give back success message to front-end
-		broadcast <- []byte("success")
+		//broadcast <- []byte("success")
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
@@ -136,16 +149,15 @@ func StartWebUI() {
 	callbacks["[ALERT_USER]"] = func(context string) {
 		// send context throught websocket
 
-		broadcast <- []byte("[ALERT_USER]|" + context)
+		//broadcast <- []byte("[ALERT_USER]|" + context)
 
-		// wait user input from web gui
-
+		backend_api.ShowAlert(context)
 		data := "prout"
 
 		backend_api.GiveInput("[ALERT_USER]", string(data))
 
 		// give back success message to front-end
-		broadcast <- []byte("success")
+		//broadcast <- []byte("success")
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)

@@ -240,17 +240,18 @@ TODO (voir mes notes, sec)
 POUR TOUT :
 - différencier la lock du filesystem en fonction de la taches pour ne pas tout bloquer
 
+
+
 POUR PC :
+- utiliser des popup natives pour la confirmation des largages aeriens à la place de la webui
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
 - tester l'ajout/suppression/lancement des applications
-- peut-etre utiliser des popup natives pour la confirmation des largages aeriens à la place de la webui
-- Utiliser un BytesBuffer dans le Delta binaire pour les instructions
 
 
 
 POUR L'APP :
-- Fix le delta binaire ???? Ou la serialisation ????
+- Notification persistentes pendant l'envoi de Qevent ( barre de chargement simple dans la fct d'envoi)
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - faire une popup qui invite à télécharger sur ses autres appareils

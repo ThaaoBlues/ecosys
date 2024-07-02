@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-01 15:28:25
+ * @lastModified    2024-07-02 12:06:12
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -595,7 +595,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 
 	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
 	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n"))
-	if user_response == "1" || user_response == "true" || user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
+	if user_response == "true" {
 		// make sure we have the right directory set-up
 		ex := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
@@ -608,9 +608,14 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 
 		// write the file. As this is probably a full file, the binary delta is just the file content
 		data.Delta.PatchFile()
-		err := open.Run(data.Delta.FilePath)
-		if err != nil {
-			open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+
+		// run the file if it is not an executable ( for security and conveniance reasons)
+
+		if !globals.IsExecutable(data.Delta.FilePath) {
+			err := open.Run(data.Delta.FilePath)
+			if err != nil {
+				open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+			}
 		}
 
 	}
@@ -622,7 +627,9 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 
 	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
 	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n"))
-	if user_response == "1" || user_response == "true" || user_response == "y" || user_response == "Y" || user_response == "yes" || user_response == "YES" || user_response == "oui" {
+
+	// veryfiy user response AND that we are not tricked to untar something random
+	if user_response == "true" && file_name == "multilargage.tar" {
 		// make sure we have the right directory set-up
 		ex := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
 
