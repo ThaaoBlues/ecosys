@@ -3,7 +3,7 @@
       {
         "AppName": "Test calendrier",
         "AppDownloadUrl": "http://127.0.0.1:8000/main",
-        "NeedsInstaller": true,
+        "NeedsInstaller": false,
         "AppLauncherPath": "main",
         "AppInstallerPath": "",
         "AppUninstallerPath": "",
