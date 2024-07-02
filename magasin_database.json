@@ -1,14 +1,14 @@
 {
     "tout_en_un_configs": [
       {
-        "AppName": "App 1",
-        "AppDownloadUrl": "https://example.com/app1/download",
+        "AppName": "Test calendrier",
+        "AppDownloadUrl": "http://127.0.0.1:8000/main",
         "NeedsInstaller": true,
-        "AppLauncherPath": "/path/to/app1/executable",
-        "AppInstallerPath": "/path/to/app1/installer",
-        "AppUninstallerPath": "/path/to/app1/uninstaller",
-        "AppSyncDataFolderPath": "/path/to/app1/data",
-        "AppDescription":"premier test de config.",
+        "AppLauncherPath": "main",
+        "AppInstallerPath": "",
+        "AppUninstallerPath": "",
+        "AppSyncDataFolderPath": "calendrier",
+        "AppDescription":"Premier test avec une vraie application",
         "AppIconURL":"https://via.placeholder.com/300",
         "SupportedPlatforms": ["Windows", "Linux"]
 

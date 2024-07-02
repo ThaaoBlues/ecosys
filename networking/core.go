@@ -3,13 +3,14 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-02 12:06:12
+ * @lastModified    2024-07-02 12:54:36
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
 package networking
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"log"
@@ -52,6 +53,10 @@ func ConnectToDevice(conn net.Conn) {
 
 	acces.InitConnection()
 
+	//now, for faster data processing, we will setup a buffered reader
+
+	reader := bufio.NewReader(conn)
+
 	// get the device id and secure sync id from header
 
 	header_buff := make([]byte, HEADER_LENGTH)
@@ -61,14 +66,15 @@ func ConnectToDevice(conn net.Conn) {
 	padding_buff := make([]byte, 1)
 	padding_buff[0] = 0
 	for padding_buff[0] == 0 {
-		_, err := conn.Read(padding_buff)
+		_, err := reader.Read(padding_buff)
+
 		if err != nil {
 			log.Println("Error in ConnectToDevice() while reading header, request must be malformed.")
 			return
 		}
 	}
 
-	_, err := conn.Read(header_buff)
+	_, err := reader.Read(header_buff)
 	//log.Println("HEADER BUFF", header_buff)
 
 	// as the padding got the first element of the header, we must shift the header slice by one
@@ -112,7 +118,7 @@ func ConnectToDevice(conn net.Conn) {
 	init := []byte("[")
 	body_buff := bytes.NewBuffer(init)
 
-	_, err = body_buff.ReadFrom(conn)
+	_, err = body_buff.ReadFrom(reader)
 	if err != nil {
 		if err != io.EOF {
 			log.Fatal("Error in ConnectToDevice() while reading body:", err)
