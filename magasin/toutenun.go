@@ -9,7 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"qsync/backend_api"
 	"qsync/bdd"
+	"qsync/filesystem"
 	"qsync/globals"
 	"strings"
 )
@@ -73,6 +75,7 @@ func InstallApp(data io.ReadCloser) error {
 
 	sanitized_app_name := strings.ReplaceAll(json_data.AppName, " ", "_")
 	new_app_root_path := filepath.Join(apps_path, sanitized_app_name)
+	json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
 
 	ex = globals.Exists(new_app_root_path)
 
@@ -93,6 +96,14 @@ func InstallApp(data io.ReadCloser) error {
 		if json_data.NeedsInstaller {
 			RunInstaller(json_data.AppInstallerPath)
 		}
+	} else {
+		// still need to download portable executable
+
+		err = DownloadFromUrl(json_data.AppDownloadUrl, json_data.AppLauncherPath)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	// and last but not least, if the installed did not create it, create the sync folder
@@ -112,7 +123,6 @@ func InstallApp(data io.ReadCloser) error {
 	// when launching app
 	json_data.AppSyncDataFolderPath = filepath.Join(new_app_root_path, json_data.AppSyncDataFolderPath)
 	json_data.AppInstallerPath = filepath.Join(new_app_root_path, json_data.AppInstallerPath)
-	json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
 	json_data.AppUninstallerPath = filepath.Join(new_app_root_path, json_data.AppUninstallerPath)
 
 	// now its time to register in the database the new little app
@@ -126,6 +136,11 @@ func InstallApp(data io.ReadCloser) error {
 	acces.AddToutEnUn(&json_data)
 
 	log.Println("added app to database")
+
+	// start watching the app's derectory
+	go filesystem.StartWatcher(app_sync_folder)
+
+	backend_api.ShowAlert("Application " + json_data.AppName + " installed !")
 
 	return nil
 

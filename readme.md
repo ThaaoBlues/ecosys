@@ -249,9 +249,12 @@ POUR PC :
 - Finir et tester le launcher/setup
 - tester l'ajout/suppression/lancement des applications
 
-
-
 POUR L'APP :
+- Fix PatchFile qui écrit que des NullByte ????
+- Fix le rebond apres un evenement [UPDATE]
+
+
+
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - faire une popup qui invite à télécharger sur ses autres appareils

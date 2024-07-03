@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-02 12:54:36
+ * @lastModified    2024-07-03 23:08:08
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -131,7 +131,7 @@ func ConnectToDevice(conn net.Conn) {
 	var data globals.QEvent = globals.DeSerializeQevent(body_buff.String(), secure_id)
 
 	// check if this is a regular file event of a special request
-	//log.Println("DECODED EVENT : ", data)
+	log.Println("EVENT : ", data)
 	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":
@@ -187,8 +187,12 @@ func ConnectToDevice(conn net.Conn) {
 
 		} else {
 			path = backend_api.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
-			log.Println("Future sync will be stored at : ", path)
-			acces.CreateSyncFromOtherEnd(path, secure_id)
+
+			if path != "[CANCELLED]" {
+				log.Println("Future sync will be stored at : ", path)
+				acces.CreateSyncFromOtherEnd(path, secure_id)
+			}
+
 		}
 
 		log.Println("Linking device : ", device_id)
@@ -289,6 +293,7 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 		case "[UPDATE]":
 
 			acces.IncrementFileVersion(relative_path)
+			acces.UpdateCachedFile(relative_path)
 			event.Delta.PatchFile()
 		default:
 			log.Fatal("Qsync network loop received an unknown event type : ", event)
@@ -551,6 +556,7 @@ func BuildSetupQueue(secure_id string, device_id string) {
 			return err
 		}
 		relative_path := strings.Replace(absolute_path, rootPath, "", 1)
+		log.Println("relative path : " + relative_path)
 		if relative_path != "" {
 			if info.IsDir() {
 				// creates a delta with full file content

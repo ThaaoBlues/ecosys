@@ -280,7 +280,7 @@ h1 {
             updateResponse(response.message);
         }
 
-        async function createSyncTask() {
+        async function createlinkDevSyncTask() {
 
             var response = await sendRequest('/ask-file-path?is_folder='+true);
 
@@ -294,9 +294,11 @@ h1 {
 
         async function linkDevice(task,device) {
 
-            let data = task;
-            data.IpAddr = device.IpAddr;
-            data.DeviceId = device.DeviceId;
+            let data = {}
+            data.SecureId = task.SecureId;
+            data.IpAddr = device.ip_addr;
+            data.DeviceId = device.device_id;
+            console.log(data);
 
             const response = await sendRequest(`/link`,'POST',data);
             updateResponse(response.message);
@@ -453,11 +455,19 @@ h1 {
                 btn.onclick = function (){closePopup();openApp(task);}
                 btn.innerText = translations[currentLang].openApp;
                 popup.appendChild(btn);
+
+                btn = document.createElement("button");
+                btn.onclick = function (){closePopup();chooseDeviceAndLinkIt(task);}
+                btn.innerText = "Link as an App";
+                popup.appendChild(btn);
             }
 
-
             btn = document.createElement("button");
-            btn.onclick = function (){closePopup();chooseDeviceAndLinkIt(task);}
+            btn.onclick = function (){
+                closePopup();
+                task.IsApp = false;
+                chooseDeviceAndLinkIt(task);
+            }
             btn.innerText = translations[currentLang].syncAnotherDevice;
             popup.appendChild(btn);
 
@@ -568,7 +578,7 @@ h1 {
 
 
         async function openApp(task){
-            const response = await sendRequest('/launch-app?AppId='+task.AppId);
+            const response = await sendRequest('/launch-app?AppId='+task.SecureId);
 
         }
 

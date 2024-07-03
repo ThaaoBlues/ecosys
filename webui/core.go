@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-02 17:29:56
+ * @lastModified    2024-07-03 11:12:26
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -99,6 +99,8 @@ func StartWebUI() {
 				backend_api.GiveInput("[CHOOSELINKPATH]", path)
 			}
 
+		} else {
+			backend_api.GiveInput("[CHOOSELINKPATH]", "[CANCELLED]")
 		}
 
 		// give back success message to front-end
@@ -251,9 +253,11 @@ func launchAppHandler(w http.ResponseWriter, r *http.Request) {
 	acces.InitConnection()
 	defer acces.CloseConnection()
 
-	config := acces.GetAppConfig(app_id)
-
+	var config globals.MinGenConfig
+	config = acces.GetAppConfig(app_id)
+	log.Println(config.BinPath)
 	cmd := exec.Command(config.BinPath)
+	cmd.Dir = filepath.Dir(config.BinPath)
 
 	err := cmd.Run()
 
@@ -326,7 +330,6 @@ func createSyncTask(w http.ResponseWriter, r *http.Request) {
 
 func linkDevice(w http.ResponseWriter, r *http.Request) {
 	var requestData struct {
-		Path     string `json:"Path"`
 		SecureId string `json:"SecureId"`
 		DeviceId string `json:"DeviceId"`
 		IpAddr   string `json:"IpAddr"`
@@ -345,6 +348,8 @@ func linkDevice(w http.ResponseWriter, r *http.Request) {
 
 	acces.SecureId = requestData.SecureId
 
+	acces.LinkDevice(requestData.DeviceId, requestData.IpAddr)
+
 	var event globals.QEvent
 	event.Flag = "[LINK_DEVICE]"
 	event.SecureId = acces.SecureId
@@ -356,7 +361,6 @@ func linkDevice(w http.ResponseWriter, r *http.Request) {
 	device_ids.Add(requestData.DeviceId)
 
 	networking.SendDeviceEventQueueOverNetwork(device_ids, acces.SecureId, queue, requestData.IpAddr)
-	acces.LinkDevice(requestData.SecureId, requestData.IpAddr)
 
 	json.NewEncoder(w).Encode(MenuResponse{Message: "Device linked"})
 }

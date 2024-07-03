@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-02 17:05:51
+ * @lastModified    2024-07-03 22:57:18
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -357,10 +357,12 @@ func (acces *AccesBdd) GetFileLastVersionId(path string) int64 {
 func (acces *AccesBdd) GetSyncOfflineDevices() globals.GenArray[string] {
 	linked_devices := acces.GetSyncLinkedDevices()
 
-	var str_ids string = ""
+	/*var str_ids string = ""
 	for i := 0; i < linked_devices.Size(); i++ {
 		str_ids += linked_devices.Get(i) + ","
 	}
+
+	if(str_ids > 1)
 	// remove the last colon
 	str_ids = str_ids[:len(str_ids)-1]
 
@@ -383,6 +385,15 @@ func (acces *AccesBdd) GetSyncOfflineDevices() globals.GenArray[string] {
 
 		if !device.IsConnected {
 			offline_devices.Add(device.SecureId)
+		}
+	}*/
+
+	var offline_devices globals.GenArray[string]
+
+	for i := 0; i < linked_devices.Size(); i++ {
+		if !acces.GetDeviceConnectionState(linked_devices.Get(i)) {
+			log.Println(linked_devices.Get(i))
+			offline_devices.Add(linked_devices.Get(i))
 		}
 	}
 
@@ -792,13 +803,21 @@ func (acces *AccesBdd) GetDeviceConnectionState(device_id string) bool {
 	return connection_state
 }
 
+func (acces *AccesBdd) ClearAllFileSystemLockInDb() {
+	_, err := acces.db_handler.Exec("UPDATE linked_devices SET receiving_update=''")
+
+	if err != nil {
+		log.Fatal("Error while updating database in LinkDevice() : ", err)
+	}
+}
+
 // search in the list of secure_id if the given one is receiving updates from another device
 func (acces *AccesBdd) IsThisFileSystemBeingPatched() bool {
 
 	var ids_str string
 	var ids_list globals.GenArray[string]
 
-	row := acces.db_handler.QueryRow("SELECT IFNULL(receiving_update, '')FROM linked_devices")
+	row := acces.db_handler.QueryRow("SELECT IFNULL(receiving_update, '') FROM linked_devices")
 
 	err := row.Scan(&ids_str)
 
@@ -1065,7 +1084,7 @@ func (acces *AccesBdd) GetOnlineDevices() globals.GenArray[string] {
 func (acces *AccesBdd) GetSyncOnlineDevices() globals.GenArray[string] {
 	linked_devices := acces.GetSyncLinkedDevices()
 
-	var str_ids string = ""
+	/*var str_ids string = ""
 	for i := 0; i < linked_devices.Size(); i++ {
 		str_ids += linked_devices.Get(i) + ","
 	}
@@ -1091,6 +1110,15 @@ func (acces *AccesBdd) GetSyncOnlineDevices() globals.GenArray[string] {
 
 		if device.IsConnected {
 			online_devices.Add(device.SecureId)
+		}
+	}*/
+
+	var online_devices globals.GenArray[string]
+
+	for i := 0; i < linked_devices.Size(); i++ {
+		if acces.GetDeviceConnectionState(linked_devices.Get(i)) {
+			log.Println(linked_devices.Get(i))
+			online_devices.Add(linked_devices.Get(i))
 		}
 	}
 
@@ -1524,6 +1552,7 @@ func (acces *AccesBdd) IsDeviceOnNetworkMap(ipAddr string) bool {
 		if err == sql.ErrNoRows {
 			return false
 		}
+
 		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
 	}
 
@@ -1542,7 +1571,7 @@ func (acces *AccesBdd) IsSyncInBackupMode() bool {
 	var bcp_mode bool = false
 	err := row.Scan(&bcp_mode)
 	if err != nil {
-		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
+		log.Fatal("Error while executing query in IsSyncInBackupMode(): ", err)
 	}
 
 	return bcp_mode
@@ -1552,7 +1581,7 @@ func (acces *AccesBdd) ToggleBackupMode() {
 	_, err := acces.db_handler.Exec("UPDATE sync SET backup_mode = NOT backup_mode WHERE secure_id=?", acces.SecureId)
 
 	if err != nil {
-		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
+		log.Fatal("Error while executing query in ToggleBackupMode(): ", err)
 	}
 
 }
@@ -1561,6 +1590,6 @@ func (acces *AccesBdd) UpdateSyncId(root_path string, secure_id string) {
 	_, err := acces.db_handler.Exec("UPDATE sync SET secure_id = ? WHERE root=?", secure_id, root_path)
 
 	if err != nil {
-		log.Fatal("Error while executing query in IsDeviceOnNetworkMap(): ", err)
+		log.Fatal("Error while executing query in UpdateSyncId(): ", err)
 	}
 }

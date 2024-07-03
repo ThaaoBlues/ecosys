@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-01 15:26:33
+ * @lastModified    2024-07-03 22:52:26
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -17,6 +17,7 @@ import (
 	"qsync/delta_binaire"
 	"qsync/globals"
 	"qsync/networking"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,6 +61,10 @@ func StartWatcher(rootPath string) {
 			log.Println("NEW FILESYSTEM EVENT (rootPath="+rootPath+" ) : ", event)
 			// get only the relative path
 			relative_path := strings.Replace(event.Name, rootPath, "", 1)
+
+			// make sure the relative path does not start with a "/"
+			relative_path = strings.TrimPrefix(relative_path, "/")
+
 			switch {
 			case event.Has(fsnotify.Create):
 				// in the case of a directory being sent to us by another end, we still
@@ -67,6 +72,7 @@ func StartWatcher(rootPath string) {
 				handleCreateEvent(&acces, event.Name, relative_path, watcher)
 			case event.Has(fsnotify.Write):
 				if !acces.IsThisFileSystemBeingPatched() {
+					log.Println("Handling event for file : " + relative_path)
 					handleWriteEvent(&acces, event.Name, relative_path)
 				}
 			case event.Has(fsnotify.Remove):
@@ -153,8 +159,10 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 		event.Delta = delta
 
 		queue.Add(event)
-
+		dev := acces.GetSyncOnlineDevices()
+		log.Println("Sending event to " + strconv.FormatInt(int64(dev.Size()), 10) + " connected devices")
 		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
+		log.Println("Event sent.")
 	}
 }
 

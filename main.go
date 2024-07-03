@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-29 15:28:16
+ * @lastModified    2024-07-03 22:57:34
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -66,9 +66,11 @@ func main() {
 	acces.InitConnection()
 	defer acces.CloseConnection()
 
+	acces.ClearAllFileSystemLockInDb()
+
 	tasks := acces.ListSyncAllTasks()
 	for i := 0; i < tasks.Size(); i++ {
-		filesystem.StartWatcher(tasks.Get(i).Path)
+		go filesystem.StartWatcher(tasks.Get(i).Path)
 	}
 
 	for {
