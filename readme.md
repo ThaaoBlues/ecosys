@@ -240,7 +240,7 @@ As example, here is a program that shows a bit how it is working :
 TODO (voir mes notes, sec)
 
 POUR TOUT :
-- différencier la lock du filesystem en fonction de la taches pour ne pas tout bloquer
+- Faire une app mobile pour tester les intents et une belle synchro pc-android
 
 
 
@@ -250,11 +250,6 @@ POUR PC :
 - tester l'ajout/suppression/lancement des applications
 
 POUR L'APP :
-- Fix PatchFile qui écrit que des NullByte ????
-- Fix le rebond apres un evenement [UPDATE]
-
-
-
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - faire une popup qui invite à télécharger sur ses autres appareils
