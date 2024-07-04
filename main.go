@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-03 22:57:34
+ * @lastModified    2024-07-04 19:40:34
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -35,8 +35,8 @@ func main() {
 
 	setup.CleanupTempFiles()
 	if networking.IsNetworkAvailable() {
-		//setup.Setup()
-		//setup.CheckUpdates()
+		setup.Setup()
+		setup.CheckUpdates()
 	}
 
 	var zc networking.ZeroConfService
@@ -45,10 +45,6 @@ func main() {
 
 	log.SetOutput(log_file)
 
-	/*if networking.IsNetworkAvailable() {
-
-
-	}*/
 	// register this device
 	go zc.Register()
 	// keep an up to date list ofmtf linked devices that are on our network
