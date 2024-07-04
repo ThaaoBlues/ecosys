@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-03 22:57:18
+ * @lastModified    2024-07-04 13:18:16
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -100,7 +100,8 @@ func (acces *AccesBdd) InitConnection() {
 		secure_id TEXT,
 		linked_devices_id TEXT DEFAULT "",
 		root TEXT,
-			backup_mode BOOLEAN DEFAULT 0
+		backup_mode BOOLEAN DEFAULT 0,
+		is_being_patch BOOLEAN DEFAULT 0
 	)`)
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
@@ -110,7 +111,6 @@ func (acces *AccesBdd) InitConnection() {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		device_id TEXT,
 		is_connected BOOLEAN,
-		receiving_update TEXT DEFAULT "",
 		ip_addr TEXT
 	)`)
 
@@ -804,7 +804,7 @@ func (acces *AccesBdd) GetDeviceConnectionState(device_id string) bool {
 }
 
 func (acces *AccesBdd) ClearAllFileSystemLockInDb() {
-	_, err := acces.db_handler.Exec("UPDATE linked_devices SET receiving_update=''")
+	_, err := acces.db_handler.Exec("UPDATE sync SET is_being_patch=0")
 
 	if err != nil {
 		log.Fatal("Error while updating database in LinkDevice() : ", err)
@@ -814,80 +814,35 @@ func (acces *AccesBdd) ClearAllFileSystemLockInDb() {
 // search in the list of secure_id if the given one is receiving updates from another device
 func (acces *AccesBdd) IsThisFileSystemBeingPatched() bool {
 
-	var ids_str string
-	var ids_list globals.GenArray[string]
+	var count int = 0
+	err := acces.db_handler.QueryRow(
+		"SELECT COUNT(*) FROM sync WHERE secure_id=? AND is_being_patch=?",
+		acces.SecureId,
+		true,
+	).Scan(&count)
 
-	row := acces.db_handler.QueryRow("SELECT IFNULL(receiving_update, '') FROM linked_devices")
-
-	err := row.Scan(&ids_str)
-
-	if err != sql.ErrNoRows && err != nil {
-		log.Fatal("Error while querying database in IsThisFileSystemBeingPatched() ", err)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	for _, val := range strings.Split(ids_str, ";") {
-		ids_list.Add(val)
-	}
-
-	for i := 0; i < ids_list.Size(); i++ {
-		if ids_list.Get(i) == acces.SecureId {
-			return true
-		}
-	}
-
-	return false
+	return count > 0
 
 }
 
 func (acces *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
 
 	// lock the filesystem (simply add the secure_id of the sync task to the list)
-	if value {
 
-		_, err := acces.db_handler.Exec("UPDATE linked_devices SET receiving_update=IFNULL(receiving_update, '') || ?", acces.SecureId+";")
+	_, err := acces.db_handler.Exec(
+		"UPDATE sync SET is_being_patch=? WHERE secure_id=?",
+		value,
+		acces.SecureId,
+	)
 
-		if err != nil {
-			log.Fatal("Error while updating database in LinkDevice() : ", err)
-		}
-
-		// unlock the filesystem
-	} else {
-		var ids_str string
-		var ids_list globals.GenArray[string]
-
-		row := acces.db_handler.QueryRow("SELECT receiving_update FROM linked_devices")
-
-		err := row.Scan(&ids_str)
-		if err != nil {
-			log.Fatal("Error while querying database SetFileSystemPatchLockState() : ", err)
-		}
-
-		for _, val := range strings.Split(ids_str, ";") {
-			ids_list.Add(val)
-		}
-
-		// same list of sync tasks secure_id but without this one
-		var new_ids globals.GenArray[string]
-		for i := 0; i < ids_list.Size(); i++ {
-			if !(ids_list.Get(i) == acces.SecureId) {
-				new_ids.Add(ids_list.Get(i))
-			}
-		}
-		var str_ids string = ""
-		for i := 0; i < new_ids.Size(); i++ {
-			str_ids += new_ids.Get(i) + ";"
-		}
-		// remove the last semicolon
-		str_ids = str_ids[:len(str_ids)-1]
-
-		// rewrite the updated list
-		_, err = acces.db_handler.Exec("UPDATE linked_devices SET receiving_update= ?", str_ids)
-
-		if err != nil {
-			log.Fatal("Error while updating database in LinkDevice() : ", err)
-		}
-
+	if err != nil {
+		log.Fatal("Error while updating database in LinkDevice() : ", err)
 	}
+
 }
 
 func (acces *AccesBdd) GetFileSizeFromBdd(path string) int64 {
