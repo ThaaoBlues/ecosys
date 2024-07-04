@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-07-03 11:03:54
+ * @lastModified    2024-07-04 12:25:13
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -160,9 +160,9 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 				//instruction_buffer.WriteByte(new_file_buff[new_buff_index])
 
 				inst := Delta_instruction{
-					Data:            []int8{0},
+					Data:            []int8{int8(new_file_buff[new_buff_index])},
 					InstructionType: "ab",
-					ByteIndex:       byte_index,
+					ByteIndex:       global_index,
 				}
 				//log.Println("append : ", inst)
 
@@ -201,11 +201,11 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 					// this operation removes the need to clone a byte array to extend it at each new byte in a block
 
 					if instruction_buffer.Len() > 0 {
-						file_delta[len(file_delta)-1].Data = byteBufferToInt8Slice(instruction_buffer.Bytes())
+						copy(file_delta[len(file_delta)-1].Data, byteBufferToInt8Slice(instruction_buffer.Bytes()))
 						instruction_buffer.Reset()
 					}
 
-					blocking_byte_index = byte_index + 1
+					blocking_byte_index = global_index + 1
 				}
 			}
 			// don't forget to increment byte index
