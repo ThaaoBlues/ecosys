@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-04 19:40:34
+ * @lastModified    2024-07-04 19:57:46
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -18,7 +18,6 @@ import (
 	"qsync/globals"
 	"qsync/networking"
 	"qsync/setup"
-
 	"qsync/webui"
 )
 

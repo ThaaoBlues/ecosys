@@ -97,7 +97,7 @@ func DownloadWebuiFiles() {
 	// downloading all the web gui files
 
 	// URL of the ZIP file to download
-	zipURL := "http://github.com/thaaoblues/qsync/webui.zip"
+	zipURL := "https://github.com/ThaaoBlues/qsync/raw/master/webui.zip"
 
 	// Local path to save the downloaded ZIP file
 	zipFilePath := "webui.zip"
@@ -120,7 +120,7 @@ func DownloadWebuiFiles() {
 	}
 
 	// Unzip the downloaded file
-	if err := Unzip(zipFilePath, folderName); err != nil {
+	if err := Unzip(zipFilePath, globals.QSyncWriteableDirectory); err != nil {
 		fmt.Printf("Failed to unzip file: %v\n", err)
 		return
 	}
