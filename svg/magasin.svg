@@ -1,0 +1,26 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Canopy -->
+  <rect x="50" y="30" width="100" height="20" fill="#FF6347" stroke="#CC0000" stroke-width="2"/>
+  <path d="M50,50 Q60,30 70,50 T90,50 T110,50 T130,50 T150,50 Q140,30 130,50 Q120,30 110,50 Q100,30 90,50 Q80,30 70,50 Q60,30 50,50" fill="#FF6347" stroke="#CC0000" stroke-width="2"/>
+
+  <!-- Market stall -->
+  <rect x="50" y="80" width="100" height="50" fill="#DEB887" stroke="#8B4513" stroke-width="2"/>
+  <line x1="60" y1="80" x2="50" y2="50" stroke="#8B4513" stroke-width="4"/>
+  <line x1="140" y1="80" x2="150" y2="50" stroke="#8B4513" stroke-width="4"/>
+  
+  
+  <!-- Wood lines -->
+  <line x1="50" y1="90" x2="150" y2="90" stroke="#8B4513" stroke-width="2"/>
+  <line x1="50" y1="100" x2="150" y2="100" stroke="#8B4513" stroke-width="2"/>
+  <line x1="50" y1="110" x2="150" y2="110" stroke="#8B4513" stroke-width="2"/>
+  <line x1="50" y1="120" x2="150" y2="120" stroke="#8B4513" stroke-width="2"/>
+
+  <!-- Goods -->
+  <circle cx="70" cy="90" r="10" fill="#FFD700" stroke="#B8860B" stroke-width="2"/>
+  <circle cx="100" cy="90" r="10" fill="#ADFF2F" stroke="#6B8E23" stroke-width="2"/>
+  <circle cx="130" cy="90" r="10" fill="#87CEEB" stroke="#4682B4" stroke-width="2"/>
+  
+  <!-- Table legs -->
+  <line x1="50" y1="130" x2="50" y2="150" stroke="#8B4513" stroke-width="4"/>
+  <line x1="150" y1="130" x2="150" y2="150" stroke="#8B4513" stroke-width="4"/>
+</svg>
