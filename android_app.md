@@ -1,89 +1,87 @@
 # How do I let Qsync know that I want to work with it ?
 You have to send an intent to qsync. Qsync will then handle the creation of the sync task and app's folder.
-Don't try to fool Us by placing another thing than your app's package name
-or when you will be using the content provider it will not do anything.
 ```java
-Intent sendIntent = new Intent();
-sendIntent.setAction(Intent.ACTION_SYNC);
-sendIntent.putExtra("action_flag", "[INSTALL_APP]");
-sendIntent.putExtra("package_name", "your_app_package_name");
-sendIntent.setType("text/plain");
+ Intent intent = new Intent(Intent.ACTION_SYNC);
+        intent.setClassName("com.qsync.qsync","com.qsync.qsync.AppsIntentActivity");
+        intent.putExtra("action_flag","[INSTALL_APP]");
+        intent.putExtra("package_name",getContext().getPackageName());
 
-if (sendIntent.resolveActivity(getPackageManager()) != null) {
-    startActivity(sendIntent);
-}
+startActivity(intent);
 ```
 
 
+
+> You need to implement an activity NAMED QSyncCallbackActivity that recieve Intent.ACTION_SEND so QSync can send you the Uri back in the intent data with the proper permissions
+
+## Don't forget to retrieve the intent permissions
+
+```java
+Intent intent = getIntent();
+Uri uri = intent.getData();
+
+if (uri != null && intent.getExtra("flag").equals("[INSTALL_APP]")) {
+    // Take persistable URI permission
+    final int takeFlags = intent.getFlags()
+            & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+    getContentResolver().takePersistableUriPermission(uri, takeFlags);
+
+    // Now you can work with the URI
+    // For example, you can list files, open input/output streams, etc.
+}
+
+```
 
 
 # How do I let Qsync sync the files of my android app ?
 Qsync uses ContentProvider to let your app write the files and folders you want to synchronize.
 examples :
-> Using these functions, you must use the appropriate URI, like 'content://com.qsync.fileprovider/my_app_package_name/subfolder_if_i_want'
+> Using these functions, you must use the appropriate URI, like 'content://com.qsync.qsync.fileprovider/apps/my_app_package_name/subfolder_if_i_want'
 
-## I want to create a file in a folder named after my app :
+## /!\ The content provider is not designed to share an entire directory, to bypass that limitation the file creation is a little more complicated : It will also be using QSyncCallbackActivity that recieve Intent.ACTION_SEND but with a [CREATE_FILE] flag.
 
+> File creation : as app installation, uri is sent to QSyncCallbackActivity but very easily predictible so you can start using the file right after the qsync activity finished without actually storing the retrieved uri. 
 ```java
-public void createFile(Uri rootDir, String fileName) {
-    ContentValues values = new ContentValues();
-    values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-    values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
+public void checkFileCreated(String fileName) {
 
-
-    Uri newFileUri = getContentResolver().insert(rootDir, values);
-
-    if (newFileUri != null) {
-        Log.d(TAG, "File created successfully: " + newFileUri);
-    } else {
-        Log.e(TAG, "Failed to create file : " + fileName);
-    }
-    
-}
-
-createFile(Uri.parse('content://com.qsync.fileprovider/my_app_package_name'),'myfile.txt');
-```
-
-
-## I want to create a folder
-```java
-public void createFolder(Uri rootUri, String folderName) {
-    ContentValues values = new ContentValues();
-    values.put(MediaStore.MediaColumns.DISPLAY_NAME, folderName);
-    values.put(MediaStore.MediaColumns.MIME_TYPE, "vnd.android.document/directory");
-
-    Uri newFolderUri = getContentResolver().insert(rootUri, values);
-
-    if (newFolderUri != null) {
-        Log.d(TAG, "Folder created successfully: " + newFolderUri);
-    } else {
-        Log.e(TAG, "Failed to create folder: " + folderName);
-    }
+        Intent intent = new Intent(Intent.ACTION_SYNC);
+        intent.setClassName("com.qsync.qsync","com.qsync.qsync.AppsIntentActivity");
+        intent.putExtra("action_flag","[CREATE_FILE]");
+        intent.putExtra("package_name",getContext().getPackageName());
+        intent.putExtra("file_name",fileName);
+        intent.putExtra("mime_type","text/plain");
+        Log.d(TAG,"starting activity with sync intent");
+        startActivity(intent);
 }
 
 ```
 
-
-## I want to delete a file/folder
+> Callback called by qsync via intent after it created your file
 ```java
 
-public void deleteFile(Uri fileUri) {
-    int rowsDeleted = getContentResolver().delete(fileUri, null, null);
-    if (rowsDeleted > 0) {
-        Log.d(TAG, "File deleted successfully");
-    } else {
-        Log.e(TAG, "Failed to delete file");
-    }
+Intent intent = getIntent();
+Uri uri = intent.getData();
+
+if (uri != null && intent.getExtra("action_flag").equals("[CREATE_FILE]")) {
+    // Take persistable URI permission
+    final int takeFlags = intent.getFlags()
+            & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+    getContentResolver().takePersistableUriPermission(uri, takeFlags);
+
+    // Now you can work with the URI
+    // For example, you can list files, open input/output streams, etc.
 }
 
 ```
 
+## All the rest of the files manipulations are by using the regular content provider at content://com.qsync.qsync.fileprovider/apps/my_app_package_name
 
-## I want to write a file
+## Examples :
+
+### I want to write a file
 
 ```java
 public void writeFile(Context context, Uri fileUri) {
-    try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(fileUri, "w");
+    try (ParcelFileDescriptor pfd = context.getContentResolver().openFile(fileUri, "w");
          FileOutputStream outputStream = new FileOutputStream(pfd.getFileDescriptor())) {
 
         // Write to the output stream
@@ -97,11 +95,11 @@ public void writeFile(Context context, Uri fileUri) {
 
 ```
 
-## I want to read a file
+### I want to read a file
 
 ```java
 public void readFile(Context context, Uri fileUri) {
-    try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(fileUri, "r");
+    try (ParcelFileDescriptor pfd = context.getContentResolver().openFile(fileUri, "r");
          FileInputStream inputStream = new FileInputStream(pfd.getFileDescriptor())) {
 
         // Read from the input stream
@@ -119,9 +117,3 @@ public void readFile(Context context, Uri fileUri) {
 ```
 
 # openInputStream() and openOutputStream() are also available !
-
-> All these methods dont create the file if it does not exists. For that, user insert()
-
-
-
-## The implementation of the Qsync file provider is visible on [the QSync mobile repo](https://github.com/ThaaoBlues/qsync_mobile/blob/master/app/src/main/java/com/qsync/qsync/FileProvider.java).

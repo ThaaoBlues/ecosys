@@ -245,17 +245,16 @@ POUR TOUT :
 
 
 POUR PC :
+- faire la prompt de selection d'une application lors d'une demande de lien d'app
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
 - tester l'ajout/suppression/lancement des applications
 
 POUR L'APP :
+- tester de link avec le pc pour voir si l'agenda prend
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
-- faire une popup qui invite à télécharger sur ses autres appareils
 - mettre un texte quand la list d'appareils est vide
-- trouver un moyen de s'assurer qu'une application accedant à son dossier dans le fileProvider est bien légitime
-- faire plusieurs apps de base (agenda, notes ...)
 
 
 
