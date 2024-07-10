@@ -488,6 +488,8 @@ h1 {
             
         }
 
+        
+
         async function chooseDeviceAndLinkIt(task){
 
             const popup = document.getElementById('popupContent');
@@ -610,6 +612,32 @@ h1 {
            //alert("connected");
         };
 
+
+        async function openTaskChooserToLinkApp(){
+            let title = document.createElement("h1");
+            title.innerText = translations[currentLang].taskActions;
+            popup.appendChild(title);
+
+            const response = await sendRequest('/list-tasks');
+            let btn = document.createElement("button");
+            
+            response.forEach((task, index) => {
+
+                if(task.IsApp){
+                    const button = document.createElement('button');
+                    button.innerText = task.Name;
+                    task.Flag = "[APP_TO_LINK_CHOOSEN]";
+                    button.onclick = () => sendMessage(JSON.stringify(task));
+                    devicesDiv.appendChild(button);
+                }
+
+            });
+            
+
+            popup.appendChild(btn);
+            showPopup();
+        }
+
         socket.onmessage = function(event) {
             const parts = event.data.split("|")
             const flag = parts[0];
@@ -632,6 +660,10 @@ h1 {
                 case "[ALERT_USER]":
                     alert(msg)
                     break;
+
+                case "[CHOOSE_APP_TO_LINK]":
+                    break;
+
 
                 case "success":
                     break;

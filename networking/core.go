@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-03 23:08:08
+ * @lastModified    2024-07-10 17:53:16
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -182,7 +182,15 @@ func ConnectToDevice(conn net.Conn) {
 			} else {
 				// replace the original secure_id generated for the app
 				// by the one from the other device so we can link them
+				secure_id := backend_api.AskInput(
+					"[CHOOSE_APP_TO_LINK]",
+					"",
+				)
 				acces.UpdateSyncId(path, secure_id)
+
+				_ = backend_api.AskInput("[ALERT_USER]",
+					"Applications successfully linked to each others !",
+				)
 			}
 
 		} else {

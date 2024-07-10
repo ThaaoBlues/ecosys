@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-03 11:12:26
+ * @lastModified    2024-07-10 17:52:28
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -163,6 +163,30 @@ func StartWebUI() {
 
 		// let the backend process and suppress the event file
 		time.Sleep(1 * time.Second)
+	}
+
+	callbacks["[CHOOSE_APP_TO_LINK]"] = func(context string) {
+		broadcast <- []byte("[CHOOSE_APP_TO_LINK]|" + context)
+
+		data := <-user_response
+		var response struct {
+			Path       string
+			SecureId   string
+			IsApp      bool
+			Name       string
+			BackupMode bool
+			Flag       string
+		}
+		err := json.Unmarshal(data, response)
+
+		if err != nil {
+			log.Fatal("Unable to unmarshall app to link response from websocket : ", err)
+		}
+
+		if response.Flag == "[APP_TO_LINK_CHOOSEN]" {
+			backend_api.GiveInput("[CHOOSE_APP_TO_LINK]", response.SecureId)
+		}
+
 	}
 
 	go backend_api.WaitEventLoop(callbacks)
