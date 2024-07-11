@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-04 13:18:16
+ * @lastModified    2024-07-11 20:48:42
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -101,7 +101,8 @@ func (acces *AccesBdd) InitConnection() {
 		linked_devices_id TEXT DEFAULT "",
 		root TEXT,
 		backup_mode BOOLEAN DEFAULT 0,
-		is_being_patch BOOLEAN DEFAULT 0
+		is_being_patch BOOLEAN DEFAULT 0,
+		creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	)`)
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
@@ -235,6 +236,21 @@ func (acces *AccesBdd) IsFile(path string) bool {
 // GetSecureIdFromRootPath retrieves the secure ID associated with a given root path.
 func (acces *AccesBdd) GetSecureIdFromRootPath(rootpath string) {
 	row := acces.db_handler.QueryRow("SELECT secure_id FROM sync WHERE root=?", rootpath)
+
+	err := row.Scan(&acces.SecureId)
+
+	if err == sql.ErrNoRows {
+		log.Fatal("The provided path does not match any existing sync rootpath")
+	}
+
+	if err != nil {
+		log.Fatal("Error while querying database GetSecureIdFromRootPath() : ", err)
+	}
+
+}
+
+func (acces *AccesBdd) GetSecureIdFromRootPathMatch(rootpath string) {
+	row := acces.db_handler.QueryRow("SELECT secure_id FROM sync WHERE root LIKE ?", rootpath+"?")
 
 	err := row.Scan(&acces.SecureId)
 
@@ -864,14 +880,22 @@ func (acces *AccesBdd) GetSyncLinkedDevices() globals.GenArray[string] {
 	row := acces.db_handler.QueryRow("SELECT linked_devices_id FROM sync WHERE secure_id=?", acces.SecureId)
 
 	err := row.Scan(&devices_str)
-	if err != nil {
+	// as the secure_id could change while the files watcher is running
+	// in the case of an app link
+	// no rows could match the select at the create event of the setup for example
+	// and the create event is still trigered as the filesystem lock does not
+	// match the old secure_id
+	if err != nil && err != sql.ErrNoRows {
 		log.Fatal("Error while querying database in GetSyncLinkedDevices() :", err)
 	}
 
-	for _, val := range strings.Split(devices_str, ";") {
-		devices_list.Add(val)
+	if err == nil {
+		for _, val := range strings.Split(devices_str, ";") {
+			devices_list.Add(val)
+		}
+	} else {
+		devices_list.Add(";")
 	}
-
 	// remove the last slot (empty space) in the array
 	// caused by the last semicolon of the string representation of the list
 	devices_list.PopLast()
@@ -1542,9 +1566,65 @@ func (acces *AccesBdd) ToggleBackupMode() {
 }
 
 func (acces *AccesBdd) UpdateSyncId(root_path string, secure_id string) {
-	_, err := acces.db_handler.Exec("UPDATE sync SET secure_id = ? WHERE root=?", secure_id, root_path)
+
+	// get old sync id
+	var old_sync_id string
+	row := acces.db_handler.QueryRow("SELECT secure_id FROM sync WHERE root LIKE ?", root_path+"%")
+
+	err := row.Scan(&old_sync_id)
+
+	if err == sql.ErrNoRows {
+		log.Fatal("The provided path does not match any existing sync rootpath")
+	}
+
+	if err != nil {
+		log.Fatal("Error while querying database GetSecureIdFromRootPath() : ", err)
+	}
+
+	// update the sync row
+	_, err = acces.db_handler.Exec("UPDATE sync SET secure_id = ? WHERE secure_id=?", secure_id, old_sync_id)
 
 	if err != nil {
 		log.Fatal("Error while executing query in UpdateSyncId(): ", err)
 	}
+
+	// update the app row
+	_, err = acces.db_handler.Exec("UPDATE apps SET secure_id = ? WHERE secure_id=?", secure_id, old_sync_id)
+
+	if err != nil {
+		log.Fatal("Error while executing query in UpdateSyncId(): ", err)
+	}
+
+	// change all registered files to have this secure id
+	_, err = acces.db_handler.Exec("UPDATE filesystem SET secure_id = ? WHERE secure_id=?", secure_id, old_sync_id)
+
+	if err != nil {
+		log.Fatal("Error while executing query in UpdateSyncId(): ", err)
+	}
+
+}
+
+func (acces *AccesBdd) GetSyncCreationDate() int64 {
+	var timestamp int64
+	row := acces.db_handler.QueryRow("SELECT creation_date FROM sync WHERE secure_id=?", acces.SecureId)
+
+	err := row.Scan(&timestamp)
+
+	if err != nil {
+		log.Fatal("Error while querying database GetSyncCreationDate() : ", err)
+	}
+
+	return timestamp
+}
+func (acces *AccesBdd) GetSyncCreationDateFromPathMatch(root_path string) int64 {
+	var timestamp int64
+	row := acces.db_handler.QueryRow("SELECT creation_date FROM sync WHERE root LIKE ?", root_path+"%")
+
+	err := row.Scan(&timestamp)
+
+	if err != nil {
+		log.Fatal("Error while querying database GetSyncCreationDate() : ", err)
+	}
+
+	return timestamp
 }

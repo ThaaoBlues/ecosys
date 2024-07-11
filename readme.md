@@ -173,6 +173,14 @@ The typical request must look like :
 
 [CREATE LINK PACKED RECEIVED]
 - add this device and its id to the database
+- if we link a sync task, create it on the new end
+- if we link an app :
+	* determine with the timestamp sent wich end has the older task
+	* if it's the remote one ( relative to the machine recieving the link request )
+		* change the secure_id of its task
+		* ask for a setup queue
+	* else, ignore the link request and send one in the other way ( from this machine to the originally asking one)
+- this procedure is made to avoid erasing our data by accident by linking the newer task to the old one
 
 [REMOVE LINK PACKED RECEIVED]
 - remove this device from database
@@ -245,12 +253,13 @@ POUR TOUT :
 
 
 POUR PC :
-- faire la prompt de selection d'une application lors d'une demande de lien d'app
+- voir pourquoi tjrs envoi à 0 devices et rien dans la table de retard 
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
 - tester l'ajout/suppression/lancement des applications
 
 POUR L'APP :
+- finir updateSync avec les autres tables
 - tester de link avec le pc pour voir si l'agenda prend
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-10 17:53:16
+ * @lastModified    2024-07-11 20:51:37
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -22,6 +22,7 @@ import (
 	"qsync/bdd"
 	"qsync/delta_binaire"
 	"qsync/globals"
+	"strconv"
 	"strings"
 	"time"
 
@@ -162,6 +163,7 @@ func ConnectToDevice(conn net.Conn) {
 	// is trying to link to you with a new sync task that you may not have
 	// the device sending this is building a SETUP_DL queue to send at you
 	case "[LINK_DEVICE]":
+
 		// as this is triggered by another machine telling this one to create a sync task,
 		// we must prepare the environnement to accept this
 		// by creating a new sync task with the same path (replace this later by asking to the user)
@@ -171,26 +173,56 @@ func ConnectToDevice(conn net.Conn) {
 
 		var path string
 		if data.FileType == "[APPLICATION]" {
-			path = filepath.Join(globals.QSyncWriteableDirectory, "apps", data.FilePath)
 
 			// check if the app is downloaded
 			if !globals.Exists(path) {
-				_ = backend_api.AskInput("[ALERT_USER]",
-					"Please install "+data.FilePath+" from the magasin on this machine before linking the app from another device.",
-				)
-				return
-			} else {
 				// replace the original secure_id generated for the app
 				// by the one from the other device so we can link them
-				secure_id := backend_api.AskInput(
+				acces.SecureId = backend_api.AskInput(
 					"[CHOOSE_APP_TO_LINK]",
 					"",
 				)
-				acces.UpdateSyncId(path, secure_id)
+				path = acces.GetRootSyncPath()
 
-				_ = backend_api.AskInput("[ALERT_USER]",
-					"Applications successfully linked to each others !",
-				)
+			} else {
+				path = filepath.Join(globals.QSyncWriteableDirectory, "apps", data.FilePath)
+			}
+
+			remote_task_creation_date, err := strconv.ParseInt(data.NewFilePath, 10, 64)
+
+			if err != nil {
+				log.Fatal("Error while parsing task creation date from request : ", err)
+			}
+
+			local_task_creation_date := acces.GetSyncCreationDateFromPathMatch(path)
+
+			if remote_task_creation_date > local_task_creation_date {
+				acces.UpdateSyncId(path, secure_id)
+			} else {
+
+				// task is older than remote one, sending link request
+				// the other way around
+
+				log.Println("Sync task on this machine is older than the remote one, sending request to invert the link procedure...")
+				acces.GetSecureIdFromRootPathMatch(path)
+
+				ip_addr := acces.GetDeviceIP(device_id)
+				acces.LinkDevice(device_id, ip_addr)
+
+				var event globals.QEvent
+				event.Flag = "[LINK_DEVICE]"
+				event.SecureId = acces.SecureId
+				event.FilePath = "[APPLICATION]"
+				event.NewFilePath = strconv.FormatInt(local_task_creation_date, 10)
+
+				var queue globals.GenArray[globals.QEvent]
+				queue.Add(event)
+				var device_ids globals.GenArray[string]
+				device_ids.Add(device_id)
+
+				SendDeviceEventQueueOverNetwork(device_ids, acces.SecureId, queue, ip_addr)
+
+				return
 			}
 
 		} else {
@@ -220,6 +252,11 @@ func ConnectToDevice(conn net.Conn) {
 		dummy_device.Add(device_id)
 		SendDeviceEventQueueOverNetwork(dummy_device, secure_id, queue, strings.Split(conn.RemoteAddr().String(), ":")[0])
 
+		if data.FileType == "[APPLICATION]" {
+			_ = backend_api.AskInput("[ALERT_USER]",
+				"Applications successfully linked to each others ! Please restart QSync before changing anything",
+			)
+		}
 	case "[UNLINK_DEVICE]":
 		acces.UnlinkDevice(device_id)
 

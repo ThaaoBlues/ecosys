@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-10 17:52:28
+ * @lastModified    2024-07-11 20:53:39
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -227,6 +227,7 @@ func websocketMsgHandler(w http.ResponseWriter, r *http.Request) {
 
 		// give response to event callback function
 		user_response <- p
+
 	}
 
 }
@@ -377,7 +378,13 @@ func linkDevice(w http.ResponseWriter, r *http.Request) {
 	var event globals.QEvent
 	event.Flag = "[LINK_DEVICE]"
 	event.SecureId = acces.SecureId
-	event.FilePath = ""
+
+	if acces.IsApp(acces.SecureId) {
+		event.FilePath = "[APPLICATION]"
+		event.NewFilePath = strconv.FormatInt(acces.GetSyncCreationDate(), 10)
+	} else {
+		event.FilePath = "[CLASSIC]"
+	}
 
 	var queue globals.GenArray[globals.QEvent]
 	queue.Add(event)
