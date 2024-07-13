@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-03 22:52:26
+ * @lastModified    2024-07-13 13:49:57
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -58,36 +58,42 @@ func StartWatcher(rootPath string) {
 	for {
 		select {
 		case event := <-watcher.Events:
-			log.Println("NEW FILESYSTEM EVENT (rootPath="+rootPath+" ) : ", event)
-			// get only the relative path
-			relative_path := strings.Replace(event.Name, rootPath, "", 1)
 
-			// make sure the relative path does not start with a "/"
-			relative_path = strings.TrimPrefix(relative_path, "/")
+			// in case of removed sync task or updated sync id after link
+			if acces.SyncStillExists() {
+				log.Println("NEW FILESYSTEM EVENT (rootPath="+rootPath+" ) : ", event)
+				// get only the relative path
+				relative_path := strings.Replace(event.Name, rootPath, "", 1)
 
-			switch {
-			case event.Has(fsnotify.Create):
-				// in the case of a directory being sent to us by another end, we still
-				// have to partly process the event to add it to the watcher :)
-				handleCreateEvent(&acces, event.Name, relative_path, watcher)
-			case event.Has(fsnotify.Write):
-				if !acces.IsThisFileSystemBeingPatched() {
-					log.Println("Handling event for file : " + relative_path)
-					handleWriteEvent(&acces, event.Name, relative_path)
-				}
-			case event.Has(fsnotify.Remove):
-				// backup mode allow to store files on another machine while
-				// still freeing up space on the device if we want
-				if !acces.IsThisFileSystemBeingPatched() {
-					handleRemoveEvent(&acces, event.Name, relative_path)
-				}
-			case event.Has(fsnotify.Rename):
-				if !acces.IsThisFileSystemBeingPatched() {
-					handleRenameEvent(&acces, event.Name, relative_path)
-				}
-			default:
-				log.Println("Unhandled event (maybe in later versions ) : ", event)
+				// make sure the relative path does not start with a "/"
+				relative_path = strings.TrimPrefix(relative_path, "/")
 
+				switch {
+				case event.Has(fsnotify.Create):
+					// in the case of a directory being sent to us by another end, we still
+					// have to partly process the event to add it to the watcher :)
+					handleCreateEvent(&acces, event.Name, relative_path, watcher)
+				case event.Has(fsnotify.Write):
+					if !acces.IsThisFileSystemBeingPatched() {
+						log.Println("Handling event for file : " + relative_path)
+						handleWriteEvent(&acces, event.Name, relative_path)
+					}
+				case event.Has(fsnotify.Remove):
+					// backup mode allow to store files on another machine while
+					// still freeing up space on the device if we want
+					if !acces.IsThisFileSystemBeingPatched() {
+						handleRemoveEvent(&acces, event.Name, relative_path)
+					}
+				case event.Has(fsnotify.Rename):
+					if !acces.IsThisFileSystemBeingPatched() {
+						handleRenameEvent(&acces, event.Name, relative_path)
+					}
+				default:
+					log.Println("Unhandled event (maybe in later versions ) : ", event)
+
+				}
+			} else {
+				return
 			}
 
 		case err := <-watcher.Errors:

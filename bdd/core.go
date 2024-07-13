@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-11 20:48:42
+ * @lastModified    2024-07-12 16:00:40
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -102,7 +102,7 @@ func (acces *AccesBdd) InitConnection() {
 		root TEXT,
 		backup_mode BOOLEAN DEFAULT 0,
 		is_being_patch BOOLEAN DEFAULT 0,
-		creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		creation_date INTEGER DEFAULT (strftime('%s','now'))
 	)`)
 	if err != nil {
 		log.Fatal("Error while creating table : ", err)
@@ -354,7 +354,7 @@ func (acces *AccesBdd) CreateFile(relative_path string, absolute_path string, fl
 	}
 
 	// update the cached file content to build the next delta (needs absolute path to the file)
-	acces.UpdateCachedFile(absolute_path)
+	acces.UpdateCachedFile(relative_path, absolute_path)
 }
 
 // GetFileLastVersionId retrieves the last version ID of a file.
@@ -467,7 +467,7 @@ func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 	}
 
 	// update the cached file content to build the next delta (needs absolute path to the file)
-	acces.UpdateCachedFile(filepath.Join(acces.GetRootSyncPath(), path))
+	acces.UpdateCachedFile(path, filepath.Join(acces.GetRootSyncPath(), path))
 }
 
 // THIS FUNCTION DOES NOT SEEM TO BE USED ???
@@ -845,7 +845,7 @@ func (acces *AccesBdd) IsThisFileSystemBeingPatched() bool {
 
 }
 
-func (acces *AccesBdd) SetFileSystemPatchLockState(device_id string, value bool) {
+func (acces *AccesBdd) SetFileSystemPatchLockState(value bool) {
 
 	// lock the filesystem (simply add the secure_id of the sync task to the list)
 
@@ -1136,10 +1136,10 @@ func (acces *AccesBdd) IncrementFileVersion(path string) {
 	}
 }
 
-func (acces *AccesBdd) UpdateCachedFile(path string) {
+func (acces *AccesBdd) UpdateCachedFile(relative_path string, absolute_path string) {
 	// reads the current state of the given file and update it in the database
 
-	file_content, err := os.ReadFile(path)
+	file_content, err := os.ReadFile(absolute_path)
 
 	var bytes_buffer bytes.Buffer
 
@@ -1153,7 +1153,7 @@ func (acces *AccesBdd) UpdateCachedFile(path string) {
 		log.Fatal("Error in UpdateCachedFile() while reading file to cache its content : ", err)
 	}
 
-	_, err = acces.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), path, acces.SecureId)
+	_, err = acces.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), relative_path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
@@ -1627,4 +1627,19 @@ func (acces *AccesBdd) GetSyncCreationDateFromPathMatch(root_path string) int64 
 	}
 
 	return timestamp
+}
+
+func (acces *AccesBdd) SyncStillExists() bool {
+	var count int = 0
+	err := acces.db_handler.QueryRow(
+		"SELECT COUNT(*) FROM sync WHERE secure_id=?",
+		acces.SecureId,
+	).Scan(&count)
+
+	if err != nil && err != sql.ErrNoRows {
+		log.Fatal(err)
+	}
+
+	return count > 0
+
 }

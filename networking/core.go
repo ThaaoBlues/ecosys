@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-11 20:51:37
+ * @lastModified    2024-07-13 13:59:44
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/skratchdot/open-golang/open"
+	"golang.org/x/net/internal/socket"
 )
 
 const HEADER_LENGTH int = 83
@@ -95,6 +96,7 @@ func ConnectToDevice(conn net.Conn) {
 		secure_id = strings.Split(string(header_buff), ";")[1]
 	} else {
 		log.Println("A malformed request has been refused.")
+		log.Println("header_buff = ", header_buff)
 		return
 	}
 
@@ -136,13 +138,16 @@ func ConnectToDevice(conn net.Conn) {
 	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":
+		// le mieux serait cette fonction mais pour target qu'un seul fichier
+		// comme ça on envoit modif done à chaque fichier et l'autre supprime de retard
+		//acces.RemoveDeviceFromRetard(device_id)
 		SetEventNetworkLockForDevice(device_id, false)
 
 	case "[BEGIN_UPDATE]":
 
 		if acces.IsDeviceLinked(device_id) {
 			log.Println("LOCKING FILESYSTEM")
-			acces.SetFileSystemPatchLockState(device_id, true)
+			acces.SetFileSystemPatchLockState(true)
 		}
 
 	case "[END_OF_UPDATE]":
@@ -174,6 +179,7 @@ func ConnectToDevice(conn net.Conn) {
 		var path string
 		if data.FileType == "[APPLICATION]" {
 
+			path = filepath.Join(globals.QSyncWriteableDirectory, "apps", data.FilePath)
 			// check if the app is downloaded
 			if !globals.Exists(path) {
 				// replace the original secure_id generated for the app
@@ -184,8 +190,6 @@ func ConnectToDevice(conn net.Conn) {
 				)
 				path = acces.GetRootSyncPath()
 
-			} else {
-				path = filepath.Join(globals.QSyncWriteableDirectory, "apps", data.FilePath)
 			}
 
 			remote_task_creation_date, err := strconv.ParseInt(data.NewFilePath, 10, 64)
@@ -201,7 +205,7 @@ func ConnectToDevice(conn net.Conn) {
 			} else {
 
 				// task is older than remote one, sending link request
-				// the other way around
+				// the other way around- Faire une app mobile pour tester les intents et une belle synchro pc-android
 
 				log.Println("Sync task on this machine is older than the remote one, sending request to invert the link procedure...")
 				acces.GetSecureIdFromRootPathMatch(path)
@@ -273,17 +277,16 @@ func ConnectToDevice(conn net.Conn) {
 	default:
 
 		// regular file event
-		HandleEvent(secure_id, device_id, data)
-		// send back a modification confirmation, so the other end can remove this machine device_id
-		// from concerned sync task retard entries
-		buff := []byte(acces.GetMyDeviceId() + ";" + acces.SecureId + ";" + "[MODIFICATION_DONE]")
-		conn.Write(buff)
+		HandleEvent(secure_id, device_id, data, conn)
+
 	}
+
+	//conn.Close()
 
 }
 
 // used to process a request when it is a regular file event
-func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
+func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn socket.Conn) {
 
 	// first, we lock the filesystem watcher so it don't notify the changes we are doing
 	// as it would do a ping-pong effect
@@ -293,7 +296,7 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 
 	acces.InitConnection()
 
-	acces.SetFileSystemPatchLockState(device_id, true)
+	acces.SetFileSystemPatchLockState(true)
 
 	// mise de la sync root après le chemin relatif reçu pour pouvoir
 	// utiliser directement la variable
@@ -327,7 +330,7 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 			log.Println("Creating file : ", event.FilePath)
 			if event.FileType == "file" {
 				event.Delta.PatchFile()
-				acces.CreateFile(relative_path, filepath.Join(acces.GetRootSyncPath(), relative_path), "[SENT_FROM_OTHER_DEVICE]")
+				acces.CreateFile(relative_path, event.FilePath, "[SENT_FROM_OTHER_DEVICE]")
 
 			} else {
 				os.Mkdir(event.FilePath, 0755)
@@ -338,16 +341,25 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent) {
 		case "[UPDATE]":
 
 			acces.IncrementFileVersion(relative_path)
-			acces.UpdateCachedFile(relative_path)
+			acces.UpdateCachedFile(relative_path, event.FilePath)
 			event.Delta.PatchFile()
 		default:
 			log.Fatal("Qsync network loop received an unknown event type : ", event)
 		}
 	}
 
-	//wait [END_OF_UPDATE] event so if multiple files are to be treated at the same time
-	// there are no problem
-	acces.SetFileSystemPatchLockState(device_id, false)
+	go func() {
+		// wait for last event to be detected and skipped by filesystem watcher
+		time.Sleep(2 * time.Second)
+		acces.SetFileSystemPatchLockState(false)
+		// send back a modification confirmation, so the other end can remove this machine device_id
+		// from concerned sync task retard entries
+		var ev globals.QEvent
+		ev.FilePath = event.FilePath
+		ev.Flag = "[MODIFICATION_DONE]"
+		buff := []byte(acces.GetMyDeviceId() + ";" + acces.SecureId + string(globals.SerializeQevent(ev)))
+		conn.Write(buff)
+	}()
 
 }
 

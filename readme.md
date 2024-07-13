@@ -248,18 +248,17 @@ As example, here is a program that shows a bit how it is working :
 TODO (voir mes notes, sec)
 
 POUR TOUT :
-- Faire une app mobile pour tester les intents et une belle synchro pc-android
-
-
+- tester le lien amelioré
+- tester les liens app-pc de l'agenda
+- déplacer la suppression des retards dans un evenement [MDOFICATION_DONE] pour ne pas supprimer en cas d'échec de l'envoi
 
 POUR PC :
-- voir pourquoi tjrs envoi à 0 devices et rien dans la table de retard 
+- Voir pourquoi il y a un effet de rebond apres un [UPDATE]
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
 - tester l'ajout/suppression/lancement des applications
 
 POUR L'APP :
-- finir updateSync avec les autres tables
 - tester de link avec le pc pour voir si l'agenda prend
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
