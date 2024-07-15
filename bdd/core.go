@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-12 16:00:40
+ * @lastModified    2024-07-15 15:37:32
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1351,6 +1351,79 @@ func (acces *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 	} else {
 		// rewrite the updated list
 		_, err = acces.db_handler.Exec("DELETE FROM retard WHERE devices_to_patch LIKE ?", "%"+device_id+"%")
+
+		if err != nil {
+			log.Fatal("Error while updating database in LinkDevice() : ", err)
+		}
+	}
+
+}
+
+func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_path string, version_id int64) {
+
+	// to replace, this code is the one from FileSystemPatchLockState
+
+	var ids_str string
+	var ids_list globals.GenArray[string]
+
+	row := acces.db_handler.QueryRow(
+		"SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ? AND path=? AND version_id AND secure_id=?",
+		"%"+device_id+"%",
+		relative_path,
+		version_id,
+		acces.SecureId,
+	)
+
+	err := row.Scan(&ids_str)
+	if err != nil {
+		log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+	}
+
+	for _, val := range strings.Split(ids_str, ";") {
+		ids_list.Add(val)
+	}
+
+	// same list of sync tasks secure_id but without this one
+	var new_ids globals.GenArray[string]
+	for i := 0; i < ids_list.Size(); i++ {
+		if !(ids_list.Get(i) == device_id) {
+			new_ids.Add(ids_list.Get(i))
+		}
+	}
+
+	// if it was the last device to being late, we suppress the row from the table
+	// if not we just rewrite without its id
+	if new_ids.Size() > 0 {
+		// rewrite the updated list
+
+		var str_ids string = ""
+		for i := 0; i < new_ids.Size(); i++ {
+			str_ids += new_ids.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		_, err = acces.db_handler.Exec(
+			"UPDATE retard SET devices_to_patch= ? WHERE devices_to_patch LIKE ? AND path=? AND version_id=? AND secure_id=?",
+			str_ids,
+			"%"+device_id+"%",
+			relative_path,
+			version_id,
+			acces.SecureId,
+		)
+
+		if err != nil {
+			log.Fatal("Error while updating database in LinkDevice() : ", err)
+		}
+
+	} else {
+		// rewrite the updated list
+		_, err = acces.db_handler.Exec("DELETE FROM retard WHERE devices_to_patch LIKE ? AND path=? AND version_id=? AND secure_id=?",
+			"%"+device_id+"%",
+			relative_path,
+			version_id,
+			acces.SecureId,
+		)
 
 		if err != nil {
 			log.Fatal("Error while updating database in LinkDevice() : ", err)

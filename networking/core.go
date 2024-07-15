@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-13 13:59:44
+ * @lastModified    2024-07-15 15:39:23
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -142,6 +142,17 @@ func ConnectToDevice(conn net.Conn) {
 		// comme ça on envoit modif done à chaque fichier et l'autre supprime de retard
 		//acces.RemoveDeviceFromRetard(device_id)
 		SetEventNetworkLockForDevice(device_id, false)
+
+		version_id, err := strconv.ParseInt(data.FileType, 10, 64)
+		if err != nil {
+			log.Fatal("Error while parsing file version_id in [MODIFICATION_DONE] : ", err)
+		}
+
+		acces.RemoveDeviceFromRetardOneFile(
+			device_id,
+			data.FilePath,
+			version_id,
+		)
 
 	case "[BEGIN_UPDATE]":
 

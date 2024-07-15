@@ -250,19 +250,19 @@ TODO (voir mes notes, sec)
 POUR TOUT :
 - tester le lien amelioré
 - tester les liens app-pc de l'agenda
-- déplacer la suppression des retards dans un evenement [MDOFICATION_DONE] pour ne pas supprimer en cas d'échec de l'envoi
+- tester [MODIFICATION_DONE]
 
 POUR PC :
-- Voir pourquoi il y a un effet de rebond apres un [UPDATE]
+- tester si le patch du rebond a fonctionné
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
-- tester l'ajout/suppression/lancement des applications
+- tester la suppression des applications
 
 POUR L'APP :
-- tester de link avec le pc pour voir si l'agenda prend
+- voir s'il ne manque pas des trucs pour les modif done
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
-- mettre un texte quand la list d'appareils est vide
+- mettre un texte quand la liste d'appareils est vide
 
 
 
