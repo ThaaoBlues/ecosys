@@ -245,24 +245,19 @@ As example, here is a program that shows a bit how it is working :
 
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
-TODO (voir mes notes, sec)
-
-POUR TOUT :
-- tester le lien amelioré
-- tester les liens app-pc de l'agenda
-- tester [MODIFICATION_DONE]
+TOUDOU : 
+- fix le problème de format du fichier ics de QAgenda
 
 POUR PC :
-- tester si le patch du rebond a fonctionné
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
 - tester la suppression des applications
 
 POUR L'APP :
-- voir s'il ne manque pas des trucs pour les modif done
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - mettre un texte quand la liste d'appareils est vide
+
 
 
 
