@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-15 15:39:23
+ * @lastModified    2024-07-15 22:41:50
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/skratchdot/open-golang/open"
-	"golang.org/x/net/internal/socket"
 )
 
 const HEADER_LENGTH int = 83
@@ -138,10 +137,6 @@ func ConnectToDevice(conn net.Conn) {
 	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":
-		// le mieux serait cette fonction mais pour target qu'un seul fichier
-		// comme ça on envoit modif done à chaque fichier et l'autre supprime de retard
-		//acces.RemoveDeviceFromRetard(device_id)
-		SetEventNetworkLockForDevice(device_id, false)
 
 		version_id, err := strconv.ParseInt(data.FileType, 10, 64)
 		if err != nil {
@@ -297,7 +292,7 @@ func ConnectToDevice(conn net.Conn) {
 }
 
 // used to process a request when it is a regular file event
-func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn socket.Conn) {
+func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn net.Conn) {
 
 	// first, we lock the filesystem watcher so it don't notify the changes we are doing
 	// as it would do a ping-pong effect
@@ -368,8 +363,16 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn 
 		var ev globals.QEvent
 		ev.FilePath = event.FilePath
 		ev.Flag = "[MODIFICATION_DONE]"
-		buff := []byte(acces.GetMyDeviceId() + ";" + acces.SecureId + string(globals.SerializeQevent(ev)))
-		conn.Write(buff)
+		var connected_devices globals.GenArray[string]
+		connected_devices.Add(device_id)
+		var event_queue globals.GenArray[globals.QEvent]
+		event_queue.Add(ev)
+		ip_addr := strings.Split(conn.RemoteAddr().String(), ":")[0]
+
+		// to avoid reusing addr
+		conn.Close()
+
+		SendDeviceEventQueueOverNetwork(connected_devices, acces.SecureId, event_queue, ip_addr)
 	}()
 
 }
@@ -466,12 +469,19 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			conn, err := net.Dial("tcp", ip_addr[0]+":8274")
 
 			if err != nil {
-				log.Fatal("Error while dialing "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
+				log.Println("Error while dialing "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
+
+				// don't forget to release lock !!!
+				SetEventNetworkLockForDevice(device_id, false)
+
 			}
 			_, err = conn.Write(write_buff)
 
 			if err != nil {
-				log.Fatal("Error while writing to "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
+				log.Println("Error while writing to "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
+
+				// don't forget to release lock !!!
+				SetEventNetworkLockForDevice(device_id, false)
 			}
 
 			conn.Close()

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-15 15:37:32
+ * @lastModified    2024-07-15 23:04:43
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1367,7 +1367,7 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 	var ids_list globals.GenArray[string]
 
 	row := acces.db_handler.QueryRow(
-		"SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ? AND path=? AND version_id AND secure_id=?",
+		"SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ? AND path=? AND version_id=? AND secure_id=?",
 		"%"+device_id+"%",
 		relative_path,
 		version_id,
@@ -1375,8 +1375,44 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 	)
 
 	err := row.Scan(&ids_str)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+	}
+
+	// main reason : a problem led to unsiycnhronised files versionning,
+	// retrying with the oldest version present in retard table
+	// associated with the device id
+	if err == sql.ErrNoRows {
+		row := acces.db_handler.QueryRow(
+			"SELECT min(version_id) FROM retard WHERE devices_to_patch LIKE ? AND path=? AND secure_id=?",
+			"%"+device_id+"%",
+			relative_path,
+			acces.SecureId,
+		)
+
+		// update version id with the closest one to a true match
+		// as the event that came first has the best chance to be patched first
+		// (not assured but the others are coming very soon if there are any so not really a problem )
+		err := row.Scan(&version_id)
+
+		// well... now that's a bit chiant quoi
+		if err != nil {
+			log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+		}
+
+		// now we can retry :)
+		row = acces.db_handler.QueryRow(
+			"SELECT devices_to_patch FROM retard WHERE devices_to_patch LIKE ? AND path=? AND version_id=? AND secure_id=?",
+			"%"+device_id+"%",
+			relative_path,
+			version_id,
+			acces.SecureId,
+		)
+
+		err = row.Scan(&ids_str)
+		if err != nil {
+			log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+		}
 	}
 
 	for _, val := range strings.Split(ids_str, ";") {

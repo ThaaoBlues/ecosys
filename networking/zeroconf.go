@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-06-29 15:48:27
+ * @lastModified    2024-07-15 22:04:39
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -80,7 +80,9 @@ func (zcs *ZeroConfService) Browse() {
 
 				}
 
-				acces.RemoveDeviceFromRetard(new_device["device_id"])
+				// NOT USED ANYMORE AS WE NOW WAIT TO HAVE CONFIRMATION EVENT TO REMOVE FROM DB
+				// SO WE ARE NETWORK ERRORS PROOF :)
+				//acces.RemoveDeviceFromRetard(new_device["device_id"])
 			}
 
 		}
