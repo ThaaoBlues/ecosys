@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-15 23:04:43
+ * @lastModified    2024-07-15 23:24:19
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1395,9 +1395,10 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 		// (not assured but the others are coming very soon if there are any so not really a problem )
 		err := row.Scan(&version_id)
 
-		// well... now that's a bit chiant quoi
-		if err != nil {
+		// no rows excepted as it can happen if all devices are online
+		if err != nil && !(err == sql.ErrNoRows) {
 			log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+
 		}
 
 		// now we can retry :)
@@ -1410,8 +1411,10 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 		)
 
 		err = row.Scan(&ids_str)
-		if err != nil {
+		// no rows excepted as it can happen if all devices are online
+		if err != nil && !(err == sql.ErrNoRows) {
 			log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+
 		}
 	}
 

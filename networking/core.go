@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-15 22:41:50
+ * @lastModified    2024-07-15 23:19:01
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -361,7 +361,9 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn 
 		// send back a modification confirmation, so the other end can remove this machine device_id
 		// from concerned sync task retard entries
 		var ev globals.QEvent
-		ev.FilePath = event.FilePath
+		ev.FilePath = relative_path
+		ev.SecureId = secure_id
+		ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(relative_path), 10)
 		ev.Flag = "[MODIFICATION_DONE]"
 		var connected_devices globals.GenArray[string]
 		connected_devices.Add(device_id)
