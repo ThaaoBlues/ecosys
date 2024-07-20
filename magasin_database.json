@@ -18,7 +18,7 @@
         "AppName": "com.qsync.qagenda",
         "AppDownloadUrl": "http://127.0.0.1:8000/qagenda_1.0_amd64.deb",
         "NeedsInstaller": true,
-        "AppLauncherPath": "/opt/qaegenda/bin/QAgenda",
+        "AppLauncherPath": "/opt/qagenda/bin/QAgenda",
         "AppInstallerPath": "qagenda_1.0_amd64.deb",
         "AppUninstallerPath": "",
         "AppSyncDataFolderPath": "/opt/qaegenda/bin/",
