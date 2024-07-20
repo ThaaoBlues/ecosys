@@ -21,7 +21,7 @@
         "AppLauncherPath": "/opt/qagenda/bin/QAgenda",
         "AppInstallerPath": "qagenda_1.0_amd64.deb",
         "AppUninstallerPath": "",
-        "AppSyncDataFolderPath": "/opt/qaegenda/bin/",
+        "AppSyncDataFolderPath": "",
         "AppDescription":"Premier test avec une vraie application Linux",
         "AppIconURL":"https://via.placeholder.com/300",
         "SupportedPlatforms": ["Linux"]

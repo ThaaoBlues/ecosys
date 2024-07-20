@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-03-02 19:14:18
- * @lastModified    2024-07-20 12:16:43
+ * @lastModified    2024-07-20 18:35:23
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -150,7 +150,7 @@ func ShowAlert(message string) {
 	_ = zenity.Warning(message, zenity.Title("Information"))
 }
 
-func RunAsRoot(command_string string) {
+func RunDPKGAsRoot(deb_path string) {
 	// Use zenity to show a graphical prompt for sudo
 	cmd := exec.Command("zenity", "--password", "--title=Authentication Required", "--text=QSync needs to be root to run dpkg and install your app.")
 	cmd.Stderr = os.Stderr
@@ -167,35 +167,36 @@ func RunAsRoot(command_string string) {
 	password := string(passwordBytes)
 
 	// Use the password to run the command with sudo
-	sudoCmd := exec.Command("sudo", "-S", command_string)
+	log.Println("Running sudo command")
+	sudoCmd := exec.Command("sudo", "-S", "dpkg", "-i", deb_path)
 	sudoCmd.Stderr = os.Stderr
-	sudoCmd.Stdin = os.Stdin
 	sudoCmd.Stdout = os.Stdout
 
 	// Create a pipe to send the password to sudo's stdin
 	stdin, err := sudoCmd.StdinPipe()
+	log.Println("Providing password")
 	if err != nil {
-		fmt.Println("Failed to create stdin pipe:", err)
-		os.Exit(1)
+		log.Fatal("Failed to create stdin pipe:", err)
+		//os.Exit(1)
 	}
 
 	// Start the sudo command
 	if err := sudoCmd.Start(); err != nil {
-		fmt.Println("Failed to start sudo:", err)
-		os.Exit(1)
+		log.Fatal("Failed to start sudo:", err)
+		//os.Exit(1)
 	}
 
 	// Write the password to sudo's stdin
 	if _, err := stdin.Write([]byte(password)); err != nil {
-		fmt.Println("Failed to write password to stdin:", err)
-		os.Exit(1)
+		log.Fatal("Failed to write password to stdin:", err)
+		//os.Exit(1)
 	}
 	stdin.Close()
 
 	// Wait for the sudo command to complete
 	if err := sudoCmd.Wait(); err != nil {
-		fmt.Println("Failed to run with sudo:", err)
-		os.Exit(1)
+		log.Fatal("Failed to run with sudo:", err)
+		//os.Exit(1)
 	}
 
 }

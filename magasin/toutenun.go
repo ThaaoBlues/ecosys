@@ -23,7 +23,8 @@ func RunInstaller(path string) {
 
 	switch runtime.GOOS {
 	case "linux":
-		backend_api.RunAsRoot("dpkg -i \"" + path + "\"")
+		log.Println("asking root privileges to run installer")
+		backend_api.RunDPKGAsRoot(path)
 	case "windows":
 		open.Run(path)
 	}
@@ -93,8 +94,9 @@ func InstallApp(data io.ReadCloser) error {
 	}
 
 	if json_data.NeedsInstaller {
-		// pre-determined installer name so there are no problem ( on linux .exe does not do anything but required on windows)
-		json_data.AppInstallerPath = filepath.Join(new_app_root_path, sanitized_app_name+".exe")
+		// pre-determined installer name so there are no problem
+
+		json_data.AppInstallerPath = strings.ReplaceAll(json_data.AppInstallerPath, " ", "_")
 
 		err = DownloadFromUrl(json_data.AppDownloadUrl, json_data.AppInstallerPath)
 
@@ -103,6 +105,7 @@ func InstallApp(data io.ReadCloser) error {
 		}
 
 		if json_data.NeedsInstaller {
+			log.Println("Running installer...")
 			RunInstaller(json_data.AppInstallerPath)
 		}
 	} else {
