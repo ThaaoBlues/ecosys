@@ -85,7 +85,11 @@ func InstallApp(data io.ReadCloser) error {
 
 	sanitized_app_name := strings.ReplaceAll(json_data.AppName, " ", "_")
 	new_app_root_path := filepath.Join(apps_path, sanitized_app_name)
-	json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
+
+	// change launcher path only on portable apps
+	if !json_data.NeedsInstaller {
+		json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
+	}
 
 	ex = globals.Exists(new_app_root_path)
 
@@ -134,7 +138,13 @@ func InstallApp(data io.ReadCloser) error {
 	// finish by putting non relative path so we can revover them easily from the database
 	// when launching app
 	json_data.AppSyncDataFolderPath = filepath.Join(new_app_root_path, json_data.AppSyncDataFolderPath)
-	json_data.AppInstallerPath = filepath.Join(new_app_root_path, json_data.AppInstallerPath)
+	if json_data.NeedsInstaller {
+		json_data.AppInstallerPath = filepath.Join(json_data.AppInstallerPath)
+
+	} else {
+		json_data.AppInstallerPath = ""
+
+	}
 	json_data.AppUninstallerPath = filepath.Join(new_app_root_path, json_data.AppUninstallerPath)
 
 	// now its time to register in the database the new little app

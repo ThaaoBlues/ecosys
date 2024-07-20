@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-16 11:38:26
+ * @lastModified    2024-07-20 18:59:29
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -280,9 +280,13 @@ func launchAppHandler(w http.ResponseWriter, r *http.Request) {
 
 	var config globals.MinGenConfig
 	config = acces.GetAppConfig(app_id)
+	acces.SecureId = config.SecureId
 	log.Println(config.BinPath)
 	cmd := exec.Command(config.BinPath)
-	cmd.Dir = filepath.Dir(config.BinPath)
+
+	// set working directory at the sync root for the application
+	// so it can recover the path easily
+	cmd.Dir = acces.GetRootSyncPath()
 
 	err := cmd.Run()
 
