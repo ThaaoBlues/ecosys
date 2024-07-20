@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-07-04 12:25:13
+ * @lastModified    2024-07-17 15:09:23
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -112,115 +112,116 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 	var global_index int64 = 0
 	log.Println("old file size : ", old_file_size)
-	log.Println("old file content : ", old_file_content)
+	//log.Println("old file content : ", old_file_content)
 
 	var instruction_buffer bytes.Buffer
 
-	for (global_index < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
+	if new_file_size > 0 {
+		for (global_index < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
 
-		new_buff_fill_size, new_err := new_file_reader.Read(new_file_buff)
+			new_buff_fill_size, new_err := new_file_reader.Read(new_file_buff)
 
-		if new_err != nil {
-			log.Fatal("Erreur dans la lecture du fichier : ", err)
+			if new_err != nil {
+				log.Fatal("Erreur dans la lecture du fichier : ", err)
 
-		}
-
-		//log.Println(new_file_buff, int8(new_file_buff))
-
-		// new delta instruction
-		// we are looping throught the newly read block
-
-		// var instructions_buffer bytes.Buffer;
-		for new_buff_index := 0; new_buff_index < new_buff_fill_size; new_buff_index++ {
-
-			var delta_index int = 0
-			var byte_index_cond bool = true
-
-			if len(file_delta) > 0 {
-				delta_index = len(file_delta) - 1
-				byte_index_cond = (file_delta[delta_index].ByteIndex != blocking_byte_index)
 			}
 
-			// initialize to a non-zero value as some files actually need zeros in them
-			// and comparing it to non-initialized buffer would act as if the old file already
-			// had zeros
+			//log.Println(new_file_buff, int8(new_file_buff))
 
-			// the comparison does not work if old file is at EOF
-			// because old_file_buff will always be 0xff
-			// so it would skip all the 255 byte
-			// so to counter that we must double check
+			// new delta instruction
+			// we are looping throught the newly read block
 
-			var old_file_byte byte = 0xff
-			if global_index < old_file_size {
-				old_file_byte = old_file_content[global_index]
-			}
+			// var instructions_buffer bytes.Buffer;
+			for new_buff_index := 0; new_buff_index < new_buff_fill_size; new_buff_index++ {
 
-			if ((new_file_buff[new_buff_index] != old_file_byte) || (global_index >= old_file_size)) && (byte_index_cond) {
+				var delta_index int = 0
+				var byte_index_cond bool = true
 
-				//instruction_buffer.WriteByte(new_file_buff[new_buff_index])
-
-				inst := Delta_instruction{
-					Data:            []int8{int8(new_file_buff[new_buff_index])},
-					InstructionType: "ab",
-					ByteIndex:       global_index,
+				if len(file_delta) > 0 {
+					delta_index = len(file_delta) - 1
+					byte_index_cond = (file_delta[delta_index].ByteIndex != blocking_byte_index)
 				}
-				//log.Println("append : ", inst)
 
-				instruction_buffer.WriteByte(new_file_buff[new_buff_index])
-				file_delta = append(file_delta, inst)
+				// initialize to a non-zero value as some files actually need zeros in them
+				// and comparing it to non-initialized buffer would act as if the old file already
+				// had zeros
 
-			} else {
-				// continue to fill bytes to delta instruction
-				if (new_file_buff[new_buff_index] != old_file_byte) || global_index >= old_file_size {
+				// the comparison does not work if old file is at EOF
+				// because old_file_buff will always be 0xff
+				// so it would skip all the 255 byte
+				// so to counter that we must double check
 
-					// add the byte we've just read to the data of the delta chunk
-					instruction_buffer.WriteByte(new_file_buff[new_buff_index])
+				var old_file_byte byte = 0xff
+				if global_index < old_file_size {
+					old_file_byte = old_file_content[global_index]
+				}
 
-					// check if we are at end of read buffer block and flush the write buffer
-					// this operation removes the need to clone a byte array to extend it at each new byte in a block
-					// This block is necessary as if we weren't using this, the last differences chunk being
-					// processed ad each read buffer block would not be written to its delta Instruction
-					if instruction_buffer.Len() > 0 && (new_buff_index == new_buff_fill_size-1) {
+				if ((new_file_buff[new_buff_index] != old_file_byte) || (global_index >= old_file_size)) && (byte_index_cond) {
 
-						file_delta[len(file_delta)-1].Data = byteBufferToInt8Slice(instruction_buffer.Bytes())
-						instruction_buffer.Reset()
+					//instruction_buffer.WriteByte(new_file_buff[new_buff_index])
 
-						// prepare a new block for the next buffer, with the good index
-
-						blocking_byte_index = global_index + 1
-
+					inst := Delta_instruction{
+						Data:            []int8{int8(new_file_buff[new_buff_index])},
+						InstructionType: "ab",
+						ByteIndex:       global_index,
 					}
+					//log.Println("append : ", inst)
 
-					//file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff[new_buff_index]))
+					instruction_buffer.WriteByte(new_file_buff[new_buff_index])
+					file_delta = append(file_delta, inst)
 
 				} else {
-					// same bytes, regular case we just increment counters
+					// continue to fill bytes to delta instruction
+					if (new_file_buff[new_buff_index] != old_file_byte) || global_index >= old_file_size {
 
-					// check if we are at the end of a block change ( i.e the data stream has bytes in it )
-					// as if this is just a random byte in a chunk of unchanged bytes the buffer would be empty
-					// this operation removes the need to clone a byte array to extend it at each new byte in a block
+						// add the byte we've just read to the data of the delta chunk
+						instruction_buffer.WriteByte(new_file_buff[new_buff_index])
 
-					if instruction_buffer.Len() > 0 {
-						copy(file_delta[len(file_delta)-1].Data, byteBufferToInt8Slice(instruction_buffer.Bytes()))
-						instruction_buffer.Reset()
+						// check if we are at end of read buffer block and flush the write buffer
+						// this operation removes the need to clone a byte array to extend it at each new byte in a block
+						// This block is necessary as if we weren't using this, the last differences chunk being
+						// processed ad each read buffer block would not be written to its delta Instruction
+						if instruction_buffer.Len() > 0 && (new_buff_index == new_buff_fill_size-1) {
+
+							file_delta[len(file_delta)-1].Data = byteBufferToInt8Slice(instruction_buffer.Bytes())
+							instruction_buffer.Reset()
+
+							// prepare a new block for the next buffer, with the good index
+
+							blocking_byte_index = global_index + 1
+
+						}
+
+						//file_delta[len(file_delta)-1].Data = append(file_delta[len(file_delta)-1].Data, int8(new_file_buff[new_buff_index]))
+
+					} else {
+						// same bytes, regular case we just increment counters
+
+						// check if we are at the end of a block change ( i.e the data stream has bytes in it )
+						// as if this is just a random byte in a chunk of unchanged bytes the buffer would be empty
+						// this operation removes the need to clone a byte array to extend it at each new byte in a block
+
+						if instruction_buffer.Len() > 0 {
+							copy(file_delta[len(file_delta)-1].Data, byteBufferToInt8Slice(instruction_buffer.Bytes()))
+							instruction_buffer.Reset()
+						}
+
+						blocking_byte_index = global_index + 1
 					}
-
-					blocking_byte_index = global_index + 1
 				}
+				// don't forget to increment byte index
+				global_index++
 			}
-			// don't forget to increment byte index
-			global_index++
-		}
 
-		byte_index = byte_index + int64(new_buff_fill_size)
+			byte_index = byte_index + int64(new_buff_fill_size)
+
+		}
 
 	}
 
 	if needs_truncature {
 
-		var delta_index int = 0
 		if len(file_delta) > 0 {
-			delta_index = len(file_delta) - 1
 			file_delta = append(file_delta,
 				Delta_instruction{
 					Data:            []int8{0},
@@ -229,11 +230,12 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 				})
 
 		} else {
-			file_delta[delta_index] = Delta_instruction{
-				Data:            []int8{0},
-				InstructionType: "t",
-				ByteIndex:       new_file_size,
-			}
+			file_delta = append(file_delta,
+				Delta_instruction{
+					Data:            []int8{0},
+					InstructionType: "t",
+					ByteIndex:       new_file_size,
+				})
 		}
 
 	}

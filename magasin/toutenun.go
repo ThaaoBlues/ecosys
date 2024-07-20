@@ -13,11 +13,20 @@ import (
 	"qsync/bdd"
 	"qsync/filesystem"
 	"qsync/globals"
+	"runtime"
 	"strings"
+
+	"github.com/skratchdot/open-golang/open"
 )
 
 func RunInstaller(path string) {
 
+	switch runtime.GOOS {
+	case "linux":
+		backend_api.RunAsRoot("dpkg -i \"" + path + "\"")
+	case "windows":
+		open.Run(path)
+	}
 }
 
 func DownloadFromUrl(url string, installer_path string) error {

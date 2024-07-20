@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-13 13:49:57
+ * @lastModified    2024-07-17 15:19:14
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -106,6 +106,15 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 
 	var queue globals.GenArray[globals.QEvent]
 
+	// just wait to see if it is a temporary file or not
+	// as some text editors write changes to a random file before writing
+	// the real one
+	time.Sleep(1 * time.Second)
+
+	if !globals.ExistsInFilesystem(absolute_path) {
+		return
+	}
+
 	if acces.IsFile(absolute_path) && !acces.IsThisFileSystemBeingPatched() {
 
 		acces.CreateFile(relative_path, absolute_path, "[ADD_TO_RETARD]")
@@ -191,6 +200,8 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.SecureId = acces.SecureId
 		event.FileType = file_type
 		event.FilePath = relative_path
+
+		log.Println("RELATIVE PATH = ", relative_path)
 
 		queue.Add(event)
 

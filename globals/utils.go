@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-07-02 12:03:42
+ * @lastModified    2024-07-17 15:20:56
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -365,4 +365,9 @@ func IsExecutable(filePath string) bool {
 	}
 
 	return ret
+}
+func ExistsInFilesystem(filePath string) bool {
+	_, err := os.Stat(filePath)
+
+	return err == nil
 }

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-15 23:24:19
+ * @lastModified    2024-07-17 14:59:55
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -470,33 +470,43 @@ func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 	acces.UpdateCachedFile(path, filepath.Join(acces.GetRootSyncPath(), path))
 }
 
-// THIS FUNCTION DOES NOT SEEM TO BE USED ???
-// IT EVEN HAVE AN ERROR IN THE SECOND SQL SYNTAX
-// BUT I'M AFRAID TO REMOVE IT
-func (acces *AccesBdd) NotifyDeviceUpdate(path string, device_id string) {
-	// remove all mentions of the given device_id in the retard table for a specific file
+// rebuild an entry in retard table to add a potential missing device
 
-	var devices_to_patch string
-	row := acces.db_handler.QueryRow("SELECT devices_to_patch FROM retard WHERE path=? AND secure_id=?", path, acces.SecureId)
+func (acces *AccesBdd) RefreshCorrespondingRetardRow(path string, modtype string) {
+	version_id := acces.GetFileLastVersionId(path)
 
-	row.Scan(&devices_to_patch)
+	// remove the outdated retard entry
 
-	devices_split := strings.Split(devices_to_patch, ";")
+	acces.db_handler.Exec("DELETE FROM retard WHERE path=? AND version_id=? AND secure_id=?", path, version_id, acces.SecureId)
 
-	var list_builder globals.GenArray[string]
+	// get only offline devices
 
-	for _, dev := range devices_split {
-		if !(dev == device_id) {
-			list_builder.Add(dev)
+	offline_devices := acces.GetSyncOfflineDevices()
+	if offline_devices.Size() > 0 {
+		// add a line in retard table with all devices linked and the version number
+
+		var str_ids string = ""
+		for i := 0; i < offline_devices.Size(); i++ {
+			str_ids += offline_devices.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		_, err := acces.db_handler.Exec(
+			"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)",
+			version_id,
+			path,
+			modtype,
+			str_ids,
+			acces.SecureId)
+
+		if err != nil {
+			log.Fatal("Error while inserting new retard : ", err)
 		}
 	}
 
-	_, err := acces.db_handler.Exec("UPDATE retard SET WHERE path=? AND secure_id=?", list_builder, path)
-
-	if err != nil {
-		log.Fatal("Error while inserting new retard : ", err)
-	}
-
+	// update the cached file content to build the next delta (needs absolute path to the file)
+	acces.UpdateCachedFile(path, filepath.Join(acces.GetRootSyncPath(), path))
 }
 
 // GetFileContent retrieves the content of a file from the database.
@@ -1306,8 +1316,6 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 
 func (acces *AccesBdd) RemoveDeviceFromRetard(device_id string) {
 
-	// to replace, this code is the one from FileSystemPatchLockState
-
 	var ids_str string
 	var ids_list globals.GenArray[string]
 
@@ -1383,23 +1391,28 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 	// retrying with the oldest version present in retard table
 	// associated with the device id
 	if err == sql.ErrNoRows {
-		row := acces.db_handler.QueryRow(
+		rows, err := acces.db_handler.Query(
 			"SELECT min(version_id) FROM retard WHERE devices_to_patch LIKE ? AND path=? AND secure_id=?",
 			"%"+device_id+"%",
 			relative_path,
 			acces.SecureId,
 		)
 
+		// no rows excepted as it can happen if all devices are online
+		if err != nil {
+			//log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
+			log.Println("Nothing to remove in retard table. Nothing unusual. : ", err)
+			return
+		}
+
+		if rows.Next() {
+			rows.Scan(&version_id)
+
+		}
+		rows.Close()
 		// update version id with the closest one to a true match
 		// as the event that came first has the best chance to be patched first
 		// (not assured but the others are coming very soon if there are any so not really a problem )
-		err := row.Scan(&version_id)
-
-		// no rows excepted as it can happen if all devices are online
-		if err != nil && !(err == sql.ErrNoRows) {
-			log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
-
-		}
 
 		// now we can retry :)
 		row = acces.db_handler.QueryRow(
@@ -1416,6 +1429,7 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 			log.Fatal("Error while querying database RemoveDeviceFromRetard() : ", err)
 
 		}
+
 	}
 
 	for _, val := range strings.Split(ids_str, ";") {
@@ -1452,7 +1466,7 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 		)
 
 		if err != nil {
-			log.Fatal("Error while updating database in LinkDevice() : ", err)
+			log.Fatal("Error while updating database in RemoveDeviceFromRetardOneFile() : ", err)
 		}
 
 	} else {
@@ -1465,7 +1479,7 @@ func (acces *AccesBdd) RemoveDeviceFromRetardOneFile(device_id string, relative_
 		)
 
 		if err != nil {
-			log.Fatal("Error while updating database in LinkDevice() : ", err)
+			log.Fatal("Error while updating database in RemoveDeviceFromRetardOneFile() : ", err)
 		}
 	}
 

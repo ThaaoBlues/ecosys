@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-15 23:19:01
+ * @lastModified    2024-07-17 15:02:28
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -206,7 +206,7 @@ func ConnectToDevice(conn net.Conn) {
 
 			local_task_creation_date := acces.GetSyncCreationDateFromPathMatch(path)
 
-			if remote_task_creation_date > local_task_creation_date {
+			if remote_task_creation_date < local_task_creation_date {
 				acces.UpdateSyncId(path, secure_id)
 			} else {
 
@@ -363,7 +363,18 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn 
 		var ev globals.QEvent
 		ev.FilePath = relative_path
 		ev.SecureId = secure_id
-		ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(relative_path), 10)
+		switch event.Flag {
+		case "[MOVE]":
+			// event.NewFilePath is still relative
+			ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(event.NewFilePath), 10)
+
+		case "[REMOVE]":
+			ev.FileType = "0"
+
+		default:
+			ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(relative_path), 10)
+
+		}
 		ev.Flag = "[MODIFICATION_DONE]"
 		var connected_devices globals.GenArray[string]
 		connected_devices.Add(device_id)
@@ -468,19 +479,41 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			// /!\ the device_id we send is our own so the other end can identify ourselves
 			write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + string(formatted_event))
 
-			conn, err := net.Dial("tcp", ip_addr[0]+":8274")
+			d := net.Dialer{Timeout: 1 * time.Second}
+			conn, err := d.Dial("tcp", ip_addr[0]+":8274")
 
 			if err != nil {
 				log.Println("Error while dialing "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
 
+				// an error occured, adding this event to retard table
+				log.Println("Adding event to retard table for this device")
+
+				acces.SetDeviceConnectionState(device_id, false)
+				MODTYPES := map[string]string{
+					"[CREATE]": "c",
+					"[REMOVE]": "d",
+					"[UPDATE]": "p",
+					"[MOVE]":   "m",
+				}
+				acces.RefreshCorrespondingRetardRow(event.FilePath, MODTYPES[event.Flag])
+
 				// don't forget to release lock !!!
 				SetEventNetworkLockForDevice(device_id, false)
-
+				return
 			}
 			_, err = conn.Write(write_buff)
 
 			if err != nil {
 				log.Println("Error while writing to "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
+
+				acces.SetDeviceConnectionState(device_id, false)
+				MODTYPES := map[string]string{
+					"[CREATE]": "c",
+					"[REMOVE]": "d",
+					"[UPDATE]": "p",
+					"[MOVE]":   "m",
+				}
+				acces.RefreshCorrespondingRetardRow(event.FilePath, MODTYPES[event.Flag])
 
 				// don't forget to release lock !!!
 				SetEventNetworkLockForDevice(device_id, false)
@@ -519,7 +552,7 @@ func SetEventNetworkLockForDevice(device_id string, value bool) {
 
 		err := os.Remove(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
 		log.Println("removing network lock after sending event")
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			log.Fatal("Error while removing a network lock file in SetEventNetworkLockForDevice() : ", err)
 		}
 

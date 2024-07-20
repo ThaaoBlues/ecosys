@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-11 20:53:39
+ * @lastModified    2024-07-16 11:38:26
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -380,10 +380,11 @@ func linkDevice(w http.ResponseWriter, r *http.Request) {
 	event.SecureId = acces.SecureId
 
 	if acces.IsApp(acces.SecureId) {
-		event.FilePath = "[APPLICATION]"
+		event.FileType = "[APPLICATION]"
 		event.NewFilePath = strconv.FormatInt(acces.GetSyncCreationDate(), 10)
+		event.FilePath = acces.GetAppConfig(requestData.SecureId).AppName
 	} else {
-		event.FilePath = "[CLASSIC]"
+		event.FileType = "[CLASSIC]"
 	}
 
 	var queue globals.GenArray[globals.QEvent]

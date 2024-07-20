@@ -55,7 +55,9 @@ If the folder where the files to sync is not created after we check (and started
 /!\ The folder name you will provide as sync task root is relative to <qsync_installation_root>/apps/<app_name>
 
 You can specify informations about your app in a json format matching :
-All the path asked are relative to your app's root
+All the path asked are relative to your app's root, except if your app is not portable.
+Then you need to provide absolute path to your executables.
+The sync data folder path is always relative your private qsync app root, as qsync set this as the current working directory before starting your binary. So you just have to recover the cwd at start of your app to konw where to write your files that needs to be sync.
 ```go
 type ToutEnUnConfig struct {
 	AppName               string // well... the app's name ?
@@ -63,7 +65,7 @@ type ToutEnUnConfig struct {
 	NeedsInstaller        bool   // if we need to run the binary installer
 	AppExecutableName       string // the name of to the main executable of your app, 
 	// if the app does not have an installer, it will be <app_name.exe> (spaces replaced by '_')
-	AppInstallerPath      string // the installer path
+	AppInstallerPath      string // the installer/package file name (like installer.msi or app.deb)
 	AppUninstallerPath    string // the uninstaller path
 	AppSyncDataFolderPath string // the folder where the data to synchronize is stored, relative to you app's root
 	AppDescription        string // well that's the app's descriptions
@@ -246,7 +248,11 @@ As example, here is a program that shows a bit how it is working :
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TOUDOU : 
-- fix le problème de format du fichier ics de QAgenda
+- voir pourquoi le patch du ics détruit une partie du fichier sur telephone (partie haute)
+ * mauvais état de fichier dans la bdd avant le calcul du delta ?
+ * re-essayer pour voir car peut-être que j'ai oublié que ça avait bug sur un truc entre temps sans re-effacer le fichier, ce qui a donné une version diff entre chaque appareils et donc un patch qui pu
+
+- finir de package qagenda et mettre l'installateur linux et windows séparés comme linux va l'installer dans /opt... et qu'il faut dpkg
 
 POUR PC :
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
