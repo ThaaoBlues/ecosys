@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-21 14:35:27
+ * @lastModified    2024-07-21 20:25:42
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1166,7 +1166,7 @@ func (acces *AccesBdd) UpdateCachedFile(relative_path string, absolute_path stri
 		log.Fatal("Error in UpdateCachedFile() while reading file to cache its content : ", err)
 	}
 
-	_, err = acces.db_handler.Exec("UPDATE filesystem SET content=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), relative_path, acces.SecureId)
+	_, err = acces.db_handler.Exec("UPDATE filesystem SET content=?,size=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), bytes_buffer.Len(), relative_path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
