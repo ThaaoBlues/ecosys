@@ -40,6 +40,8 @@ examples :
 ## /!\ The content provider is not designed to share an entire directory, to bypass that limitation the file creation is a little more complicated : It will also be using QSyncCallbackActivity that recieve Intent.ACTION_SEND but with a [CREATE_FILE] flag.
 
 > File creation : as app installation, uri is sent to QSyncCallbackActivity but very easily predictible so you can start using the file right after the qsync activity finished without actually storing the retrieved uri. 
+
+> If you provide a relative path before the actual file name, necessary directories will be created if they do not exists
 ```java
 public void checkFileCreated(String fileName) {
 
@@ -47,13 +49,30 @@ public void checkFileCreated(String fileName) {
         intent.setClassName("com.qsync.qsync","com.qsync.qsync.AppsIntentActivity");
         intent.putExtra("action_flag","[CREATE_FILE]");
         intent.putExtra("package_name",getContext().getPackageName());
-        intent.putExtra("file_name",fileName);
+        intent.putExtra("file_path","subdirectory_that_will_be_created/"+fileName);
         intent.putExtra("mime_type","text/plain");
         Log.d(TAG,"starting activity with sync intent");
         startActivity(intent);
 }
 
 ```
+
+
+> I implemented the same thing for full directories path, same usage as before, just with [CREATE_DIRECTORY] flag
+```java
+public void checkFileCreated(String fileName) {
+
+        Intent intent = new Intent(Intent.ACTION_SYNC);
+        intent.setClassName("com.qsync.qsync","com.qsync.qsync.AppsIntentActivity");
+        intent.putExtra("action_flag","[CREATE_DIRECTORY]");
+        intent.putExtra("package_name",getContext().getPackageName());
+        intent.putExtra("file_path","subdirectory_that_will_be_created/sub_sub_another_one");
+        Log.d(TAG,"starting activity with sync intent");
+        startActivity(intent);
+}
+
+```
+
 
 > Callback called by qsync via intent after it created your file
 ```java

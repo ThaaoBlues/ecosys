@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-17 14:59:55
+ * @lastModified    2024-07-21 14:35:27
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -944,19 +944,22 @@ func (acces *AccesBdd) AddFolderToRetard(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := acces.GetSyncLinkedDevices()
-	var str_ids string = ""
-	for i := 0; i < linked_devices.Size(); i++ {
-		str_ids += linked_devices.Get(i) + ";"
-	}
-	// remove the last semicolon
-	str_ids = str_ids[:len(str_ids)-1]
+	offline_devices := acces.GetSyncOfflineDevices()
 
-	log.Println("ADDING FOLDER TO RETARD : ", path)
-	_, err := acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], str_ids, acces.SecureId)
+	if offline_devices.Size() > 0 {
+		var str_ids string = ""
+		for i := 0; i < offline_devices.Size(); i++ {
+			str_ids += offline_devices.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
 
-	if err != nil {
-		log.Fatal("Error while inserting new retard in AddFolderToRetard() : ", err)
+		log.Println("ADDING FOLDER TO RETARD : ", path)
+		_, err := acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], str_ids, acces.SecureId)
+
+		if err != nil {
+			log.Fatal("Error while inserting new retard in AddFolderToRetard() : ", err)
+		}
 	}
 
 }
