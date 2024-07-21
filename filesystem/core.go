@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-17 15:19:14
+ * @lastModified    2024-07-21 23:13:38
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -161,6 +161,7 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 
 	var queue globals.GenArray[globals.QEvent]
 	if acces.IsFile(absolute_path) {
+
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, acces.GetFileSizeFromBdd(relative_path), acces.GetFileContent(relative_path))
 		acces.UpdateFile(relative_path, delta)
 

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-21 21:31:23
+ * @lastModified    2024-07-21 23:23:30
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -304,14 +304,13 @@ func (acces *AccesBdd) CreateFile(relative_path string, absolute_path string, fl
 
 	// Now, add this file to retard and delta etc... all for the others linked devices
 	// get only offline devices
+	acces.IncrementFileVersion(relative_path)
 
 	if flag == "[ADD_TO_RETARD]" {
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
 		offline_devices := acces.GetSyncOfflineDevices()
 		if offline_devices.Size() > 0 {
 			new_version_id := acces.GetFileLastVersionId(relative_path) + 1
-
-			acces.IncrementFileVersion(relative_path)
 
 			// convert detla to json
 			json_data, err := json.Marshal(delta)
@@ -527,11 +526,14 @@ func (acces *AccesBdd) GetFileContent(path string) []byte {
 	if err != nil {
 		log.Fatal("Error while creating new gzip reader", err)
 	}
+	defer reader.Close()
 
 	decompressed_content, err := io.ReadAll(reader)
+	log.Println("old file content length : " + string(len(decompressed_content)))
+	log.Println("old file content : ", decompressed_content)
 
 	if err != nil {
-		log.Fatal("Error while reading decompression buffer", err)
+		log.Fatal("Error while reading decompression buffer ", err)
 	}
 
 	return decompressed_content
@@ -695,8 +697,6 @@ func (acces *AccesBdd) CreateSync(rootPath string) {
 		log.Fatal("Error while inserting into database ", err)
 	}
 
-	// add files to the filesystem, necessitate that all files are on the newer version so it don't erase the ones fro
-
 	err = filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Println("Error accessing path:", path, err)
@@ -704,10 +704,16 @@ func (acces *AccesBdd) CreateSync(rootPath string) {
 		}
 		log.Println("Registering : ", path)
 		relative_path := strings.Replace(path, rootPath, "", 1)
-		if info.IsDir() {
-			acces.CreateFolder(relative_path)
-		} else {
-			acces.CreateFile(relative_path, path, "[ADD_TO_RETARD]")
+
+		if relative_path != "" {
+			if relative_path[0] == '/' {
+				relative_path = strings.TrimLeft(relative_path, "/")
+			}
+			if info.IsDir() {
+				acces.CreateFolder(relative_path)
+			} else {
+				acces.CreateFile(relative_path, path, "")
+			}
 		}
 
 		return nil
@@ -1190,6 +1196,8 @@ func (acces *AccesBdd) UpdateCachedFile(relative_path string, absolute_path stri
 
 	gzip_writer.Flush()
 
+	gzip_writer.Close()
+
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while reading file to cache its content : ", err)
 	}
@@ -1205,8 +1213,6 @@ func (acces *AccesBdd) UpdateCachedFile(relative_path string, absolute_path stri
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
 	}
-
-	gzip_writer.Close()
 
 }
 

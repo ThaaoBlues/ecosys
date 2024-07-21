@@ -273,3 +273,31 @@ POUR L'APP :
 
 	https://fr.wikipedia.org/wiki/Mode_d%27op%C3%A9ration_(cryptographie)#Compteur_avec_code_d%27authentification_de_message_de_cha%C3%AEnage_de_blocs_de_chiffrement_%28CCM%29
 	
+
+
+// erreur quand on modifie un fichier
+
+panic: runtime error: index out of range [0] with length 0
+
+goroutine 53 [running]:
+qsync/delta_binaire.BuilDelta({0xc0001294d1, 0x9}, {0xc00002aed0?, 0xc00008fbb8?}, 0x32, {0xc0001da200, 0x0, 0xc000010f00?})
+	/home/thaao/dev/projects/qsync/delta_binaire/core.go:156 +0x1245
+qsync/filesystem.handleWriteEvent(0xc0000f6000, {0xc00002aed0, 0x2d}, {0xc0001294d1, 0x9})
+	/home/thaao/dev/projects/qsync/filesystem/core.go:164 +0xda
+qsync/filesystem.StartWatcher({0xc000480180, 0x23})
+	/home/thaao/dev/projects/qsync/filesystem/core.go:79 +0x7b7
+created by qsync/webui.createSyncTask in goroutine 71
+	/home/thaao/dev/projects/qsync/webui/core.go:364 +0x178
+
+
+// debug.log 
+
+2024/07/21 23:12:11 NEW FILESYSTEM EVENT (rootPath=/home/thaao/dev/projects/qsync/test ) :  WRITE         "/home/thaao/dev/projects/qsync/test/prout.txt"
+2024/07/21 23:12:11 Handling event for file : prout.txt
+2024/07/21 23:12:11 New file size :  71
+2024/07/21 23:12:11 needs truncature :  false
+2024/07/21 23:12:11 Calculated adapted buffer size :  100  bytes
+2024/07/21 23:12:11 old file size :  50
+
+
+il semblerait que le vieux contenu du fichier soit un tableau vide ??? (il n'est pas vide dans la table) 

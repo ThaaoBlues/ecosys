@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-20 18:59:29
+ * @lastModified    2024-07-21 22:59:34
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -54,7 +54,7 @@ func StartWebUI() {
 	router.HandleFunc("/", serveIndex).Methods("GET")
 	router.HandleFunc("/magasin", magasinHandler).Methods("GET")
 	//router.HandleFunc("/start", startQSync).Methods("GET")
-	router.HandleFunc("/create", createSyncTask).Methods("GET")
+	router.HandleFunc("/create-task", createSyncTask).Methods("GET")
 	router.HandleFunc("/link", linkDevice).Methods("POST")
 	router.HandleFunc("/list-tasks", listTasks).Methods("GET")
 	router.HandleFunc("/list-devices", listDevices).Methods("GET")
@@ -67,7 +67,7 @@ func StartWebUI() {
 	router.HandleFunc("/open-largages-folder", openLargagesFolder).Methods("GET")
 	router.HandleFunc("/remove-task", removeTask).Methods("GET")
 	router.HandleFunc("/toggle-backup-mode", toggleBackupMode).Methods("GET")
-	router.HandleFunc("/js/translations.js", serveJsFile).Methods("GET")
+	router.HandleFunc("/js/{file_name}", serveJsFile).Methods("GET")
 	router.HandleFunc("/install-tout-en-un", installAppHandler).Methods("POST")
 	router.HandleFunc("/install-grapin", installGrapinHandler).Methods("POST")
 	router.HandleFunc("/launch-app", launchAppHandler).Methods("GET")
@@ -348,12 +348,20 @@ func startQSync(w http.ResponseWriter, r *http.Request) {
 }
 
 func createSyncTask(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Query().Get("path")
+
+	path, err := dialog.Directory().Title("Select Folder").Browse()
+	if err != nil {
+		fmt.Println("Folder selection cancelled.")
+		return
+	}
+
 	var acces bdd.AccesBdd
 	acces.InitConnection()
 	defer acces.CloseConnection()
 
 	acces.CreateSync(path)
+
+	go filesystem.StartWatcher(path)
 	json.NewEncoder(w).Encode(MenuResponse{Message: "Sync task created"})
 }
 
@@ -567,7 +575,7 @@ func toggleBackupMode(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveJsFile(w http.ResponseWriter, r *http.Request) {
-	path := filepath.Join(globals.QSyncWriteableDirectory, "webui/js/translations.js")
+	path := filepath.Join(globals.QSyncWriteableDirectory, "webui/js/"+mux.Vars(r)["file_name"])
 
 	http.ServeFile(w, r, path)
 }
