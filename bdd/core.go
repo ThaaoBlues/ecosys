@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-21 20:25:42
+ * @lastModified    2024-07-21 21:31:23
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1152,25 +1152,62 @@ func (acces *AccesBdd) IncrementFileVersion(path string) {
 func (acces *AccesBdd) UpdateCachedFile(relative_path string, absolute_path string) {
 	// reads the current state of the given file and update it in the database
 
-	file_content, err := os.ReadFile(absolute_path)
+	stat, err := os.Stat(absolute_path)
+
+	if err != nil {
+		log.Fatal("Error while opening file to update the cache in database.", err)
+
+	}
+
+	file_size := stat.Size()
+
+	buff_size := delta_binaire.CalculateBufferSize(file_size)
+
+	read_buff := make([]byte, buff_size)
 
 	var bytes_buffer bytes.Buffer
 
 	gzip_writer := gzip.NewWriter(&bytes_buffer)
 
-	gzip_writer.Write(file_content)
+	reader, err := os.Open(absolute_path)
+	if err != nil {
+		log.Fatal("Error while opening file to update the cache in database.", err)
+	}
 
-	gzip_writer.Close()
+	var buff []byte
+
+	var total_read int64 = 0
+	for total_read < file_size {
+		len_read, err := reader.Read(read_buff)
+		total_read += int64(len_read)
+		if err != nil {
+			log.Fatal("Error while opening file to update the cache in database.", err)
+		}
+
+		gzip_writer.Write(buff)
+
+	}
+
+	gzip_writer.Flush()
 
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while reading file to cache its content : ", err)
 	}
 
-	_, err = acces.db_handler.Exec("UPDATE filesystem SET content=?,size=? WHERE path=? AND secure_id=?", bytes_buffer.Bytes(), bytes_buffer.Len(), relative_path, acces.SecureId)
+	_, err = acces.db_handler.Exec(
+		"UPDATE filesystem SET content=?,size=? WHERE path=? AND secure_id=?",
+		bytes_buffer.Bytes(),
+		file_size,
+		relative_path,
+		acces.SecureId,
+	)
 
 	if err != nil {
 		log.Fatal("Error in UpdateCachedFile() while caching file content into bdd : ", err)
 	}
+
+	gzip_writer.Close()
+
 }
 
 func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {

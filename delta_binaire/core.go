@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-07-17 15:09:23
+ * @lastModified    2024-07-21 20:37:09
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -31,7 +31,7 @@ type Delta struct {
 	FilePath     string
 }
 
-func calculateBufferSize(file_size int64) int {
+func CalculateBufferSize(file_size int64) int {
 	// do not make chunk of more than 100Mo
 	// we stop when we have a chunk size
 	// that is the maximum one
@@ -94,7 +94,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 	new_file_reader := bufio.NewReader(new_file_handler)
 
-	var BUFF_SIZE int = calculateBufferSize(new_file_size)
+	var BUFF_SIZE int = CalculateBufferSize(new_file_size)
 	log.Println("Calculated adapted buffer size : ", BUFF_SIZE, " bytes")
 
 	var new_file_buff = make([]byte, BUFF_SIZE)

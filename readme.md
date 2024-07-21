@@ -254,27 +254,10 @@ TOUDOU :
 
 
 
-
 POUR PC :
 - Tester intensivement les events avec un autre appareil (fichier plus grand, moins grand, tronqué, supprimé ...)
 - Finir et tester le launcher/setup
 - tester la suppression des applications
-
-
-panic: runtime error: slice bounds out of range [:-1]
-
-goroutine 51 [running]:
-qsync/bdd.(*AccesBdd).AddFolderToRetard(0xc0005125d0, {0xc000326a41, 0xa})
-	/home/thaao/dev/projects/qsync/bdd/core.go:953 +0x4ba
-qsync/filesystem.handleCreateEvent(0xc0005125d0, {0xc00022c240, 0x40}, {0xc000326a41, 0xa}, 0xc00050e190)
-	/home/thaao/dev/projects/qsync/filesystem/core.go:144 +0x4e5
-qsync/filesystem.StartWatcher({0xc0005d0040, 0x35})
-	/home/thaao/dev/projects/qsync/filesystem/core.go:75 +0x7e5
-created by main.main in goroutine 1
-	/home/thaao/dev/projects/qsync/main.go:68 +0x257
-
-
-
 
 POUR L'APP :
 - Fix le fichier qui s'ouvre mal avec la popup
