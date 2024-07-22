@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-07-21 20:37:09
+ * @lastModified    2024-07-22 21:33:12
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -117,12 +117,12 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 	var instruction_buffer bytes.Buffer
 
 	if new_file_size > 0 {
-		for (global_index < old_file_size || byte_index < new_file_size) && (new_err != io.EOF) {
+		for (byte_index < new_file_size) && (new_err != io.EOF) {
 
 			new_buff_fill_size, new_err := new_file_reader.Read(new_file_buff)
 
 			if new_err != nil {
-				log.Fatal("Erreur dans la lecture du fichier : ", err)
+				log.Fatal("Erreur dans la lecture du fichier : ", new_err)
 
 			}
 

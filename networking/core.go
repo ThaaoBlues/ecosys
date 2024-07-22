@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-17 15:02:28
+ * @lastModified    2024-07-22 22:01:55
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -466,6 +466,11 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 		for i := 0; i < event_queue.Size(); i++ {
 
 			event := event_queue.Get(i)
+
+			//skipempty events that occurs when troncating a file :/
+			if event.Flag == "[UPDATE]" && len(event.Delta.Instructions) == 0 {
+				continue
+			}
 
 			SetEventNetworkLockForDevice(device_id, true)
 

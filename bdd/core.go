@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-21 23:23:30
+ * @lastModified    2024-07-22 21:16:06
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -518,6 +518,8 @@ func (acces *AccesBdd) GetFileContent(path string) []byte {
 	if err != nil {
 		log.Fatal("Error while querying database in GetFileContent() : ", err)
 	}
+
+	//log.Println("compressed file content : ", compressed_content)
 
 	decompression_buffer := bytes.NewReader(compressed_content)
 
@@ -1180,8 +1182,6 @@ func (acces *AccesBdd) UpdateCachedFile(relative_path string, absolute_path stri
 		log.Fatal("Error while opening file to update the cache in database.", err)
 	}
 
-	var buff []byte
-
 	var total_read int64 = 0
 	for total_read < file_size {
 		len_read, err := reader.Read(read_buff)
@@ -1189,8 +1189,7 @@ func (acces *AccesBdd) UpdateCachedFile(relative_path string, absolute_path stri
 		if err != nil {
 			log.Fatal("Error while opening file to update the cache in database.", err)
 		}
-
-		gzip_writer.Write(buff)
+		gzip_writer.Write(read_buff)
 
 	}
 
