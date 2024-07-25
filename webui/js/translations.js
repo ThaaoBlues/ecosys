@@ -1,8 +1,8 @@
 const translations = {
     en: {
-        title: "ecosys Web GUI",
+        title: "Ecosys Web GUI",
         noInternet: "No internet connection",
-        startecosys: "Start ecosys",
+        startecosys: "Start Ecosys",
         createSyncTask: "Create a Sync Task",
         openMagasin: "Open Magasin",
         toggleLargageAerien: "Toggle Largage Aerien",
@@ -25,9 +25,9 @@ const translations = {
         openApp : "Open Application"
     },
     fr: {
-        title: "Interface Web ecosys",
+        title: "Interface Web Ecosys",
         noInternet: "Pas de connexion Internet",
-        startecosys: "Démarrer ecosys",
+        startecosys: "Démarrer Ecosys",
         createSyncTask: "Créer une tâche de synchronisation",
         openMagasin: "Ouvrir Magasin",
         toggleLargageAerien: "Basculer Largage Aérien",
@@ -176,9 +176,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     de: {
-        title: "ecosys Web-GUI",
+        title: "Ecosys Web-GUI",
         noInternet: "Keine Internetverbindung",
-        startecosys: "ecosys starten",
+        startecosys: "Ecosys starten",
         createSyncTask: "Sync-Aufgabe erstellen",
         openMagasin: "Magasin öffnen",
         toggleLargageAerien: "Largage Aerien umschalten",
@@ -201,9 +201,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     es: {
-        title: "Interfaz Web de ecosys",
+        title: "Interfaz Web de Ecosys",
         noInternet: "No hay conexión a Internet",
-        startecosys: "Iniciar ecosys",
+        startecosys: "Iniciar Ecosys",
         createSyncTask: "Crear una tarea de sincronización",
         openMagasin: "Abrir Magasin",
         toggleLargageAerien: "Alternar Largage Aerien",
@@ -226,9 +226,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     it: {
-        title: "Interfaccia Web ecosys",
+        title: "Interfaccia Web Ecosys",
         noInternet: "Nessuna connessione Internet",
-        startecosys: "Avvia ecosys",
+        startecosys: "Avvia Ecosys",
         createSyncTask: "Crea un'attività di sincronizzazione",
         openMagasin: "Apri Magasin",
         toggleLargageAerien: "Attiva/disattiva Largage Aerien",
@@ -251,9 +251,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     pt: {
-        title: "Interface Web ecosys",
+        title: "Interface Web Ecosys",
         noInternet: "Sem conexão à Internet",
-        startecosys: "Iniciar ecosys",
+        startecosys: "Iniciar Ecosys",
         createSyncTask: "Criar uma tarefa de sincronização",
         openMagasin: "Abrir Magasin",
         toggleLargageAerien: "Alternar Largage Aerien",
@@ -276,9 +276,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     nl: {
-        title: "ecosys Web GUI",
+        title: "Ecosys Web GUI",
         noInternet: "Geen internetverbinding",
-        startecosys: "ecosys starten",
+        startecosys: "Ecosys starten",
         createSyncTask: "Maak een synchronisatietaak",
         openMagasin: "Open Magasin",
         toggleLargageAerien: "Schakel Largage Aerien in/uit",
