@@ -9,10 +9,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"qsync/backend_api"
-	"qsync/bdd"
-	"qsync/filesystem"
-	"qsync/globals"
+	"ecosys/backend_api"
+	"ecosys/bdd"
+	"ecosys/filesystem"
+	"ecosys/globals"
 	"runtime"
 	"strings"
 
@@ -61,20 +61,20 @@ func InstallApp(data io.ReadCloser) error {
 	log.Println("installing app : ")
 	log.Println(json_data)
 
-	// by default, the app will be installed to <qsync_installation_root>/apps/<app_name>
+	// by default, the app will be installed to <ecosys_installation_root>/apps/<app_name>
 
 	if err != nil {
 		return err
 	}
 
-	// getting qsync root path
+	// getting ecosys root path
 	self_path, err := os.Executable()
 	if err != nil {
-		log.Fatal("An error occured while determining the path to qsync executable in InstallApp()", err)
+		log.Fatal("An error occured while determining the path to ecosys executable in InstallApp()", err)
 	}
 
 	self_path = filepath.Dir(self_path)
-	log.Println("qsync root path : ", self_path)
+	log.Println("ecosys root path : ", self_path)
 
 	apps_path := filepath.Join(self_path, "apps")
 	ex := globals.Exists(apps_path)

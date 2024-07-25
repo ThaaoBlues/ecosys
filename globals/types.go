@@ -9,7 +9,7 @@
 
 package globals
 
-import "qsync/delta_binaire"
+import "ecosys/delta_binaire"
 
 type QEvent struct {
 	Flag        string

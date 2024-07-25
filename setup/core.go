@@ -2,6 +2,7 @@ package setup
 
 import (
 	"archive/zip"
+	"ecosys/globals"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"qsync/globals"
 	"strings"
 )
 
@@ -97,7 +97,7 @@ func DownloadWebuiFiles() {
 	// downloading all the web gui files
 
 	// URL of the ZIP file to download
-	zipURL := "https://github.com/ThaaoBlues/qsync/raw/master/webui.zip"
+	zipURL := "https://github.com/ThaaoBlues/ecosys/raw/master/webui.zip"
 
 	// Local path to save the downloaded ZIP file
 	zipFilePath := "webui.zip"
@@ -120,7 +120,7 @@ func DownloadWebuiFiles() {
 	}
 
 	// Unzip the downloaded file
-	if err := Unzip(zipFilePath, globals.QSyncWriteableDirectory); err != nil {
+	if err := Unzip(zipFilePath, globals.EcosysWriteableDirectory); err != nil {
 		fmt.Printf("Failed to unzip file: %v\n", err)
 		return
 	}
@@ -172,7 +172,7 @@ func checkAndCompareVersion(owner, repo, versionFilePath string) error {
 	}
 
 	if latestTag != localVersion {
-		updateQsync()
+		updateecosys()
 	} else {
 		fmt.Println("Versions match. No action needed.")
 	}
@@ -180,15 +180,15 @@ func checkAndCompareVersion(owner, repo, versionFilePath string) error {
 	return nil
 }
 
-func updateQsync() {
-	// download qsync main exe and restart it
+func updateecosys() {
+	// download ecosys main exe and restart it
 
 }
 
 func CheckUpdates() {
 	owner := "thaaoblues"
-	repo := "qsync"
-	versionFilePath := filepath.Join(globals.QSyncWriteableDirectory, "version")
+	repo := "ecosys"
+	versionFilePath := filepath.Join(globals.EcosysWriteableDirectory, "version")
 
 	err := checkAndCompareVersion(owner, repo, versionFilePath)
 	if err != nil {
@@ -207,7 +207,7 @@ func Setup() {
 	f.WriteString(VERSION)
 	f.Close()
 
-	if !globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "webui")) {
+	if !globals.Exists(filepath.Join(globals.EcosysWriteableDirectory, "webui")) {
 		DownloadWebuiFiles()
 	}
 

@@ -12,11 +12,11 @@ package tui
 import (
 	"fmt"
 	"log"
-	"qsync/backend_api"
-	"qsync/bdd"
-	"qsync/filesystem"
-	"qsync/globals"
-	"qsync/networking"
+	"ecosys/backend_api"
+	"ecosys/bdd"
+	"ecosys/filesystem"
+	"ecosys/globals"
+	"ecosys/networking"
 	"strconv"
 	"time"
 
@@ -36,12 +36,12 @@ _____/\\\\/\\\\______/\\\/////////\\\___________________________________________
 
 var MENU string = `
 
-[0] - Start QSync
+[0] - Start ecosys
 [1] - Create a sync task
 [2] - Link another machine to a sync task on yours
 [3] - List current sync task and their id
-[4] - List devices using qsync on your network
-[5] - Open QSync Magasin
+[4] - List devices using ecosys on your network
+[5] - Open ecosys Magasin
 [6] - Send something to another device : "Largage Aérien"
 [7] - Send a whole folder to another device : "Multi Largage Aérien"
 [8] - Allow/Disallow people to send you Largage Aerien
@@ -137,7 +137,7 @@ func HandleMenuQuery(query string) {
 
 		fmt.Println("Mapping available devices on your local network...")
 
-		// list qsync devices across the network
+		// list ecosys devices across the network
 		devices := acces.GetNetworkMap()
 		for i := 0; i < devices.Size(); i++ {
 			fmt.Printf("[%d] ", i)
@@ -188,7 +188,7 @@ func HandleMenuQuery(query string) {
 		}
 
 	case "4":
-		// list qsync devices across the network
+		// list ecosys devices across the network
 
 		devices := acces.GetNetworkMap()
 		for i := 0; i < devices.Size(); i++ {

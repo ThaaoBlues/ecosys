@@ -1,8 +1,8 @@
 const translations = {
     en: {
-        title: "QSync Web GUI",
+        title: "ecosys Web GUI",
         noInternet: "No internet connection",
-        startQSync: "Start QSync",
+        startecosys: "Start ecosys",
         createSyncTask: "Create a Sync Task",
         openMagasin: "Open Magasin",
         toggleLargageAerien: "Toggle Largage Aerien",
@@ -25,9 +25,9 @@ const translations = {
         openApp : "Open Application"
     },
     fr: {
-        title: "Interface Web QSync",
+        title: "Interface Web ecosys",
         noInternet: "Pas de connexion Internet",
-        startQSync: "Démarrer QSync",
+        startecosys: "Démarrer ecosys",
         createSyncTask: "Créer une tâche de synchronisation",
         openMagasin: "Ouvrir Magasin",
         toggleLargageAerien: "Basculer Largage Aérien",
@@ -53,7 +53,7 @@ const translations = {
     hi: {
         title: "क्यूसिंक वेब जीयूआई",
         noInternet: "कोई इंटरनेट कनेक्शन नहीं",
-        startQSync: "क्यूसिंक शुरू करें",
+        startecosys: "क्यूसिंक शुरू करें",
         createSyncTask: "सिंक कार्य बनाएँ",
         openMagasin: "मगासिन खोलें",
         toggleLargageAerien: "लार्गेज एरियन टॉगल करें",
@@ -78,7 +78,7 @@ const translations = {
     bn: {
         title: "কিউসিঙ্ক ওয়েব জিইউআই",
         noInternet: "কোনও ইন্টারনেট সংযোগ নেই",
-        startQSync: "কিউসিঙ্ক শুরু করুন",
+        startecosys: "কিউসিঙ্ক শুরু করুন",
         createSyncTask: "সিঙ্ক কাজ তৈরি করুন",
         openMagasin: "মাগাসিন খুলুন",
         toggleLargageAerien: "লার্জেজ এয়ারিয়েন টগল করুন",
@@ -103,7 +103,7 @@ const translations = {
     te: {
         title: "క్యుసింక్ వెబ్ జీయూఐ",
         noInternet: "ఇంటర్నెట్ కనెక్షన్ లేదు",
-        startQSync: "క్యుసింక్ ప్రారంభించండి",
+        startecosys: "క్యుసింక్ ప్రారంభించండి",
         createSyncTask: "సింక్ టాస్క్ సృష్టించండి",
         openMagasin: "మాగసిన్ తెరవండి",
         toggleLargageAerien: "లార్గేజ్ ఏరియన్ టాగిల్ చేయండి",
@@ -128,7 +128,7 @@ const translations = {
     mr: {
         title: "क्यूसिंक वेब जीयूआय",
         noInternet: "कोणतेही इंटरनेट कनेक्शन नाही",
-        startQSync: "क्यूसिंक सुरू करा",
+        startecosys: "क्यूसिंक सुरू करा",
         createSyncTask: "सिंक कार्य तयार करा",
         openMagasin: "मगासिन उघडा",
         toggleLargageAerien: "लार्गेज एरियन टॉगल करा",
@@ -153,7 +153,7 @@ const translations = {
     ta: {
         title: "க்யூசின்க் இணைய வழி GUI",
         noInternet: "இணைய இணைப்பு இல்லை",
-        startQSync: "க்யூசின்க் தொடங்கு",
+        startecosys: "க்யூசின்க் தொடங்கு",
         createSyncTask: "சின்க் பணி உருவாக்கவும்",
         openMagasin: "மகசின் திற",
         toggleLargageAerien: "லார்ஜேஜ் ஏரியன் மாற்று",
@@ -176,9 +176,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     de: {
-        title: "QSync Web-GUI",
+        title: "ecosys Web-GUI",
         noInternet: "Keine Internetverbindung",
-        startQSync: "QSync starten",
+        startecosys: "ecosys starten",
         createSyncTask: "Sync-Aufgabe erstellen",
         openMagasin: "Magasin öffnen",
         toggleLargageAerien: "Largage Aerien umschalten",
@@ -201,9 +201,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     es: {
-        title: "Interfaz Web de QSync",
+        title: "Interfaz Web de ecosys",
         noInternet: "No hay conexión a Internet",
-        startQSync: "Iniciar QSync",
+        startecosys: "Iniciar ecosys",
         createSyncTask: "Crear una tarea de sincronización",
         openMagasin: "Abrir Magasin",
         toggleLargageAerien: "Alternar Largage Aerien",
@@ -226,9 +226,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     it: {
-        title: "Interfaccia Web QSync",
+        title: "Interfaccia Web ecosys",
         noInternet: "Nessuna connessione Internet",
-        startQSync: "Avvia QSync",
+        startecosys: "Avvia ecosys",
         createSyncTask: "Crea un'attività di sincronizzazione",
         openMagasin: "Apri Magasin",
         toggleLargageAerien: "Attiva/disattiva Largage Aerien",
@@ -251,9 +251,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     pt: {
-        title: "Interface Web QSync",
+        title: "Interface Web ecosys",
         noInternet: "Sem conexão à Internet",
-        startQSync: "Iniciar QSync",
+        startecosys: "Iniciar ecosys",
         createSyncTask: "Criar uma tarefa de sincronização",
         openMagasin: "Abrir Magasin",
         toggleLargageAerien: "Alternar Largage Aerien",
@@ -276,9 +276,9 @@ const translations = {
         openApp : "Ouvrir l'Application"
     },
     nl: {
-        title: "QSync Web GUI",
+        title: "ecosys Web GUI",
         noInternet: "Geen internetverbinding",
-        startQSync: "QSync starten",
+        startecosys: "ecosys starten",
         createSyncTask: "Maak een synchronisatietaak",
         openMagasin: "Open Magasin",
         toggleLargageAerien: "Schakel Largage Aerien in/uit",

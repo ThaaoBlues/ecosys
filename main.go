@@ -13,24 +13,24 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"qsync/bdd"
-	"qsync/filesystem"
-	"qsync/globals"
-	"qsync/networking"
-	"qsync/setup"
-	"qsync/webui"
+	"ecosys/bdd"
+	"ecosys/filesystem"
+	"ecosys/globals"
+	"ecosys/networking"
+	"ecosys/setup"
+	"ecosys/webui"
 )
 
 func main() {
 	// as in this main function we are always on desktop
-	// assume the directory where qsync the executable is
+	// assume the directory where ecosys the executable is
 	// has read/write access
 	ex, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
 	exPath := filepath.Dir(ex)
-	globals.SetQsyncWriteableDirectory(exPath)
+	globals.SetecosysWriteableDirectory(exPath)
 
 	setup.CleanupTempFiles()
 	if networking.IsNetworkAvailable() {
@@ -56,7 +56,7 @@ func main() {
 	go webui.StartWebUI()
 	globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
-	//start qsync
+	//start ecosys
 	var acces bdd.AccesBdd
 	acces.InitConnection()
 	defer acces.CloseConnection()

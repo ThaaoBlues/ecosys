@@ -13,8 +13,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"qsync/bdd"
-	"qsync/globals"
+	"ecosys/bdd"
+	"ecosys/globals"
 	"strings"
 	"time"
 
@@ -123,7 +123,7 @@ func (zcs *ZeroConfService) Register() {
 		"version=0.0.1-PreAlpha",
 		"device_id=" + acces.GetMyDeviceId(),
 	}
-	service, _ := mdns.NewMDNSService(host, "_qsync._tcp.", "", "", 8274, []net.IP{GetOutboundIP()}, info)
+	service, _ := mdns.NewMDNSService(host, "_ecosys._tcp.", "", "", 8274, []net.IP{GetOutboundIP()}, info)
 
 	// Create the mDNS server
 	server, _ := mdns.NewServer(&mdns.Config{Zone: service})
@@ -168,7 +168,7 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 
 	// Start the lookup
 	//log.SetOutput(io.Discard)
-	mdns.Lookup("_qsync._tcp.", entriesCh)
+	mdns.Lookup("_ecosys._tcp.", entriesCh)
 	close(entriesCh)
 
 	return devices_list

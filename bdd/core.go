@@ -13,14 +13,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"database/sql"
+	"ecosys/delta_binaire"
+	"ecosys/globals"
 	"encoding/json"
 	"io"
 	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
-	"qsync/delta_binaire"
-	"qsync/globals"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -51,10 +51,10 @@ type LinkDevice struct {
 // This function is used everytime we create an AccesBdd object
 func (acces *AccesBdd) InitConnection() {
 	var err error
-	acces.db_handler, err = sql.Open("sqlite3", filepath.Join(globals.QSyncWriteableDirectory, "qsync.db"))
+	acces.db_handler, err = sql.Open("sqlite3", filepath.Join(globals.EcosysWriteableDirectory, "ecosys.db"))
 
 	if err != nil {
-		log.Fatal("An error occured while connecting to the qsync database.", err)
+		log.Fatal("An error occured while connecting to the ecosys database.", err)
 	}
 
 	_, err = acces.db_handler.Exec(`CREATE TABLE IF NOT EXISTS retard(
@@ -1571,7 +1571,7 @@ func (acces *AccesBdd) AddGrapin(data *globals.GrapinConfig) {
 	}
 }
 
-// this function list all installed apps on qsync
+// this function list all installed apps on ecosys
 func (acces *AccesBdd) ListInstalledApps() globals.GenArray[*globals.MinGenConfig] {
 
 	var configs globals.GenArray[*globals.MinGenConfig]

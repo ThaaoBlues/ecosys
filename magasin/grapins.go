@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"qsync/bdd"
-	"qsync/globals"
+	"ecosys/bdd"
+	"ecosys/globals"
 	"strings"
 )
 

@@ -10,6 +10,12 @@
 package webui
 
 import (
+	"ecosys/backend_api"
+	"ecosys/bdd"
+	"ecosys/filesystem"
+	"ecosys/globals"
+	"ecosys/magasin"
+	"ecosys/networking"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -17,12 +23,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"qsync/backend_api"
-	"qsync/bdd"
-	"qsync/filesystem"
-	"qsync/globals"
-	"qsync/magasin"
-	"qsync/networking"
 	"strconv"
 	"text/template"
 	"time"
@@ -53,7 +53,7 @@ func StartWebUI() {
 
 	router.HandleFunc("/", serveIndex).Methods("GET")
 	router.HandleFunc("/magasin", magasinHandler).Methods("GET")
-	//router.HandleFunc("/start", startQSync).Methods("GET")
+	//router.HandleFunc("/start", startecosys).Methods("GET")
 	router.HandleFunc("/create-task", createSyncTask).Methods("GET")
 	router.HandleFunc("/link", linkDevice).Methods("POST")
 	router.HandleFunc("/list-tasks", listTasks).Methods("GET")
@@ -335,7 +335,7 @@ func serveIndex(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./webui/html/index.html")
 }
 
-func startQSync(w http.ResponseWriter, r *http.Request) {
+func startecosys(w http.ResponseWriter, r *http.Request) {
 	var acces bdd.AccesBdd
 	acces.InitConnection()
 	defer acces.CloseConnection()
@@ -344,7 +344,7 @@ func startQSync(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < tasks.Size(); i++ {
 		filesystem.StartWatcher(tasks.Get(i).Path)
 	}
-	json.NewEncoder(w).Encode(MenuResponse{Message: "QSync started"})
+	json.NewEncoder(w).Encode(MenuResponse{Message: "ecosys started"})
 }
 
 func createSyncTask(w http.ResponseWriter, r *http.Request) {
@@ -462,7 +462,7 @@ func sendLargage(w http.ResponseWriter, r *http.Request) {
 	log.Println(requestData)
 
 	if requestData.IsFolder {
-		tarfile_path := filepath.Join(globals.QSyncWriteableDirectory, "multilargage.tar")
+		tarfile_path := filepath.Join(globals.EcosysWriteableDirectory, "multilargage.tar")
 
 		err := globals.TarFolder(requestData.FilePath, tarfile_path)
 		if err != nil {
@@ -491,7 +491,7 @@ func sendText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f_path := filepath.Join(globals.QSyncWriteableDirectory, "text.txt")
+	f_path := filepath.Join(globals.EcosysWriteableDirectory, "text.txt")
 
 	f, err := os.OpenFile(f_path, os.O_CREATE|os.O_RDWR, 0750)
 
@@ -552,7 +552,7 @@ func checkInternetConnection(w http.ResponseWriter, r *http.Request) {
 }
 
 func openLargagesFolder(w http.ResponseWriter, r *http.Request) {
-	open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+	open.Run(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
 	json.NewEncoder(w).Encode(MenuResponse{Message: "success"})
 }
 
@@ -575,7 +575,7 @@ func toggleBackupMode(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveJsFile(w http.ResponseWriter, r *http.Request) {
-	path := filepath.Join(globals.QSyncWriteableDirectory, "webui/js/"+mux.Vars(r)["file_name"])
+	path := filepath.Join(globals.EcosysWriteableDirectory, "webui/js/"+mux.Vars(r)["file_name"])
 
 	http.ServeFile(w, r, path)
 }

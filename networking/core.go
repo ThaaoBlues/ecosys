@@ -12,16 +12,16 @@ package networking
 import (
 	"bufio"
 	"bytes"
+	"ecosys/backend_api"
+	"ecosys/bdd"
+	"ecosys/delta_binaire"
+	"ecosys/globals"
 	"io"
 	"log"
 	"net"
 	"os"
 	"path"
 	"path/filepath"
-	"qsync/backend_api"
-	"qsync/bdd"
-	"qsync/delta_binaire"
-	"qsync/globals"
 	"strconv"
 	"strings"
 	"time"
@@ -185,7 +185,7 @@ func ConnectToDevice(conn net.Conn) {
 		var path string
 		if data.FileType == "[APPLICATION]" {
 
-			path = filepath.Join(globals.QSyncWriteableDirectory, "apps", data.FilePath)
+			path = filepath.Join(globals.EcosysWriteableDirectory, "apps", data.FilePath)
 			// check if the app is downloaded
 			if !globals.Exists(path) {
 				// replace the original secure_id generated for the app
@@ -264,7 +264,7 @@ func ConnectToDevice(conn net.Conn) {
 
 		if data.FileType == "[APPLICATION]" {
 			_ = backend_api.AskInput("[ALERT_USER]",
-				"Applications successfully linked to each others ! Please restart QSync before changing anything",
+				"Applications successfully linked to each others ! Please restart ecosys before changing anything",
 			)
 		}
 	case "[UNLINK_DEVICE]":
@@ -350,7 +350,7 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn 
 			acces.UpdateCachedFile(relative_path, event.FilePath)
 			event.Delta.PatchFile()
 		default:
-			log.Fatal("Qsync network loop received an unknown event type : ", event)
+			log.Fatal("ecosys network loop received an unknown event type : ", event)
 		}
 	}
 
@@ -546,7 +546,7 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 func SetEventNetworkLockForDevice(device_id string, value bool) {
 
 	if value {
-		file, err := os.Create(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
+		file, err := os.Create(filepath.Join(globals.EcosysWriteableDirectory, device_id+".nlock"))
 
 		if err != nil {
 			log.Fatal("Error while creating a network lock file in SetEventNetworkLockForDevice() : ", err)
@@ -555,7 +555,7 @@ func SetEventNetworkLockForDevice(device_id string, value bool) {
 		file.Close()
 	} else {
 
-		err := os.Remove(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
+		err := os.Remove(filepath.Join(globals.EcosysWriteableDirectory, device_id+".nlock"))
 		log.Println("removing network lock after sending event")
 		if err != nil && !os.IsNotExist(err) {
 			log.Fatal("Error while removing a network lock file in SetEventNetworkLockForDevice() : ", err)
@@ -568,7 +568,7 @@ func SetEventNetworkLockForDevice(device_id string, value bool) {
 func GetEventNetworkLockForDevice(device_id string) bool {
 
 	var acces bdd.AccesBdd
-	return acces.IsFile(filepath.Join(globals.QSyncWriteableDirectory, device_id+".nlock"))
+	return acces.IsFile(filepath.Join(globals.EcosysWriteableDirectory, device_id+".nlock"))
 
 }
 
@@ -724,17 +724,17 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	file_name := filepath.Base(data.Delta.FilePath)
 
 	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
-	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n"))
+	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien\n\n"))
 	if user_response == "true" {
 		// make sure we have the right directory set-up
-		ex := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+		ex := globals.Exists(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
 
 		if !ex {
-			os.Mkdir(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"), 0775)
+			os.Mkdir(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"), 0775)
 		}
 
 		// build the path to the largage_aerien folder
-		data.Delta.FilePath = filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", file_name)
+		data.Delta.FilePath = filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien", file_name)
 
 		// write the file. As this is probably a full file, the binary delta is just the file content
 		data.Delta.PatchFile()
@@ -744,7 +744,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 		if !globals.IsExecutable(data.Delta.FilePath) {
 			err := open.Run(data.Delta.FilePath)
 			if err != nil {
-				open.Run(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+				open.Run(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
 			}
 		}
 
@@ -756,19 +756,19 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 	file_name := filepath.Base(data.Delta.FilePath)
 
 	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
-	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien\n\n"))
+	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien\n\n"))
 
 	// veryfiy user response AND that we are not tricked to untar something random
 	if user_response == "true" && file_name == "multilargage.tar" {
 		// make sure we have the right directory set-up
-		ex := globals.Exists(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"))
+		ex := globals.Exists(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
 
 		if !ex {
-			os.Mkdir(filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien"), 0775)
+			os.Mkdir(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"), 0775)
 		}
 
 		// build the path to the largage_aerien folder
-		data.Delta.FilePath = filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", file_name)
+		data.Delta.FilePath = filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien", file_name)
 
 		// write the file. As this is probably a full file, the binary delta is just the file content
 		data.Delta.PatchFile()
@@ -778,7 +778,7 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 		date_str := now.Format("2006-01-02-15h04min-05s")
 
 		folder_name := file_name + "_" + date_str
-		folder_path := filepath.Join(globals.QSyncWriteableDirectory, "largage_aerien", folder_name)
+		folder_path := filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien", folder_name)
 		globals.UntarFolder(data.Delta.FilePath, folder_path)
 
 		open.Run(folder_path)

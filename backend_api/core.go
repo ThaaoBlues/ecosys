@@ -3,19 +3,19 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-03-02 19:14:18
- * @lastModified    2024-07-20 18:35:23
+ * @lastModified    2024-07-25 22:21:17
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
 package backend_api
 
 import (
+	"ecosys/globals"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"qsync/globals"
 	"time"
 
 	"github.com/gen2brain/beeep"
@@ -23,7 +23,7 @@ import (
 )
 
 func NotifyDesktop(msg string) {
-	err := beeep.Alert("Qsync", msg, "assets/warning.png")
+	err := beeep.Alert("ecosys", msg, "assets/warning.png")
 	if err != nil {
 		panic(err)
 	}
@@ -33,8 +33,8 @@ func NotifyDesktop(msg string) {
 // PROCESSED BY BACKEND, THIS FUNCTION DOES NOT MAKES SURE OF IT
 func AskInput(flag string, context string) string {
 
-	f, err := os.Create(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
-	defer os.Remove(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
+	f, err := os.Create(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"))
+	defer os.Remove(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"))
 
 	if err != nil {
 		log.Fatal("Unable to Create input file in AskInput() : ", err)
@@ -42,7 +42,7 @@ func AskInput(flag string, context string) string {
 
 	f.WriteString(context)
 
-	og_fstat, err_2 := os.Stat(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
+	og_fstat, err_2 := os.Stat(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"))
 
 	if err_2 != nil {
 		log.Fatal("Unable to read stats of input file in AskInput() : ", err)
@@ -50,7 +50,7 @@ func AskInput(flag string, context string) string {
 
 	// wait for front-end to provide user input
 	var nw_fstat os.FileInfo
-	nw_fstat, err_2 = os.Stat(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
+	nw_fstat, err_2 = os.Stat(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"))
 
 	if err_2 != nil {
 		log.Fatal("Unable to read stats of input file in AskInput() : ", err)
@@ -59,7 +59,7 @@ func AskInput(flag string, context string) string {
 	for nw_fstat.Size() == og_fstat.Size() {
 		time.Sleep(2 * time.Second)
 
-		nw_fstat, err_2 = os.Stat(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
+		nw_fstat, err_2 = os.Stat(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"))
 
 		if err_2 != nil {
 			log.Fatal("Unable to read stats of input file in AskInput() : ", err)
@@ -69,7 +69,7 @@ func AskInput(flag string, context string) string {
 
 	// now that we have the user input in the file, we can read it
 
-	ret, err := os.ReadFile(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
+	ret, err := os.ReadFile(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"))
 	if err != nil {
 		log.Fatal("Unable to Read input file in AskInput() : ", err)
 	}
@@ -81,7 +81,7 @@ func AskInput(flag string, context string) string {
 // must be used before providing the user's input
 func ReadInputContext(flag string) string {
 
-	buff, err := os.ReadFile(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"))
+	buff, err := os.ReadFile(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"))
 	if err != nil {
 		log.Fatal("Unable to Read input file in ReadInputContext() : ", err)
 	}
@@ -90,7 +90,7 @@ func ReadInputContext(flag string) string {
 }
 
 func GiveInput(flag string, data string) {
-	f, err := os.OpenFile(filepath.Join(globals.QSyncWriteableDirectory, flag+".btf"), os.O_RDWR|os.O_APPEND, os.ModeAppend)
+	f, err := os.OpenFile(filepath.Join(globals.EcosysWriteableDirectory, flag+".btf"), os.O_RDWR|os.O_APPEND, os.ModeAppend)
 	if err != nil {
 		log.Fatal("Unable to Create input file in AskInput() : ", err)
 	}
@@ -105,7 +105,7 @@ func WaitEventLoop(callbacks map[string]func(context string)) {
 
 	for {
 		// Read the contents of the root directory
-		files, err := os.ReadDir(globals.QSyncWriteableDirectory)
+		files, err := os.ReadDir(globals.EcosysWriteableDirectory)
 		if err != nil {
 			log.Fatal("Error while reading directory in WaitEventLoop() : ", err)
 		}
@@ -152,7 +152,7 @@ func ShowAlert(message string) {
 
 func RunDPKGAsRoot(deb_path string) {
 	// Use zenity to show a graphical prompt for sudo
-	cmd := exec.Command("zenity", "--password", "--title=Authentication Required", "--text=QSync needs to be root to run dpkg and install your app.")
+	cmd := exec.Command("zenity", "--password", "--title=Authentication Required", "--text=ecosys needs to be root to run dpkg and install your app.")
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 

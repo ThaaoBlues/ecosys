@@ -1,4 +1,4 @@
-module qsync
+module ecosys
 
 go 1.21
 

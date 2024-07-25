@@ -4,7 +4,7 @@ function updateLanguage(lang) {
     currentLang = lang;
     document.getElementById('title').innerText = translations[lang].title;
     document.getElementById('no-internet-alert').innerText = translations[lang].noInternet;
-    //document.getElementById('start-btn').innerText = translations[lang].startQSync;
+    //document.getElementById('start-btn').innerText = translations[lang].startecosys;
     document.getElementById('create-sync-btn').innerText = translations[lang].createSyncTask;
     document.getElementById('open-magasin-btn').innerText = translations[lang].openMagasin;
     document.getElementById('toggle-largage-btn').innerText = translations[lang].toggleLargageAerien;
@@ -30,7 +30,7 @@ function updateResponse(message) {
     document.getElementById('response').innerText = message;
 }
 
-async function startQSync() {
+async function startecosys() {
     const response = await sendRequest('/start');
     updateResponse(response.message);
 }

@@ -1,28 +1,30 @@
-# QSYNC
-Qsync is a engine made to provide files synchronisation in real time or not between linked devices.
-It automatically detects linked devices on the same network and make sync the wanted folders transparently. 
-Qsync also support one-time files transferts (called "Largage Aerien" in reference to AirDrop).
+# Ecosys
+
+
+Ecosys is a engine made to provide files synchronisation in real time or not between linked devices.
+It automatically detects linked devices on the same network and make sync the wanted folders transparently. Its name comes from the french word écosysteme (transparent as it is "ecosystem" in english). 
+Ecosys also support one-time files transferts (called "Largage Aerien" in reference to AirDrop).
 In the long term, the goal is to provide a support for a symbiosis between devices and applications states so one can use any of its devices indistinctly.
 
 On desktop os :
-We may achieve this goal by making a qsync addons market where people puts json files with details about how each files is stored in each OS of a specific app. This would allow qsync to adapt and synchronise existing apps. 
+We may achieve this goal by making a ecosys addons market where people puts json files with details about how each files is stored in each OS of a specific app. This would allow ecosys to adapt and synchronise existing apps. 
 
 On Android : 
-As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. To know more about how we can still use files to sync applications data, see [android_app.md](https://github.com/ThaaoBlues/qsync/blob/master/android_app.md)
+As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. To know more about how we can still use files to sync applications data, see [android_app.md](https://github.com/ThaaoBlues/ecosys/blob/master/android_app.md)
 
-## QSync "Magasin" :
-We project to make a store where anyone can publish and/or download QSync addons (named "grapins" in all my frenchness bc it grabs apps data ) and QSync apps (named "tout en un" or 'all in one' in english).
+## ecosys "Magasin" :
+We project to make a store where anyone can publish and/or download ecosys addons (named "grapins" in all my frenchness bc it grabs apps data ) and ecosys apps (named "tout en un" or 'all in one' in english).
 
-### To sync apps from one device to another, the best is to install the app on both and then take one to link on the other via qsync synchronisations list. 
+### To sync apps from one device to another, the best is to install the app on both and then take one to link on the other via ecosys synchronisations list. 
 
-# How do I know that Qsync already has linked my app from another device ?
-Wether you are on android or on desktop, when you download an app you can everything is made for you, from the creation of the folder where you put the files you want to sync to the registration of your app in qsync database. The only thing you must do is on android, as the usage of an alternative app store is not user friendly, you must start qsync app from a specific intent to let it know that the user installed an app that works with qsync. This procedure is specified in the android_app.md file
+# How do I know that ecosys already has linked my app from another device ?
+Wether you are on android or on desktop, when you download an app you can everything is made for you, from the creation of the folder where you put the files you want to sync to the registration of your app in ecosys database. The only thing you must do is on android, as the usage of an alternative app store is not user friendly, you must start ecosys app from a specific intent to let it know that the user installed an app that works with ecosys. This procedure is specified in the android_app.md file
 
-## More details on how to write an android app that works with Qsync in the android_app.md file
+## More details on how to write an android app that works with ecosys in the android_app.md file
 ## The following description is usefull for everyone but the examples are for desktop apps
 
 
-## QSync "grapins" :
+## ecosys "grapins" :
 Addons are really simple but may evolve as time passes. You must provide a json object with those informations :
 
 ```go
@@ -37,27 +39,27 @@ type GrapinConfig struct {
 ```
 
 The supported platform must be within ["Linux","Win32","Android"]
-NeedsFormat is a flag telling qsync to replace some parts of the application path contextually such as :
+NeedsFormat is a flag telling ecosys to replace some parts of the application path contextually such as :
 * %username% for the user's name
-* %version% for an app specific version ( In first versions qsync will just walk in the parent folder and take the first child. This behavior could change if someone find a better one.)
-* %any% qsync will just walk in the parent folder and take the first child.
+* %version% for an app specific version ( In first versions ecosys will just walk in the parent folder and take the first child. This behavior could change if someone find a better one.)
+* %any% ecosys will just walk in the parent folder and take the first child.
 
 > Path separator must be "/"
 
-## QSync "tout en un" :
+## ecosys "tout en un" :
 
 ### On PC :
-"Tout en un" is the ultimate integration with qsync, you can develop your app and integrate qsync capabilities to sync all the data you want across the user's devices.
-This is really simple, all the files you want to be synchronised must be within the folder specified by the json description of your app, you are free to use it to do whatever you want. Publish your app on our store and QSync will take care of the rest.
+"Tout en un" is the ultimate integration with ecosys, you can develop your app and integrate ecosys capabilities to sync all the data you want across the user's devices.
+This is really simple, all the files you want to be synchronised must be within the folder specified by the json description of your app, you are free to use it to do whatever you want. Publish your app on our store and ecosys will take care of the rest.
 
-By default, the app will be installed to <qsync_installation_root>/apps/<app_name>
-If the folder where the files to sync is not created after we check (and started if any) the installer, qsync will create it.
-/!\ The folder name you will provide as sync task root is relative to <qsync_installation_root>/apps/<app_name>
+By default, the app will be installed to <ecosys_installation_root>/apps/<app_name>
+If the folder where the files to sync is not created after we check (and started if any) the installer, ecosys will create it.
+/!\ The folder name you will provide as sync task root is relative to <ecosys_installation_root>/apps/<app_name>
 
 You can specify informations about your app in a json format matching :
 All the path asked are relative to your app's root, except if your app is not portable.
 Then you need to provide absolute path to your executables.
-The sync data folder path is always relative your private qsync app root, as qsync set this as the current working directory before starting your binary. So you just have to recover the cwd at start of your app to konw where to write your files that needs to be sync.
+The sync data folder path is always relative your private ecosys app root, as ecosys set this as the current working directory before starting your binary. So you just have to recover the cwd at start of your app to konw where to write your files that needs to be sync.
 ```go
 type ToutEnUnConfig struct {
 	AppName               string // well... the app's name ?
@@ -74,12 +76,12 @@ type ToutEnUnConfig struct {
 
 }
 ```
-> For examples, see [magasin_database.json](https://raw.githubusercontent.com/ThaaoBlues/qsync/master/magasin_database.json)
+> For examples, see [magasin_database.json](https://raw.githubusercontent.com/ThaaoBlues/ecosys/master/magasin_database.json)
 
 
 ### On android :
-We use ContentProviders to let apps modify content on their assigned folder in the Qsync private directory.
-We list qsync friendly apps on a specific tab in the Qsync app, clicking on it will open its play store page or open the app if already installed.
+We use ContentProviders to let apps modify content on their assigned folder in the ecosys private directory.
+We list ecosys friendly apps on a specific tab in the ecosys app, clicking on it will open its play store page or open the app if already installed.
 Apps are listed as normal synchronisations, just the name is the app's name and the string "(application)" is present to let the user know that this is a sync task used by an app. 
 
 
@@ -87,12 +89,12 @@ Apps are listed as normal synchronisations, just the name is the app's name and 
 
 
 
-## QSync "Largage Aérien"
+## ecosys "Largage Aérien"
 An airdrop-like one time upload that the other device will accept or not.
 
 In this feature, the binary delta is built the same way as the others event, just it will contain a full file.
 All the file path fields in the data structure of the event must be only the file's name.
-QSync recieve the file in its dedicated folder (<qsync_root>/largage_aerien).
+ecosys recieve the file in its dedicated folder (<ecosys_root>/largage_aerien).
 If the user do not want to receive it, nothing is wrote as the file is kept in RAM as a binary delta.
 The flag used for the event is "[OTDL]"
 
@@ -108,9 +110,9 @@ It is usefull for cases like backing up your pictures and save space on your sma
 ## communications :
 
 - Each device uses mDNS with a unique device_id as additionnal data
-    * service name : ._qsync._tcp
+    * service name : ._ecosys._tcp
 
-- When a device is finding a qsync zeroconf service, it checks its own database to see if the given device_id corresponds to a/some sync task(s)
+- When a device is finding a ecosys zeroconf service, it checks its own database to see if the given device_id corresponds to a/some sync task(s)
 
 - When the zeroconf service library gets a service close event, we set de device is_connected state to false
 
@@ -248,7 +250,7 @@ As example, here is a program that shows a bit how it is working :
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TOUDOU : 
-- fix la suppression de fichiers pc-->android (pb de type folder à la place de file + pas effacé coté android)
+- fix la suppression de fichiers pc-->android (il semblerait que l'app supprime le dossier racine en entier)
 
 
 POUR PC :

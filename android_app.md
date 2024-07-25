@@ -1,8 +1,8 @@
-# How do I let Qsync know that I want to work with it ?
-You have to send an intent to qsync. Qsync will then handle the creation of the sync task and app's folder.
+# How do I let Ecosys know that I want to work with it ?
+You have to send an intent to Ecosys. Ecosys will then handle the creation of the sync task and app's folder.
 ```java
  Intent intent = new Intent(Intent.ACTION_SYNC);
-        intent.setClassName("com.qsync.qsync","com.qsync.qsync.AppsIntentActivity");
+        intent.setClassName("com.ecosys.ecosys","com.ecosys.ecosys.AppsIntentActivity");
         intent.putExtra("action_flag","[INSTALL_APP]");
         intent.putExtra("package_name",getContext().getPackageName());
 
@@ -11,7 +11,7 @@ startActivity(intent);
 
 
 
-> You need to implement an activity NAMED QSyncCallbackActivity that recieve Intent.ACTION_SEND so QSync can send you the Uri back in the intent data with the proper permissions
+> You need to implement an activity NAMED EcosysCallbackActivity that recieve Intent.ACTION_SEND so Ecosys can send you the Uri back in the intent data with the proper permissions
 
 ## Don't forget to retrieve the intent permissions
 
@@ -32,21 +32,21 @@ if (uri != null && intent.getExtra("flag").equals("[INSTALL_APP]")) {
 ```
 
 
-# How do I let Qsync sync the files of my android app ?
-Qsync uses ContentProvider to let your app write the files and folders you want to synchronize.
+# How do I let Ecosys sync the files of my android app ?
+Ecosys uses ContentProvider to let your app write the files and folders you want to synchronize.
 examples :
-> Using these functions, you must use the appropriate URI, like 'content://com.qsync.qsync.fileprovider/apps/my_app_package_name/subfolder_if_i_want'
+> Using these functions, you must use the appropriate URI, like 'content://com.Ecosys.Ecosys.fileprovider/apps/my_app_package_name/subfolder_if_i_want'
 
-## /!\ The content provider is not designed to share an entire directory, to bypass that limitation the file creation is a little more complicated : It will also be using QSyncCallbackActivity that recieve Intent.ACTION_SEND but with a [CREATE_FILE] flag.
+## /!\ The content provider is not designed to share an entire directory, to bypass that limitation the file creation is a little more complicated : It will also be using EcosysCallbackActivity that recieve Intent.ACTION_SEND but with a [CREATE_FILE] flag.
 
-> File creation : as app installation, uri is sent to QSyncCallbackActivity but very easily predictible so you can start using the file right after the qsync activity finished without actually storing the retrieved uri. 
+> File creation : as app installation, uri is sent to EcosysCallbackActivity but very easily predictible so you can start using the file right after the Ecosys activity finished without actually storing the retrieved uri. 
 
 > If you provide a relative path before the actual file name, necessary directories will be created if they do not exists
 ```java
 public void checkFileCreated(String fileName) {
 
         Intent intent = new Intent(Intent.ACTION_SYNC);
-        intent.setClassName("com.qsync.qsync","com.qsync.qsync.AppsIntentActivity");
+        intent.setClassName("com.ecosys.ecosys","com.ecosys.ecosys.AppsIntentActivity");
         intent.putExtra("action_flag","[CREATE_FILE]");
         intent.putExtra("package_name",getContext().getPackageName());
         intent.putExtra("file_path","subdirectory_that_will_be_created/"+fileName);
@@ -63,7 +63,7 @@ public void checkFileCreated(String fileName) {
 public void checkFileCreated(String fileName) {
 
         Intent intent = new Intent(Intent.ACTION_SYNC);
-        intent.setClassName("com.qsync.qsync","com.qsync.qsync.AppsIntentActivity");
+        intent.setClassName("com.ecosys.ecosys","com.ecosys.ecosys.AppsIntentActivity");
         intent.putExtra("action_flag","[CREATE_DIRECTORY]");
         intent.putExtra("package_name",getContext().getPackageName());
         intent.putExtra("file_path","subdirectory_that_will_be_created/sub_sub_another_one");
@@ -74,7 +74,7 @@ public void checkFileCreated(String fileName) {
 ```
 
 
-> Callback called by qsync via intent after it created your file
+> Callback called by Ecosys via intent after it created your file
 ```java
 
 Intent intent = getIntent();
@@ -92,7 +92,7 @@ if (uri != null && intent.getExtra("action_flag").equals("[CREATE_FILE]")) {
 
 ```
 
-## All the rest of the files manipulations are by using the regular content provider at content://com.qsync.qsync.fileprovider/apps/my_app_package_name
+## All the rest of the files manipulations are by using the regular content provider at content://com.Ecosys.Ecosys.fileprovider/apps/my_app_package_name
 
 ## Examples :
 

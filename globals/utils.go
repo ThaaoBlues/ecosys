@@ -20,7 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"qsync/delta_binaire"
+	"ecosys/delta_binaire"
 	"runtime"
 	"strconv"
 	"strings"
