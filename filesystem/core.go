@@ -3,13 +3,14 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-21 23:13:38
+ * @lastModified    2024-07-25 14:01:13
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
 package filesystem
 
 import (
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -214,11 +215,11 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path string) {
 	new_absolute_path := computeNewPath(acces, absolute_path)
 
-	new_relative_path := strings.Replace(new_absolute_path, acces.GetRootSyncPath(), "", 1)
-	var queue globals.GenArray[globals.QEvent]
-
-	if new_relative_path != "" {
-
+	if new_absolute_path == "[EVENT_CORRECTION]" {
+		handleRemoveEvent(acces, absolute_path, relative_path)
+	} else {
+		new_relative_path := strings.Replace(new_absolute_path, acces.GetRootSyncPath(), "", 1)
+		var queue globals.GenArray[globals.QEvent]
 		// determining if we moved a file or a directory
 		var file_type string
 
@@ -244,6 +245,7 @@ func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		queue.Add(event)
 		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
 	}
+
 }
 
 func computeNewPath(acces *bdd.AccesBdd, path string) string {
@@ -258,7 +260,7 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 
 	// Find the file with the latest creation date
 	var latestCreationTime time.Time
-	var latestFile string
+	var latestFile fs.DirEntry = nil
 
 	for _, file := range files {
 		finfo, err := file.Info()
@@ -269,71 +271,27 @@ func computeNewPath(acces *bdd.AccesBdd, path string) string {
 
 		if !file.IsDir() && finfo.ModTime().After(latestCreationTime) {
 			latestCreationTime = finfo.ModTime()
-			latestFile = file.Name()
+			latestFile = file
 		}
 	}
+
+	var newPath string
 
 	// Ensure a file with the latest creation date was found,
 	// if not, it means it is a REMOVE event on the last file of this folder
+	// or the lastest file creation date was from before n seconds ago
+	// meaning this is not actually a just-renamed file
 
 	// still check if it is a folder in case -\_(-_-)_/-
-	if latestFile == "" {
-		var file_type string
-		if acces.WasFile(path) {
-			acces.RmFile(path)
-
-			file_type = "file"
-
-		} else {
-			acces.RmFolder(path)
-			file_type = "folder"
-		}
-
-		var event globals.QEvent
-		event.Flag = "[REMOVE]"
-		event.SecureId = acces.SecureId
-		event.FileType = file_type
-		event.FilePath = path
-
-		var queue globals.GenArray[globals.QEvent]
-		queue.Add(event)
-
-		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
-
+	sec := 15
+	someSecAgo := time.Now().Add(time.Duration(-sec) * time.Second)
+	if latestFile == nil || latestFile.Name() == "" || latestCreationTime.Before(someSecAgo) {
+		newPath = "[EVENT_CORRECTION]"
+		log.Println("Rename event was missused, correcting it to a REMOVE event.")
+	} else {
+		// Construct the new path using the latest file name
+		newPath = filepath.Join(dir, latestFile.Name())
 	}
-
-	// if lastest creation time is from before 5 seconds ago, we are facing a REMOVE event
-	sec := 5
-	fiveSecAgo := time.Now().Add(time.Duration(-sec) * time.Second)
-	if latestCreationTime.Before(fiveSecAgo) {
-
-		var file_type string
-		if acces.WasFile(path) {
-			acces.RmFile(path)
-
-			file_type = "file"
-
-		} else {
-			acces.RmFolder(path)
-			file_type = "folder"
-		}
-
-		var event globals.QEvent
-		event.Flag = "[REMOVE]"
-		event.SecureId = acces.SecureId
-		event.FileType = file_type
-		event.FilePath = path
-
-		var queue globals.GenArray[globals.QEvent]
-		queue.Add(event)
-
-		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)
-
-		return ""
-	}
-
-	// Construct the new path using the latest file name
-	newPath := filepath.Join(dir, latestFile)
 
 	return newPath
 }

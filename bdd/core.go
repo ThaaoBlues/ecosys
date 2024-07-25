@@ -201,6 +201,7 @@ func (acces *AccesBdd) WasFile(path string) bool {
 	// but the first event has already erased the rows from database
 	// so no rows error is thrown
 	if err == sql.ErrNoRows {
+		log.Println("No rows where found containing this file path and secure_id")
 		return false
 	}
 

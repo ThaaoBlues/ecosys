@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-22 21:16:43
+ * @lastModified    2024-07-23 14:20:13
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"qsync/bdd"
+	"qsync/filesystem"
 	"qsync/globals"
 	"qsync/networking"
 	"qsync/setup"
@@ -65,8 +66,7 @@ func main() {
 	tasks := acces.ListSyncAllTasks()
 	for i := 0; i < tasks.Size(); i++ {
 		acces.SecureId = tasks.Get(i).SecureId
-		//go filesystem.StartWatcher(tasks.Get(i).Path)
-		log.Println(acces.GetFileContent("prout.txt"))
+		go filesystem.StartWatcher(tasks.Get(i).Path)
 	}
 
 	for {
