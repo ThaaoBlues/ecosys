@@ -1,72 +1,23 @@
 {
-    "tout_en_un_configs": [
-      {
-        "AppName": "com.ecosys.qagenda",
-        "AppDownloadUrl": "http://127.0.0.1:8000/qagenda.exe",
-        "NeedsInstaller": false,
-        "AppLauncherPath": "qagenda.exe",
-        "AppInstallerPath": "",
-        "AppUninstallerPath": "",
-        "AppSyncDataFolderPath": "calendrier",
-        "AppDescription":"Premier test avec une vraie application Windows",
-        "AppIconURL":"https://via.placeholder.com/300",
-        "SupportedPlatforms": ["Windows"]
+  "tout_en_un_configs": [
 
-      },
 
-      {
-        "AppName": "com.ecosys.qagenda",
-        "AppDownloadUrl": "http://127.0.0.1:8000/qagenda_1.0_amd64.deb",
-        "NeedsInstaller": true,
-        "AppLauncherPath": "/opt/qagenda/bin/QAgenda",
-        "AppInstallerPath": "qagenda_1.0_amd64.deb",
-        "AppUninstallerPath": "",
-        "AppSyncDataFolderPath": "",
-        "AppDescription":"Premier test avec une vraie application Linux",
-        "AppIconURL":"https://via.placeholder.com/300",
-        "SupportedPlatforms": ["Linux"]
+    {
+      "AppName": "com.ecosys.qagenda",
+      "AppDownloadUrl": "https://github.com/ThaaoBlues/QAgenda-desktop/raw/master/qagenda_1.0_amd64.deb",
+      "NeedsInstaller": true,
+      "AppLauncherPath": "/opt/qagenda/bin/QAgenda",
+      "AppInstallerPath": "qagenda_1.0_amd64.deb",
+      "AppUninstallerPath": "",
+      "AppSyncDataFolderPath": "",
+      "AppDescription":"Premier test avec une vraie application Linux",
+      "AppIconURL":"https://via.placeholder.com/300",
+      "SupportedPlatforms": ["Linux"]
 
-      },
-      {
-        "AppName": "Tout en un test",
-        "AppDownloadUrl": "https://freetestdata.com/wp-content/uploads/2023/11/7.7-KB.txt",
-        "NeedsInstaller": false,
-        "AppLauncherPath": "launcher.sh",
-        "AppInstallerPath": "",
-        "AppUninstallerPath": "",
-        "AppSyncDataFolderPath": "sync_data",
-        "AppDescription":"seconf test de config.",
-        "AppIconURL":"https://via.placeholder.com/300",
-        "SupportedPlatforms": ["Windows", "Linux"]
+    }
 
-      },
-      {
-        "AppName": "Tout en un test Android",
-        "AppDownloadUrl": "https://play.google.com/store/apps/details?id=com.supercell.squad",
-        "NeedsInstaller": false,
-        "AppLauncherPath": "",
-        "AppInstallerPath": "",
-        "AppUninstallerPath": "",
-        "AppSyncDataFolderPath": "",
-        "AppDescription":"second test de config pour Android.",
-        "AppIconURL":"https://via.placeholder.com/300",
-        "SupportedPlatforms": ["Android"]
+  ],
+  "grapin_configs": [
 
-      }
-    ],
-    "grapin_configs": [
-      {
-        "AppName": "Grapin App 1",
-        "AppSyncDataFolderPath": "/path/to/grapin_app1/data",
-        "NeedsFormat": true,
-        "SupportedPlatforms": ["Windows", "Linux"]
-      },
-      {
-        "AppName": "Grapin App 2",
-        "AppSyncDataFolderPath": "/path/to/grapin_app2/data",
-        "NeedsFormat": false,
-        "SupportedPlatforms": ["Linux"]
-      }
-    ]
-  }
-  
+  ]
+}
