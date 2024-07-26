@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-22 21:16:06
+ * @lastModified    2024-07-26 16:45:59
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -743,6 +743,7 @@ func (acces *AccesBdd) CreateSyncFromOtherEnd(rootPath string, secure_id string)
 	if err != nil {
 		log.Fatal("Error while inserting into database ", err)
 	}
+
 }
 
 // RmSync removes a synchronization entry from the database.

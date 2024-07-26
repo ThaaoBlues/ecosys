@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-21 22:59:34
+ * @lastModified    2024-07-26 16:50:00
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -97,6 +97,10 @@ func StartWebUI() {
 					return
 				}
 				backend_api.GiveInput("[CHOOSELINKPATH]", path)
+
+				// to avoid an import cycle in networking, we have to put the start of filesystem watcher here
+				// start watching so user don't have to restart Ecosys
+				go filesystem.StartWatcher(path)
 			}
 
 		} else {

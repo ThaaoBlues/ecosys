@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var VERSION = "0.0.1-Pre-Alpha"
+var VERSION = "0.0.2-Beta"
 
 func MakeDirectories() {
 	err := os.Mkdir("largages_aeriens", 0755)

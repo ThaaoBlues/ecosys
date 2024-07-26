@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-26 16:42:25
+ * @lastModified    2024-07-26 16:48:44
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -15,7 +15,6 @@ import (
 	"ecosys/backend_api"
 	"ecosys/bdd"
 	"ecosys/delta_binaire"
-	"ecosys/filesystem"
 	"ecosys/globals"
 	"io"
 	"log"
@@ -242,9 +241,6 @@ func ConnectToDevice(conn net.Conn) {
 			if path != "[CANCELLED]" {
 				log.Println("Future sync will be stored at : ", path)
 				acces.CreateSyncFromOtherEnd(path, secure_id)
-
-				// start watching so user don't have to restart Ecosys
-				go filesystem.StartWatcher(path)
 
 			}
 
