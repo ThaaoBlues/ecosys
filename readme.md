@@ -255,7 +255,8 @@ As example, here is a program that shows a bit how it is working :
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TOUDOU : 
-- fix la suppression de fichiers pc-->android (il semblerait que l'app supprime le dossier racine en entier)
+- trouver un moyen de faire démarrer Ecosys au démarrage du telephone/pc
+- trouver un nouveau nom pour QAgenda
 
 
 POUR PC :
