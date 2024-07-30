@@ -29,7 +29,7 @@ A major design flaw in ecosys, that can be patched but I want to think about the
 
 If you use ecosys in a basic way where all your devices are connected to the same network regularly like every day,there is a probability that it never happens, but it could.
 
-### Here is a schematic made with chagpt to visualize the problem :
+### Here is a schematic made with chagpt to visualize the problem :
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/ThaaoBlues/Ecosys/master/aa2b9636-7dc5-4ea4-a279-10eb252ca44e.png"/>
