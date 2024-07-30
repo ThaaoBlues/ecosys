@@ -35,6 +35,11 @@ If you use ecosys in a basic way where all your devices are connected to the sam
 <img src="https://raw.githubusercontent.com/ThaaoBlues/Ecosys/master/aa2b9636-7dc5-4ea4-a279-10eb252ca44e.png"/>
 </p>
 
+
+### potential fix
+One way we could fix this is when two devices are syncing, also notify of wich devices are still not updated by the current patch. By doing this, any device could store the patch and spread it.
+When a device already patched by another when would meet one that didn't send its patches to it, it could just compare the current files versions of its filesystem and the one targeted by the patch being received. If the version targeted is outdated, it could just sent a [MODOFICATION_DONE] event without actually modifying anything.
+
 ## Ecosys "Magasin" :
 We project to make a store where anyone can publish and/or download Ecosys addons (named "grapins" in all my frenchness bc it grabs apps data ) and Ecosys apps (named "tout en un" or 'all in one' in english).
 
