@@ -37,7 +37,7 @@ If you use ecosys in a basic way where all your devices are connected to the sam
 
 
 ### potential fix
-One way we could fix this is when two devices are syncing, also notify of wich devices are still not updated by the current patch. By doing this, any device could store the patch and spread it.
+One way we could fix this is when two devices are syncing, also notify of wich devices are offline and by so, still not updated by the current patch. By doing this, any device could store the patch and spread it.
 When a device already patched by another one would meet one that didn't send its patches to it, it could just compare the current files versions of its filesystem and the one targeted by the patch being received. If the version targeted is outdated, it could just sent a [MODOFICATION_DONE] event without actually modifying anything.
 
 ## Ecosys "Magasin" :
