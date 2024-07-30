@@ -35,7 +35,7 @@ if (uri != null && intent.getExtra("flag").equals("[INSTALL_APP]")) {
 # How do I let Ecosys sync the files of my android app ?
 Ecosys uses ContentProvider to let your app write the files and folders you want to synchronize.
 examples :
-> Using these functions, you must use the appropriate URI, like 'content://com.Ecosys.Ecosys.fileprovider/apps/my_app_package_name/subfolder_if_i_want'
+> Using these functions, you must use the appropriate URI, like 'content://com.ecosys.ecosys.fileprovider/apps/my_app_package_name/subfolder_if_i_want'
 
 ## /!\ The content provider is not designed to share an entire directory, to bypass that limitation the file creation is a little more complicated : It will also be using EcosysCallbackActivity that recieve Intent.ACTION_SEND but with a [CREATE_FILE] flag.
 

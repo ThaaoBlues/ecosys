@@ -9,6 +9,9 @@ It automatically detects linked devices on the same network and make sync the wa
 Ecosys also support one-time files transferts (called "Largage Aerien" in reference to AirDrop).
 In the long term, the goal is to provide a support for a symbiosis between devices and applications states so one can use any of its devices indistinctly.
 
+The way ecosys is behaving, by opportunity of exchange, can be defined by the term "synchronisation opportuniste" or, in english, "opportunistic synchronization".
+
+
 For now, Ecosys is not optimized. I intend to see if I can find a good market fit (even thougth everything is free) before putting to much time into it.
 
 On desktop os :
@@ -16,6 +19,21 @@ We may achieve this goal by making a Ecosys addons market where people puts json
 
 On Android : 
 As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. To know more about how we can still use files to sync applications data, see [android_app.md](https://github.com/ThaaoBlues/Ecosys/blob/master/android_app.md)
+
+## DISCLAIMER
+A major design flaw in ecosys, that can be patched but I want to think about the best way to do it, can be exposed in such way :
+- You have three devices all forming an ecosystem with let's say only one sync task.
+- you modify the targeted filesytem on one device
+- a second device has the opportunity to connect to the one you modified and exchange all the news and gossip ( joke, those are just binary deltas)
+- in the hypothesis of the third device not being able to connect to the same network as the first one and you are modifying the second device, the third one could be in a situation where if it connects and exchange with the second one first the timeline of modification of the affected files is broke and the binary deltas the third device is receiving are not adapted to its more ancien state.
+
+If you use ecosys in a basic way where all your devices are connected to the same network regularly like every day,there is a probability that it never happens, but it could.
+
+### Here is a schematic made with chagpt to visualize the problem :
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ThaaoBlues/Ecosys/master/aa2b9636-7dc5-4ea4-a279-10eb252ca44e.png"/>
+</p>
 
 ## Ecosys "Magasin" :
 We project to make a store where anyone can publish and/or download Ecosys addons (named "grapins" in all my frenchness bc it grabs apps data ) and Ecosys apps (named "tout en un" or 'all in one' in english).
@@ -257,6 +275,8 @@ As example, here is a program that shows a bit how it is working :
 TOUDOU : 
 - trouver un moyen de faire démarrer Ecosys au démarrage du telephone/pc
 - trouver un nouveau nom pour QAgenda
+- Fix l'uri pas bonne dans les notes ( pb de package name ??)
+
 
 
 POUR PC :
@@ -264,7 +284,6 @@ POUR PC :
 - tester la suppression des applications
 
 POUR L'APP :
-- tester la creation d'evenements update sur un fichier texte comme pour la version pc 
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - mettre un texte quand la liste d'appareils est vide
