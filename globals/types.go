@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-03-24 15:15:33
- * @lastModified    2024-06-28 13:31:10
+ * @lastModified    2024-07-30 23:27:16
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -12,12 +12,13 @@ package globals
 import "ecosys/delta_binaire"
 
 type QEvent struct {
-	Flag        string
-	FileType    string
-	Delta       delta_binaire.Delta
-	FilePath    string
-	NewFilePath string
-	SecureId    string
+	Flag           string
+	FileType       string
+	Delta          delta_binaire.Delta
+	FilePath       string
+	NewFilePath    string
+	SecureId       string
+	VersionToPatch int64
 }
 
 type ToutEnUnConfig struct {

@@ -3,21 +3,21 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-25 14:01:13
+ * @lastModified    2024-07-31 22:11:25
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
 package filesystem
 
 import (
-	"io/fs"
-	"log"
-	"os"
-	"path/filepath"
 	"ecosys/bdd"
 	"ecosys/delta_binaire"
 	"ecosys/globals"
 	"ecosys/networking"
+	"io/fs"
+	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -129,6 +129,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FileType = "file"
 		event.FilePath = relative_path
 		event.Delta = delta
+		event.VersionToPatch = 0
 
 		queue.Add(event)
 
@@ -149,6 +150,7 @@ func handleCreateEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 			event.SecureId = acces.SecureId
 			event.FileType = "folder"
 			event.FilePath = relative_path
+			event.VersionToPatch = 0
 
 			queue.Add(event)
 
@@ -174,6 +176,7 @@ func handleWriteEvent(acces *bdd.AccesBdd, absolute_path string, relative_path s
 		event.FileType = "file"
 		event.FilePath = relative_path
 		event.Delta = delta
+		event.VersionToPatch = acces.GetFileLastVersionId(relative_path) - 1
 
 		queue.Add(event)
 		dev := acces.GetSyncOnlineDevices()
@@ -202,6 +205,7 @@ func handleRemoveEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.SecureId = acces.SecureId
 		event.FileType = file_type
 		event.FilePath = relative_path
+		event.VersionToPatch = 0
 
 		log.Println("RELATIVE PATH = ", relative_path)
 
@@ -241,6 +245,7 @@ func handleRenameEvent(acces *bdd.AccesBdd, absolute_path string, relative_path 
 		event.FileType = file_type
 		event.FilePath = relative_path
 		event.NewFilePath = new_relative_path
+		event.VersionToPatch = acces.GetFileLastVersionId(relative_path)
 
 		queue.Add(event)
 		networking.SendDeviceEventQueueOverNetwork(acces.GetSyncOnlineDevices(), acces.SecureId, queue)

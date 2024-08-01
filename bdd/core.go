@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-26 16:45:59
+ * @lastModified    2024-08-01 16:16:38
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -309,20 +309,20 @@ func (acces *AccesBdd) CreateFile(relative_path string, absolute_path string, fl
 
 	if flag == "[ADD_TO_RETARD]" {
 		delta := delta_binaire.BuilDelta(relative_path, absolute_path, 0, []byte(""))
+
 		offline_devices := acces.GetSyncOfflineDevices()
 		if offline_devices.Size() > 0 {
 			new_version_id := acces.GetFileLastVersionId(relative_path) + 1
 
-			// convert detla to json
-			json_data, err := json.Marshal(delta)
-
-			if err != nil {
-				log.Fatal("Error while creating json object from delta type : ", err)
-			}
-
 			// add line in delta table
 
-			_, err = acces.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", relative_path, new_version_id, json_data, acces.SecureId)
+			_, err = acces.db_handler.Exec(
+				"INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)",
+				relative_path,
+				new_version_id,
+				delta.Serialize(),
+				acces.SecureId,
+			)
 
 			if err != nil {
 				log.Fatal("Error while storing binary delta in database : ", err)
@@ -344,7 +344,14 @@ func (acces *AccesBdd) CreateFile(relative_path string, absolute_path string, fl
 			// remove the last semicolon
 			str_ids = str_ids[:len(str_ids)-1]
 
-			_, err = acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)", new_version_id, relative_path, MODTYPES["creation"], str_ids, acces.SecureId)
+			_, err = acces.db_handler.Exec(
+				"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)",
+				new_version_id,
+				relative_path,
+				MODTYPES["creation"],
+				str_ids,
+				acces.SecureId,
+			)
 
 			if err != nil {
 				log.Fatal("Error while inserting new retard : ", err)
@@ -431,7 +438,13 @@ func (acces *AccesBdd) UpdateFile(path string, delta delta_binaire.Delta) {
 		// convert detla to a serialized representation
 		//and add line in delta table
 
-		_, err := acces.db_handler.Exec("INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)", path, new_version_id, delta.Serialize(), acces.SecureId)
+		_, err := acces.db_handler.Exec(
+			"INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)",
+			path,
+			new_version_id,
+			delta.Serialize(),
+			acces.SecureId,
+		)
 
 		if err != nil {
 			log.Fatal("Error while storing binary delta in database : ", err)
@@ -564,12 +577,12 @@ func (acces *AccesBdd) RmFile(path string) {
 		"patch":    "p",
 		"move":     "m",
 	}
-	linked_devices := acces.GetSyncLinkedDevices()
+	offline_devices := acces.GetSyncOfflineDevices()
 
-	if linked_devices.Size() > 0 {
+	if offline_devices.Size() > 0 {
 		var str_ids string = ""
-		for i := 0; i < linked_devices.Size(); i++ {
-			str_ids += linked_devices.Get(i) + ";"
+		for i := 0; i < offline_devices.Size(); i++ {
+			str_ids += offline_devices.Get(i) + ";"
 		}
 		// remove the last semicolon
 		str_ids = str_ids[:len(str_ids)-1]
@@ -965,7 +978,14 @@ func (acces *AccesBdd) AddFolderToRetard(path string) {
 		str_ids = str_ids[:len(str_ids)-1]
 
 		log.Println("ADDING FOLDER TO RETARD : ", path)
-		_, err := acces.db_handler.Exec("INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)", 1, path, MODTYPES["creation"], str_ids, acces.SecureId)
+		_, err := acces.db_handler.Exec(
+			"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)",
+			0,
+			path,
+			MODTYPES["creation"],
+			str_ids,
+			acces.SecureId,
+		)
 
 		if err != nil {
 			log.Fatal("Error while inserting new retard in AddFolderToRetard() : ", err)
@@ -1275,7 +1295,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 	var queue map[string]*globals.GenArray[*globals.QEvent] = make(map[string]*globals.GenArray[*globals.QEvent], 0)
 
 	log.Println("Building missed files event queue from retard...")
-	rows, err := acces.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
+	rows, err := acces.db_handler.Query("SELECT r.secure_id,d.delta,r.mod_type,r.path,r.type,r.version_id FROM retard AS r JOIN delta AS d ON r.path=d.path AND r.version_id=d.version_id AND r.secure_id=d.secure_id WHERE r.devices_to_patch LIKE ?", "%"+device_id+"%")
 
 	if err != nil {
 		log.Fatal("Error while querying database from BuildEventQueueFromRetard() : ", err)
@@ -1290,6 +1310,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 		var secure_id string
 		var filepath string
 		var file_type string
+		var new_version_id int64
 
 		MODTYPES_REVERSE := map[string]string{
 			"c": "[CREATE]",
@@ -1298,7 +1319,14 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 			"m": "[MOVE]",
 		}
 
-		rows.Scan(&secure_id, &delta_bytes, &mod_type, &filepath, &file_type)
+		rows.Scan(
+			&secure_id,
+			&delta_bytes,
+			&mod_type,
+			&filepath,
+			&file_type,
+			&new_version_id,
+		)
 
 		event.Flag = MODTYPES_REVERSE[mod_type]
 
@@ -1308,6 +1336,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 		event.FileType = file_type
 		event.FilePath = filepath
 		event.Delta = delta
+		event.VersionToPatch = new_version_id - 1
 
 		log.Println("ADDING EVENT : ", event)
 
@@ -1340,7 +1369,12 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 			"m": "[MOVE]",
 		}
 
-		rows.Scan(&secure_id, &mod_type, &filepath, &file_type)
+		rows.Scan(
+			&secure_id,
+			&mod_type,
+			&filepath,
+			&file_type,
+		)
 
 		event.Flag = MODTYPES_REVERSE[mod_type]
 		event.SecureId = secure_id
@@ -1815,4 +1849,154 @@ func (acces *AccesBdd) SyncStillExists() bool {
 
 	return count > 0
 
+}
+
+func (acces *AccesBdd) StoreReceivedEventForOthersDevices(event globals.QEvent) {
+	// the version stored by this is an incrementation of the version to patch
+
+	MODTYPES := map[string]string{
+		"creation": "c",
+		"delete":   "d",
+		"patch":    "p",
+		"move":     "m",
+	}
+
+	// get only offline devices
+
+	offline_devices := acces.GetSyncOfflineDevices()
+	if offline_devices.Size() > 0 {
+
+		var str_ids string = ""
+		for i := 0; i < offline_devices.Size(); i++ {
+			str_ids += offline_devices.Get(i) + ";"
+		}
+		// remove the last semicolon
+		str_ids = str_ids[:len(str_ids)-1]
+
+		if event.FileType == "file" {
+			switch event.Flag {
+
+			case "[UPDATE]":
+				// convert detla to a serialized representation
+				//and add line in delta table
+
+				_, err := acces.db_handler.Exec(
+					"INSERT INTO delta (path,version_id,delta,secure_id) VALUES(?,?,?,?)",
+					event.FilePath,
+					event.VersionToPatch+1,
+					event.Delta.Serialize(),
+					acces.SecureId,
+				)
+
+				if err != nil {
+					log.Fatal("Error while storing binary delta in database : ", err)
+				}
+
+				_, err = acces.db_handler.Exec(
+					"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)",
+					event.VersionToPatch+1,
+					event.FilePath,
+					MODTYPES["patch"],
+					str_ids,
+					acces.SecureId)
+
+				if err != nil {
+					log.Fatal("Error while inserting new retard : ", err)
+				}
+
+			case "[CREATE]":
+				_, err := acces.db_handler.Exec(
+					"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)",
+					event.VersionToPatch+1,
+					event.FilePath,
+					MODTYPES["creation"],
+					str_ids,
+					acces.SecureId,
+				)
+
+				if err != nil {
+					log.Fatal("Error while inserting new retard : ", err)
+				}
+
+			case "[REMOVE]":
+
+				_, err := acces.db_handler.Exec(
+					"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"file\",?)",
+					event.VersionToPatch+1,
+					event.FilePath,
+					MODTYPES["delete"],
+					str_ids,
+					acces.SecureId,
+				)
+
+				if err != nil {
+					log.Fatal("Error while inserting new retard : ", err)
+				}
+
+			case "[MOVE]":
+
+				_, err := acces.db_handler.Exec(
+					"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)",
+					event.VersionToPatch+1,
+					event.FilePath,
+					MODTYPES["move"],
+					str_ids,
+					event.FileType,
+					acces.SecureId,
+				)
+
+				if err != nil {
+					log.Fatal("Error while inserting new retard : ", err)
+				}
+
+			}
+		} else {
+
+			switch event.Flag {
+
+			case "[CREATE]":
+				_, err := acces.db_handler.Exec(
+					"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)",
+					0,
+					event.FilePath,
+					MODTYPES["creation"],
+					str_ids,
+					acces.SecureId,
+				)
+
+				if err != nil {
+					log.Fatal("Error while inserting new retard in AddFolderToRetard() : ", err)
+				}
+			case "[MOVE]":
+				_, err := acces.db_handler.Exec(
+					"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,?,?)",
+					0,
+					event.FilePath,
+					MODTYPES["move"],
+					str_ids,
+					event.FileType,
+					acces.SecureId,
+				)
+
+				if err != nil {
+					log.Fatal("Error while inserting new retard : ", err)
+				}
+			case "[REMOVE]":
+				_, err := acces.db_handler.Exec(
+					"INSERT INTO retard (version_id,path,mod_type,devices_to_patch,type,secure_id) VALUES(?,?,?,?,\"folder\",?)",
+					0,
+					event.FilePath,
+					MODTYPES["delete"],
+					str_ids,
+					acces.SecureId,
+				)
+
+				if err != nil {
+					log.Fatal("Error while inserting new retard : ", err)
+				}
+			}
+
+		}
+
+	}
 }

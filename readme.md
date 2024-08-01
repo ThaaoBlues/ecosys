@@ -20,14 +20,12 @@ We may achieve this goal by making a Ecosys addons market where people puts json
 On Android : 
 As you may know, android has some very strict policies on apps data, so it cannot be accessed by others applications. To know more about how we can still use files to sync applications data, see [android_app.md](https://github.com/ThaaoBlues/Ecosys/blob/master/android_app.md)
 
-## DISCLAIMER
-A major design flaw in ecosys, that can be patched but I want to think about the best way to do it, can be exposed in such way :
+## In what is Ecosys different from a basic synchronisation
+As in real life, being opportunistic and independant from a central authority can cause some problems of versionning with your peers. And it can be exposed in such way :
 - You have three devices all forming an ecosystem with let's say only one sync task.
 - you modify the targeted filesytem on one device
-- a second device has the opportunity to connect to the one you modified and exchange all the news and gossip ( joke, those are just binary deltas)
+- a second device has the opportunity to connect to the one you modified and exchange all the news and gossip
 - in the hypothesis of the third device not being able to connect to the same network as the first one and you are modifying the second device, the third one could be in a situation where if it connects and exchange with the second one first the timeline of modification of the affected files is broke and the binary deltas the third device is receiving are not adapted to its more ancien state.
-
-If you use ecosys in a basic way where all your devices are connected to the same network regularly like every day,there is a probability that it never happens, but it could.
 
 ### Here is a schematic made with chagpt to visualize the problem :
 
@@ -36,9 +34,12 @@ If you use ecosys in a basic way where all your devices are connected to the sam
 </p>
 
 
-### potential fix
-One way we could fix this is when two devices are syncing, also notify of wich devices are offline and by so, still not updated by the current patch. By doing this, any device could store the patch and spread it.
+### How I am trying to fix this problem with Ecosys :
+One way we could fix this is when two devices are syncing, also get a list of wich devices are offline and by so, still not updated by the current patch. By doing this, any device could store the patch and spread it.
 When a device already patched by another one would meet one that didn't send its patches to it, it could just compare the current files versions of its filesystem and the one targeted by the patch being received. If the version targeted is outdated, it could just sent a [MODOFICATION_DONE] event without actually modifying anything.
+
+> The implementation is not yet finished but this is going good. I still have to think about better ways to do it that could avoid the presence of duplicates events and by so reduce the database size.
+
 
 ## Ecosys "Magasin" :
 We project to make a store where anyone can publish and/or download Ecosys addons (named "grapins" in all my frenchness bc it grabs apps data ) and Ecosys apps (named "tout en un" or 'all in one' in english).
@@ -281,7 +282,9 @@ TOUDOU :
 - trouver un moyen de faire démarrer Ecosys au démarrage du telephone/pc
 - trouver un nouveau nom pour QAgenda
 - Fix l'uri pas bonne dans les notes ( pb de package name ??)
-
+- ajouter un champ pour la version du fichier dans l'evenement sur les 2 plateformes pour pouvoir la comparer
+- ajouter la version à chaque event dans le filesystem watcher
+- mettre en place la diffusion par stockage et la verification des patch
 
 
 POUR PC :

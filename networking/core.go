@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-26 16:48:44
+ * @lastModified    2024-08-01 16:17:05
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -283,7 +283,55 @@ func ConnectToDevice(conn net.Conn) {
 
 	default:
 
-		// regular file event
+		// check if update has already been made or not
+		// as multiple devices may send the same patch
+
+		switch data.FileType {
+		case "file":
+
+			// voir ici parce que dans certains evenements ça pourrait foirer
+			// par exemple un remove puis un update reçu en retard ne passerait pas
+			// et resterait dans les retards chez l'autre  :/
+			if acces.CheckFileExists(data.FilePath) {
+				if acces.GetFileLastVersionId(data.FilePath) > data.VersionToPatch {
+					// don't do outdated modifications
+					go func() {
+						sendModificationDoneEvent(device_id, data.Flag, secure_id, data.FilePath, data.NewFilePath, acces, conn)
+					}()
+					return
+				}
+			} else {
+				// un ev qui arrive en retard apres une suppression
+				if data.Flag != "[CREATE]" {
+					// don't do outdated modifications
+					go func() {
+						sendModificationDoneEvent(device_id, data.Flag, secure_id, data.FilePath, data.NewFilePath, acces, conn)
+					}()
+					return
+				}
+			}
+
+		// pareil, à voir ici
+
+		case "folder":
+			// as a folder event is always related with moves/deletions or creation
+			// weird XOR workaround for go ~\_(:/)_/~
+			if !(acces.CheckFileExists(data.FilePath) != (data.Flag == "[CREATE]")) {
+				// don't do outdated modifications
+				go func() {
+					sendModificationDoneEvent(device_id, data.Flag, secure_id, data.FilePath, data.NewFilePath, acces, conn)
+				}()
+				return
+			}
+		default:
+
+		}
+
+		//store the event for offline linked devices
+		// so the update does not have to come from the same device for every others
+		acces.StoreReceivedEventForOthersDevices(data)
+
+		// handle the regular file event
 		HandleEvent(secure_id, device_id, data, conn)
 
 	}
@@ -361,34 +409,38 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn 
 		acces.SetFileSystemPatchLockState(false)
 		// send back a modification confirmation, so the other end can remove this machine device_id
 		// from concerned sync task retard entries
-		var ev globals.QEvent
-		ev.FilePath = relative_path
-		ev.SecureId = secure_id
-		switch event.Flag {
-		case "[MOVE]":
-			// event.NewFilePath is still relative
-			ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(event.NewFilePath), 10)
-
-		case "[REMOVE]":
-			ev.FileType = "0"
-
-		default:
-			ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(relative_path), 10)
-
-		}
-		ev.Flag = "[MODIFICATION_DONE]"
-		var connected_devices globals.GenArray[string]
-		connected_devices.Add(device_id)
-		var event_queue globals.GenArray[globals.QEvent]
-		event_queue.Add(ev)
-		ip_addr := strings.Split(conn.RemoteAddr().String(), ":")[0]
-
-		// to avoid reusing addr
-		conn.Close()
-
-		SendDeviceEventQueueOverNetwork(connected_devices, acces.SecureId, event_queue, ip_addr)
+		sendModificationDoneEvent(device_id, event.Flag, secure_id, relative_path, event.NewFilePath, acces, conn)
 	}()
 
+}
+
+func sendModificationDoneEvent(device_id string, flag string, secure_id string, relative_path string, new_file_path string, acces bdd.AccesBdd, conn net.Conn) {
+	var ev globals.QEvent
+	ev.FilePath = relative_path
+	ev.SecureId = secure_id
+	switch flag {
+	case "[MOVE]":
+		// event.NewFilePath is still relative
+		ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(new_file_path), 10)
+
+	case "[REMOVE]":
+		ev.FileType = "0"
+
+	default:
+		ev.FileType = strconv.FormatInt(acces.GetFileLastVersionId(relative_path), 10)
+
+	}
+	ev.Flag = "[MODIFICATION_DONE]"
+	var connected_devices globals.GenArray[string]
+	connected_devices.Add(device_id)
+	var event_queue globals.GenArray[globals.QEvent]
+	event_queue.Add(ev)
+	ip_addr := strings.Split(conn.RemoteAddr().String(), ":")[0]
+
+	// to avoid reusing addr
+	conn.Close()
+
+	SendDeviceEventQueueOverNetwork(connected_devices, acces.SecureId, event_queue, ip_addr)
 }
 
 func SendStartUpdateEvent(secure_id string, ip_addr string) {

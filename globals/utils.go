@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-07-17 15:20:56
+ * @lastModified    2024-07-30 23:27:07
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -14,13 +14,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/rand"
+	"ecosys/delta_binaire"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"ecosys/delta_binaire"
 	"runtime"
 	"strconv"
 	"strings"
@@ -61,13 +61,14 @@ func SerializeQevent(event QEvent) string {
 		}
 	}
 
-	return fmt.Sprintf("%s;%s;%s;%s;%s;%s;%s",
+	return fmt.Sprintf("%s;%s;%s;%s;%s;%s;%d;%s",
 		event.Flag,
 		event.FileType,
 		instructions_joiner.String(),
 		event.Delta.FilePath,
 		event.FilePath,
 		event.NewFilePath,
+		event.VersionToPatch,
 		event.SecureId,
 	)
 }
@@ -92,12 +93,19 @@ func DeSerializeQevent(data string, secure_id string) QEvent {
 			SecureId:    secure_id,
 		}
 	} else {
+		file_version, err := strconv.ParseInt(string(parts[6]), 10, 64)
+		if err != nil {
+			log.Println("Error while parsing event file version")
+			file_version = 0
+		}
+
 		return QEvent{
-			Flag:        string(parts[0]),
-			FileType:    string(parts[1]),
-			FilePath:    string(parts[4]),
-			NewFilePath: string(parts[5]),
-			SecureId:    secure_id,
+			Flag:           string(parts[0]),
+			FileType:       string(parts[1]),
+			FilePath:       string(parts[4]),
+			NewFilePath:    string(parts[5]),
+			SecureId:       secure_id,
+			VersionToPatch: int(file_version),
 		}
 
 	}
