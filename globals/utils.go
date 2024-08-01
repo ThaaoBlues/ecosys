@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-07-30 23:27:07
+ * @lastModified    2024-08-01 16:28:07
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -105,7 +105,7 @@ func DeSerializeQevent(data string, secure_id string) QEvent {
 			FilePath:       string(parts[4]),
 			NewFilePath:    string(parts[5]),
 			SecureId:       secure_id,
-			VersionToPatch: int(file_version),
+			VersionToPatch: file_version,
 		}
 
 	}
