@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-01 16:16:38
+ * @lastModified    2024-08-16 16:17:40
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1731,7 +1731,7 @@ func (acces *AccesBdd) GetNetworkMap() globals.GenArray[map[string]string] {
 }
 
 func (acces *AccesBdd) IsDeviceOnNetworkMap(ipAddr string) bool {
-	row := acces.db_handler.QueryRow("SELECT * FROM reseau WHERE ip_addr=?", ipAddr)
+	row := acces.db_handler.QueryRow("SELECT device_id,ip_addr,hostname FROM reseau WHERE ip_addr=?", ipAddr)
 	var deviceID, ipAddrDB, hostname string
 	err := row.Scan(&deviceID, &ipAddrDB, &hostname)
 	if err != nil {
