@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-08-01 16:28:07
+ * @lastModified    2024-08-03 12:16:28
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -77,6 +77,12 @@ func DeSerializeQevent(data string, secure_id string) QEvent {
 	log.Println("splitting serialized event")
 	parts := bytes.Split(bytes.NewBufferString(data).Bytes(), []byte(";"))
 	log.Println("Event split")
+
+	file_version, err := strconv.ParseInt(string(parts[6]), 10, 64)
+	if err != nil {
+		log.Println("Error while parsing event file version")
+		file_version = 0
+	}
 	//log.Println(parts)
 	// check if instructions are present, as some requests does not needs it
 	if len(parts[2]) > 1 {
@@ -85,19 +91,15 @@ func DeSerializeQevent(data string, secure_id string) QEvent {
 		delta.DeSerialize(parts[2])
 		delta.FilePath = string(parts[3])
 		return QEvent{
-			Flag:        string(parts[0]),
-			FileType:    string(parts[1]),
-			Delta:       delta,
-			FilePath:    string(parts[4]),
-			NewFilePath: string(parts[5]),
-			SecureId:    secure_id,
+			Flag:           string(parts[0]),
+			FileType:       string(parts[1]),
+			Delta:          delta,
+			FilePath:       string(parts[4]),
+			NewFilePath:    string(parts[5]),
+			SecureId:       secure_id,
+			VersionToPatch: file_version,
 		}
 	} else {
-		file_version, err := strconv.ParseInt(string(parts[6]), 10, 64)
-		if err != nil {
-			log.Println("Error while parsing event file version")
-			file_version = 0
-		}
 
 		return QEvent{
 			Flag:           string(parts[0]),

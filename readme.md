@@ -292,10 +292,12 @@ POUR PC :
 - tester la suppression des applications
 
 POUR L'APP :
+- tester l'auth d'une app via secure_id
+- tester le file provider
+- voir pourquoi le boot event ne fonctionne pas !!!
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
 - mettre un texte quand la liste d'appareils est vide
-
 
 
 

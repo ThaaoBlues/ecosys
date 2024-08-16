@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-01 16:17:05
+ * @lastModified    2024-08-16 13:04:14
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -293,7 +293,8 @@ func ConnectToDevice(conn net.Conn) {
 			// par exemple un remove puis un update reçu en retard ne passerait pas
 			// et resterait dans les retards chez l'autre  :/
 			if acces.CheckFileExists(data.FilePath) {
-				if acces.GetFileLastVersionId(data.FilePath) > data.VersionToPatch {
+				// remove event has always a version_id of 0
+				if (acces.GetFileLastVersionId(data.FilePath) > data.VersionToPatch) && (data.Flag != "[REMOVE]") {
 					// don't do outdated modifications
 					go func() {
 						sendModificationDoneEvent(device_id, data.Flag, secure_id, data.FilePath, data.NewFilePath, acces, conn)
@@ -315,8 +316,7 @@ func ConnectToDevice(conn net.Conn) {
 
 		case "folder":
 			// as a folder event is always related with moves/deletions or creation
-			// weird XOR workaround for go ~\_(:/)_/~
-			if !(acces.CheckFileExists(data.FilePath) != (data.Flag == "[CREATE]")) {
+			if acces.CheckFileExists(data.FilePath) == (data.Flag == "[CREATE]") {
 				// don't do outdated modifications
 				go func() {
 					sendModificationDoneEvent(device_id, data.Flag, secure_id, data.FilePath, data.NewFilePath, acces, conn)
@@ -543,20 +543,23 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			if err != nil {
 				log.Println("Error while dialing "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
 
-				// an error occured, adding this event to retard table
-				log.Println("Adding event to retard table for this device")
+				if IsEventFilesystemRelated(event.Flag) {
+					// an error occured, adding this event to retard table
+					log.Println("Adding event to retard table for this device")
 
-				acces.SetDeviceConnectionState(device_id, false)
-				MODTYPES := map[string]string{
-					"[CREATE]": "c",
-					"[REMOVE]": "d",
-					"[UPDATE]": "p",
-					"[MOVE]":   "m",
+					acces.SetDeviceConnectionState(device_id, false)
+					MODTYPES := map[string]string{
+						"[CREATE]": "c",
+						"[REMOVE]": "d",
+						"[UPDATE]": "p",
+						"[MOVE]":   "m",
+					}
+					acces.RefreshCorrespondingRetardRow(event.FilePath, MODTYPES[event.Flag])
+
+					// don't forget to release lock !!!
+					SetEventNetworkLockForDevice(device_id, false)
 				}
-				acces.RefreshCorrespondingRetardRow(event.FilePath, MODTYPES[event.Flag])
 
-				// don't forget to release lock !!!
-				SetEventNetworkLockForDevice(device_id, false)
 				return
 			}
 			_, err = conn.Write(write_buff)
@@ -857,6 +860,7 @@ func SendLargageAerien(file_path string, device_ip string, multiple bool) {
 	event.FileType = "file"
 	event.FilePath = file_name
 	event.Delta = delta
+	event.VersionToPatch = 0
 
 	queue.Add(event)
 
@@ -874,4 +878,14 @@ func IsNetworkAvailable() bool {
 		conn.Close()
 	}
 	return err == nil
+}
+
+func IsEventFilesystemRelated(flag string) bool {
+
+	ret := flag != "[MOTDL]"
+	ret = ret && flag != "[OTDL]"
+	ret = ret && flag != "[LINK_DEVICE]"
+	ret = ret && flag != "[UNLINK_DEVICE]"
+	ret = ret && flag != "[MODIFICATION_DONE]"
+	return ret
 }

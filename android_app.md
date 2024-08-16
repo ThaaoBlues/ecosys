@@ -48,8 +48,10 @@ public void checkFileCreated(String fileName) {
         Intent intent = new Intent(Intent.ACTION_SYNC);
         intent.setClassName("com.ecosys.ecosys","com.ecosys.ecosys.AppsIntentActivity");
         intent.putExtra("action_flag","[CREATE_FILE]");
-        intent.putExtra("package_name",getContext().getPackageName());
         intent.putExtra("file_path","subdirectory_that_will_be_created/"+fileName);
+        // the preference value must be set in app creation intent callback, so BEFORE creating any files.
+        intent.putExtra("secure_id",prefs.getString("secure_id","[NO PREFS]"));
+        
         intent.putExtra("mime_type","text/plain");
         Log.d(TAG,"starting activity with sync intent");
         startActivity(intent);
@@ -74,25 +76,83 @@ public void checkFileCreated(String fileName) {
 ```
 
 
-> Callback called by Ecosys via intent after it created your file
+> Callback called by Ecosys via intent after most queries
 ```java
 
 Intent intent = getIntent();
-Uri uri = intent.getData();
+switch (intent.getStringExtra("action_flag")){
+            case "[INSTALL_APP]":
 
-if (uri != null && intent.getExtra("action_flag").equals("[CREATE_FILE]")) {
-    // Take persistable URI permission
-    final int takeFlags = intent.getFlags()
-            & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-    getContentResolver().takePersistableUriPermission(uri, takeFlags);
 
-    // Now you can work with the URI
-    // For example, you can list files, open input/output streams, etc.
+                String secureId = intent.getStringExtra("secure_id");
+                SharedPreferences prefs = this.getSharedPreferences(this.getPackageName(),MODE_PRIVATE);
+                prefs.edit().putString("secure_id",secureId).apply();
+                break;
+
+            default: // [CREATE_DIRECTORY], [CREATE_FILE] ...
+                Uri uri = intent.getData();
+
+                if (uri != null) {
+                    // Take persistable URI permission
+                    final int takeFlags = intent.getFlags()
+                            & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    getContentResolver().takePersistableUriPermission(uri, takeFlags);
+
+
+                    // used when we call file creation for a new note
+                    // as user already typed the content he wants
+                    File tmp = new File(getFilesDir(),"note_content.tmp");
+
+                    if(tmp.exists()){
+                        try {
+
+                            BufferedReader bfr = new BufferedReader(new FileReader(tmp));
+                            FileWriter fr = new FileWriter(
+                                    getContentResolver().openFileDescriptor(uri,"w").getFileDescriptor()
+                            );
+                            while (bfr.ready()){
+                                fr.write(bfr.readLine());
+                            }
+
+                            bfr.close();
+                            fr.close();
+
+                        } catch (FileNotFoundException e) {
+                            throw new RuntimeException(e);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        // don't forget to remove tempoprary file !
+                        tmp.delete();
+                    }
+
+                    // Now you can work with the URI
+                    // For example, you can list files, open input/output streams, etc.
+                    Log.d(TAG,"Got persistent permissions for : "+uri.getPath());
+
+                }else{
+                    Log.d(TAG,"An error occured while getting persistent permissions to QSync.");
+                }
+
+                String rp = uri.getPath().replace("content://com.ecosys.ecosys.fileprovider/apps/com.ecosys.qagenda/","");
+
+                intent = new Intent(EcosysCallbackActivity.this,MainActivity.class);
+
+                if(rp.startsWith("notes")){
+                    intent.putExtra("fragment_to_load","notes");
+
+                }else{
+                    intent.putExtra("fragment_to_load","agenda");
+                }
+
+                startActivity(intent);
+
 }
 
 ```
 
-## All the rest of the files manipulations are by using the regular content provider at content://com.Ecosys.Ecosys.fileprovider/apps/my_app_package_name
+## All the rest of the files manipulations are by using the regular content provider at content://com.ecosys.ecosys.fileprovider/apps/my_app_package_name
 
 ## Examples :
 

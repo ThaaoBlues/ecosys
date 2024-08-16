@@ -3,18 +3,18 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-15 22:04:39
+ * @lastModified    2024-08-16 13:07:25
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
 package networking
 
 import (
+	"ecosys/bdd"
+	"ecosys/globals"
 	"log"
 	"net"
 	"os"
-	"ecosys/bdd"
-	"ecosys/globals"
 	"strings"
 	"time"
 
@@ -145,14 +145,15 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 		for entry := range entriesCh {
 
 			dev := make(map[string]string, 0)
+			dev["host"] = entry.Host
 
-			dev["host"] = entry.Host + "local"
 			dev["ip_addr"] = entry.AddrV4.String()
 			// as the order of the supplementary fields seem to vary from
 			// a service implementation to another
 
 			// avoid malformed fields
 			if len(entry.InfoFields) > 1 {
+
 				if strings.Split(entry.InfoFields[0], "=")[0] == "version" {
 					dev["version"] = strings.Split(entry.InfoFields[0], "=")[1]
 					dev["device_id"] = strings.Split(entry.InfoFields[1], "=")[1]
