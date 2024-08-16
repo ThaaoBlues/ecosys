@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-16 13:07:25
+ * @lastModified    2024-08-16 16:25:02
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -12,6 +12,7 @@ package networking
 import (
 	"ecosys/bdd"
 	"ecosys/globals"
+	"ecosys/setup"
 	"log"
 	"net"
 	"os"
@@ -120,7 +121,7 @@ func (zcs *ZeroConfService) Register() {
 	// Setup our service export
 	host, _ := os.Hostname()
 	info := []string{
-		"version=0.0.1-PreAlpha",
+		"version=" + setup.VERSION,
 		"device_id=" + acces.GetMyDeviceId(),
 	}
 	service, _ := mdns.NewMDNSService(host, "_ecosys._tcp.", "", "", 8274, []net.IP{GetOutboundIP()}, info)
