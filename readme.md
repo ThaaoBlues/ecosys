@@ -292,8 +292,7 @@ POUR PC :
 - tester la suppression des applications
 
 POUR L'APP :
-- tester l'auth d'une app via secure_id
-- tester le file provider
+- voir pourquoi une nouvelle ligne est ajoutée dans l'annuaire de qagenda quand on modif une note + parse le timestamp en titre + séparer les boutons
 - voir pourquoi le boot event ne fonctionne pas !!!
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation
