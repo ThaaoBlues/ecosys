@@ -17,7 +17,7 @@
     },
     {
       "AppName": "com.ecosys.qagenda",
-      "AppDownloadUrl": "https://drive.google.com/file/d/1BaAjdyh6BSllnQz-alH1KdOZFsWbHk0s/view?usp=drive_link",
+      "AppDownloadUrl": "https://github.com/ThaaoBlues/QAgenda-desktop/raw/master/qagenda_1.0_amd64.deb",
       "NeedsInstaller": false,
       "AppLauncherPath": "",
       "AppInstallerPath": "",
