@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-16 16:17:40
+ * @lastModified    2024-08-19 15:52:31
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -164,7 +164,8 @@ func (acces *AccesBdd) CloseConnection() {
 
 // CheckFileExists checks if a file with a given path exists in the database.
 func (acces *AccesBdd) CheckFileExists(path string) bool {
-	rows, err := acces.db_handler.Query("SELECT id FROM filesystem WHERE path=? AND secure_id=? VALUES=(?,?)", path, acces.SecureId)
+	log.Println("Checking if file " + path + " exists on sync " + acces.SecureId + " filesystem.")
+	rows, err := acces.db_handler.Query("SELECT id FROM filesystem WHERE path=? AND secure_id=?", path, acces.SecureId)
 
 	if err != nil {
 		log.Fatal("Error while querying database from CheckFileExists() : ", err)

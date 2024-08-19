@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-16 13:04:14
+ * @lastModified    2024-08-19 15:44:47
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -285,6 +285,7 @@ func ConnectToDevice(conn net.Conn) {
 
 		// check if update has already been made or not
 		// as multiple devices may send the same patch
+		acces.SecureId = secure_id
 
 		switch data.FileType {
 		case "file":
