@@ -207,7 +207,7 @@ func Setup() {
 	f.WriteString(VERSION)
 	f.Close()
 
-	if !globals.Exists(filepath.Join(globals.EcosysWriteableDirectory, "webui")) {
+	if !globals.ExistsInFilesystem(filepath.Join(globals.EcosysWriteableDirectory, "webui")) {
 		DownloadWebuiFiles()
 	}
 

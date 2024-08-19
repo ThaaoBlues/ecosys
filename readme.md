@@ -281,18 +281,15 @@ As example, here is a program that shows a bit how it is working :
 TOUDOU : 
 - trouver un moyen de faire démarrer Ecosys au démarrage du telephone/pc
 - trouver un nouveau nom pour QAgenda
-- Fix l'uri pas bonne dans les notes ( pb de package name ??)
-- ajouter un champ pour la version du fichier dans l'evenement sur les 2 plateformes pour pouvoir la comparer
-- ajouter la version à chaque event dans le filesystem watcher
-- mettre en place la diffusion par stockage et la verification des patch
-
 
 POUR PC :
+- mettre une animation de téléchargement d'app
 - Finir et tester le launcher/setup
 - tester la suppression des applications
+- tester pourquoi sur windows le build ne fonctionne pas
 
 POUR L'APP :
-- voir pourquoi une nouvelle ligne est ajoutée dans l'annuaire de qagenda quand on modif une note + parse le timestamp en titre + séparer les boutons
+- ne pas afficher les evenements passés dans l'agenda
 - voir pourquoi le boot event ne fonctionne pas !!!
 - Fix le fichier qui s'ouvre mal avec la popup
 - Tester intensivement la synchronisation

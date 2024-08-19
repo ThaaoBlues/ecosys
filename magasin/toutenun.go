@@ -1,6 +1,10 @@
 package magasin
 
 import (
+	"ecosys/backend_api"
+	"ecosys/bdd"
+	"ecosys/filesystem"
+	"ecosys/globals"
 	"encoding/json"
 	"io"
 	"io/fs"
@@ -9,10 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"ecosys/backend_api"
-	"ecosys/bdd"
-	"ecosys/filesystem"
-	"ecosys/globals"
 	"runtime"
 	"strings"
 
@@ -77,7 +77,7 @@ func InstallApp(data io.ReadCloser) error {
 	log.Println("ecosys root path : ", self_path)
 
 	apps_path := filepath.Join(self_path, "apps")
-	ex := globals.Exists(apps_path)
+	ex := globals.ExistsInFilesystem(apps_path)
 
 	if !ex {
 		os.Mkdir(apps_path, fs.ModePerm)
@@ -91,7 +91,7 @@ func InstallApp(data io.ReadCloser) error {
 		json_data.AppLauncherPath = filepath.Join(new_app_root_path, json_data.AppLauncherPath)
 	}
 
-	ex = globals.Exists(new_app_root_path)
+	ex = globals.ExistsInFilesystem(new_app_root_path)
 
 	if !ex {
 		os.Mkdir(new_app_root_path, fs.ModePerm)
@@ -124,7 +124,7 @@ func InstallApp(data io.ReadCloser) error {
 
 	// and last but not least, if the installed did not create it, create the sync folder
 	app_sync_folder := filepath.Join(new_app_root_path, json_data.AppSyncDataFolderPath)
-	ex = globals.Exists(app_sync_folder)
+	ex = globals.ExistsInFilesystem(app_sync_folder)
 	log.Println("making app sync directory : ", app_sync_folder)
 
 	if !ex {

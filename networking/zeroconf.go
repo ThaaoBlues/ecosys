@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-16 16:25:02
+ * @lastModified    2024-08-19 21:53:36
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -146,7 +146,8 @@ func GetNetworkDevices() globals.GenArray[map[string]string] {
 		for entry := range entriesCh {
 
 			dev := make(map[string]string, 0)
-			dev["host"] = entry.Host
+			log.Println(entry)
+			dev["host"] = strings.Split(entry.Name, ".")[0]
 
 			dev["ip_addr"] = entry.AddrV4.String()
 			// as the order of the supplementary fields seem to vary from

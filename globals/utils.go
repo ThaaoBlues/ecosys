@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-08-03 12:16:28
+ * @lastModified    2024-08-19 22:19:05
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -27,7 +27,7 @@ import (
 )
 
 // exists returns whether the given file or directory exists
-func Exists(path string) bool {
+func ExistsInFilesystem(path string) bool {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true
@@ -375,9 +375,4 @@ func IsExecutable(filePath string) bool {
 	}
 
 	return ret
-}
-func ExistsInFilesystem(filePath string) bool {
-	_, err := os.Stat(filePath)
-
-	return err == nil
 }

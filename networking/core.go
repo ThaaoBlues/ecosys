@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-19 15:44:47
+ * @lastModified    2024-08-19 22:37:55
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -187,7 +187,7 @@ func ConnectToDevice(conn net.Conn) {
 
 			path = filepath.Join(globals.EcosysWriteableDirectory, "apps", data.FilePath)
 			// check if the app is downloaded
-			if !globals.Exists(path) {
+			if !globals.ExistsInFilesystem(path) {
 				// replace the original secure_id generated for the app
 				// by the one from the other device so we can link them
 				acces.SecureId = backend_api.AskInput(
@@ -384,6 +384,18 @@ func HandleEvent(secure_id string, device_id string, event globals.QEvent, conn 
 		case "[CREATE]":
 
 			log.Println("Creating file : ", event.FilePath)
+
+			//first, check if all folders leading to the file are present
+			dirs := strings.Split(relative_path, "/")
+			tmp := acces.GetRootSyncPath()
+			for i := 0; i < len(dirs)-1; i++ {
+				tmp := path.Join(tmp, dirs[i])
+				if !globals.ExistsInFilesystem(tmp) {
+					os.Mkdir(tmp, 0755)
+				}
+			}
+
+			// then, do the file creation
 			if event.FileType == "file" {
 				event.Delta.PatchFile()
 				acces.CreateFile(relative_path, event.FilePath, "[SENT_FROM_OTHER_DEVICE]")
@@ -784,7 +796,7 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien\n\n"))
 	if user_response == "true" {
 		// make sure we have the right directory set-up
-		ex := globals.Exists(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
+		ex := globals.ExistsInFilesystem(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
 
 		if !ex {
 			os.Mkdir(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"), 0775)
@@ -818,7 +830,7 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 	// veryfiy user response AND that we are not tricked to untar something random
 	if user_response == "true" && file_name == "multilargage.tar" {
 		// make sure we have the right directory set-up
-		ex := globals.Exists(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
+		ex := globals.ExistsInFilesystem(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
 
 		if !ex {
 			os.Mkdir(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"), 0775)
