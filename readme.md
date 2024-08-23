@@ -284,6 +284,7 @@ TOUDOU :
 
 POUR PC :
 - mettre une animation de téléchargement d'app
+- verifier pourquoi l'installateur de l'app n'est pas supprimé
 - Finir et tester le launcher/setup
 - tester la suppression des applications
 - tester pourquoi sur windows le build ne fonctionne pas

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-07-26 16:50:00
+ * @lastModified    2024-08-23 16:56:06
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -68,6 +68,7 @@ func StartWebUI() {
 	router.HandleFunc("/remove-task", removeTask).Methods("GET")
 	router.HandleFunc("/toggle-backup-mode", toggleBackupMode).Methods("GET")
 	router.HandleFunc("/js/{file_name}", serveJsFile).Methods("GET")
+	router.HandleFunc("/css/{file_name}", serveCssFile).Methods("GET")
 	router.HandleFunc("/install-tout-en-un", installAppHandler).Methods("POST")
 	router.HandleFunc("/install-grapin", installGrapinHandler).Methods("POST")
 	router.HandleFunc("/launch-app", launchAppHandler).Methods("GET")
@@ -204,6 +205,7 @@ func broadcastMessagesLoop(conn *websocket.Conn) {
 
 	for {
 		msg := <-broadcast
+		log.Println("Broadcasting websocket message to front : ", msg)
 		conn.WriteMessage(websocket.TextMessage, msg)
 	}
 
@@ -239,9 +241,13 @@ func websocketMsgHandler(w http.ResponseWriter, r *http.Request) {
 func installAppHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := magasin.InstallApp(r.Body)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+
+	json.NewEncoder(w).Encode(MenuResponse{Message: "success"})
+
 }
 
 func installGrapinHandler(w http.ResponseWriter, r *http.Request) {
@@ -580,6 +586,11 @@ func toggleBackupMode(w http.ResponseWriter, r *http.Request) {
 
 func serveJsFile(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(globals.EcosysWriteableDirectory, "webui/js/"+mux.Vars(r)["file_name"])
+
+	http.ServeFile(w, r, path)
+}
+func serveCssFile(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join(globals.EcosysWriteableDirectory, "webui/css/"+mux.Vars(r)["file_name"])
 
 	http.ServeFile(w, r, path)
 }

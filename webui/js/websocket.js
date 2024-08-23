@@ -1,4 +1,19 @@
-const socket = new WebSocket('ws://localhost:8275/ws');
+var socket = new WebSocket('ws://localhost:8275/ws');
+
+// Handle tab visibility change
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+        // Tab is hidden, close the WebSocket connection
+        socket.close();
+        socket = null;
+        console.log('WebSocket connection closed due to tab switch.');
+    } else if (document.visibilityState === 'visible') {
+        // Tab is visible again, reopen the WebSocket connection
+        socket = new WebSocket('ws://localhost:8275/ws');
+        console.log('Reopening websocket after user went back to tab.');
+    }
+});
+
 
 socket.onopen = function(event) {
    //alert("connected");
@@ -32,6 +47,7 @@ async function openTaskChooserToLinkApp(){
 
 socket.onmessage = function(event) {
     const parts = event.data.split("|")
+    console.log("websocket event : "+parts);
     const flag = parts[0];
     const msg = parts[1];
     switch(flag){
@@ -57,7 +73,9 @@ socket.onmessage = function(event) {
             openTaskChooserToLinkApp();
             break;
 
-
+        case "[STOP_LOADING_ANIMATION]":
+            document.getElementById('loading-animation-popup').style.display = 'none';
+            break;
         case "success":
             break;
     }

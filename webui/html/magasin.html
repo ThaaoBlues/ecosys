@@ -4,143 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magasin ecosys</title>
-    <style>
-
-        :root {
-            --bg1: #F0EBE3;  /* Light beige */
-            --bg2: #F9F4EF;  /* Very light beige */
-            --font1: #333333; /* Dark gray for better readability */
-            --card1: #355C7D; /* Deep blue */
-            --card2: #6C5B7B; /* Muted purple */
-            --btn1: #FF6F61; /* Coral */
-            --btn2: #6B8E23; /* Olive green */
-            --btn3: #FFD700; /* Gold */
-            --btn4: #98FB98; /* Pale green */
-        }
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg1);
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .tab {
-            overflow: hidden;
-            background-color: var(--bg1);
-            margin-bottom: 20px;
-        }
-        
-        .tab button {
-            background-color: inherit;
-            float: left;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            padding: 14px 16px;
-            transition: 0.3s;
-            font-size: 17px;
-        }
-        
-        .tab button:hover {
-            background-color: var(--btn4);
-        }
-        
-        .tab button.active {
-            background-color: var(--btn3);
-        }
-        
-        .section {
-            display: none;
-        }
-        
-        .section.active {
-            display: block;
-        }
-        
-        .card {
-            background-color: var(--bg1);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease-in-out;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        
-        .card:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-        
-        .card img {
-            width: 100%;
-            height: auto;
-        }
-        
-        .card-content {
-            padding: 20px;
-        }
-        
-        .card-title {
-            font-size: 18px;
-            font-weight: bolder;
-            margin-bottom: 10px;
-        }
-        
-        .card-description {
-            font-size: 16px;
-            font-weight: bold;
-            color: #666;
-        }
-
-        .install-button {
-            background-color: var(--btn2);
-            border-radius: 15px;
-            border-color: var(--btn2);
-            border-top: none;
-            border-left: none;
-            border-right: none;
-            border-bottom: 2px solid rgb(24, 139, 24);
-            padding: 5%;
-            margin: 5px;
-            width: 30%;
-        }
-
-        .install-button:hover{
-            border-bottom: none;
-            background-color: var(--btn4);
-        }
-        
-        @media (min-width: 768px) {
-            .section {
-                display: flex;
-                justify-content: space-between;
-            }
-            
-            .card {
-                width: calc(50% - 20px);
-            }
-        }
-    </style>
+    <script src="/js/websocket.js"></script>
+    <link rel="stylesheet" href="/css/magasin.css">
 </head>
 <body>
     <div class="container">
-        <h1>Magasin ecosys</h1>
-        
-        <div class="tab">
-            <button class="tablinks" onclick="openSection(event, 'Grapins')">Grapins</button>
-            <button class="tablinks" onclick="openSection(event, 'ToutEnUn')">Tout en un</button>
+        <div class="header">
+            <img src="https://raw.githubusercontent.com/ThaaoBlues/ecosys/master/svg/icon_transparent_bg.svg"/>
+            <h1>Magasin Ecosys</h1>
+            <img src="https://raw.githubusercontent.com/ThaaoBlues/ecosys/master/svg/icon_transparent_bg.svg"/>
         </div>
         
+        <div class="menu">
+            <button onclick="openSection(event, 'Grapins')">Grapins</button>
+            <button onclick="openSection(event, 'ToutEnUn')">Tout en un</button>
+        </div>        
+        
+        <div id="loading-animation-popup" class="loading-animation-popup">
+            <div class="popup-content">
+                <div class="loader"></div>
+                <p>Chargement...</p>
+            </div>
+        </div>
+
         <div id="Grapins" class="section active">
             <!-- Content will be dynamically generated here -->
         </div>
@@ -150,146 +36,7 @@
         </div>
     </div>
 
-    <script>
-
-        var os = navigator.platform.split(" ")[0]
-        function openSection(evt, sectionName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("section");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-            document.getElementById(sectionName).style.display = "block";
-            evt.currentTarget.className += " active";
-        }
-
-        // Fetch and parse the config file
-        fetch('https://raw.githubusercontent.com/ThaaoBlues/ecosys/master/magasin_database.json')
-            .then(response => response.json())
-            .then(data => {
-                // Process data and generate HTML content dynamically
-                generateHtml(data);
-            })
-            .catch(error => console.error('Error fetching config file:', error));
-
-    function generateHtml(data) {
-        // Extract tout_en_un_configs and grapin_configs from data
-        var toutEnUnConfigs = data.tout_en_un_configs;
-        var grapinConfigs = data.grapin_configs;
-        console.log(data);
-
-        // Generate HTML content for Tout en un section
-        var toutEnUnContainer = document.getElementById('ToutEnUn');
-        toutEnUnConfigs.forEach(config => {
-
-            if(config.SupportedPlatforms.indexOf(os) > -1){
-                var card = document.createElement('div');
-                card.className = 'card';
-
-                var image = document.createElement('img');
-                image.src = config.AppIconURL;
-                image.alt = 'App Image';
-
-                var cardContent = document.createElement('div');
-                cardContent.className = 'card-content';
-
-                var cardTitle = document.createElement('div');
-                cardTitle.className = 'card-title';
-                cardTitle.textContent = config.AppName;
-
-                var cardDescription = document.createElement('div');
-                cardDescription.className = 'card-description';
-                cardDescription.textContent = config.AppDescription;
-
-                var installButton = document.createElement('button');
-                installButton.textContent = 'Install app';
-                installButton.className = 'install-button'; // You can add a class to style the button
-                installButton.onclick = function() {
-                    fetch('/install-tout-en-un', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(config),
-                    })
-                    .then(response => response.json())
-                    .then(data => console.log(data))
-                    .catch((error) => console.error('Error:', error));
-                };
-
-                cardContent.appendChild(cardTitle);
-                cardContent.appendChild(cardDescription);
-                cardContent.appendChild(installButton); // Add the button to the card content
-
-                card.appendChild(image);
-                card.appendChild(cardContent);
-
-                toutEnUnContainer.appendChild(card);
-            }
-            
-        });
-
-        // Generate HTML content for Grapins section
-        var grapinsContainer = document.getElementById('Grapins');
-        grapinConfigs.forEach(config => {
-
-            if(config.SupportedPlatforms.indexOf(os) > -1){
-
-                var card = document.createElement('div');
-                card.className = 'card';
-
-                var image = document.createElement('img');
-                image.src = 'https://via.placeholder.com/300';
-                image.alt = 'App Image';
-
-                var cardContent = document.createElement('div');
-                cardContent.className = 'card-content';
-
-                var cardTitle = document.createElement('div');
-                cardTitle.className = 'card-title';
-                cardTitle.textContent = config.AppName;
-
-                var cardDescription = document.createElement('div');
-                cardDescription.className = 'card-description';
-                cardDescription.textContent = `Description of ${config.AppName}.`;
-
-                var installButton = document.createElement('button');
-                installButton.textContent = 'Install Grapin';
-                installButton.className = 'install-button'; // You can add a class to style the button
-
-                installButton.onclick = function() {
-                    fetch('/install-grapin', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(config),
-                    })
-                    .then(response => response.json())
-                    .then(data => console.log(data))
-                    .catch((error) => console.error('Error:', error));
-                };
-
-
-                cardContent.appendChild(cardTitle);
-                cardContent.appendChild(cardDescription);
-                cardContent.appendChild(installButton); // Add the button to the card content
-
-                card.appendChild(image);
-                card.appendChild(cardContent);
-
-                grapinsContainer.appendChild(card);
-
-            }
-    });
-}
-
-
-    </script>
+    <script src="/js/magasin.js"></script>
 </body>
 </html>
 

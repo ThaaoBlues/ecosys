@@ -1,0 +1,201 @@
+/*
+ * @file            webui/css/magasin.css
+ * @description     
+ * @author          thaaoblues <thaaoblues81@gmail.com>
+ * @createTime      2024-08-23 15:39:40
+ * @lastModified    2024-08-23 18:00:21
+ * Copyright ©Théo Mougnibas All rights reserved
+*/
+
+:root {
+    --bg1: #F0EBE3;  /* Light beige */
+    --bg2: #F9F4EF;  /* Very light beige */
+    --font1: #333333; /* Dark gray for better readability */
+    --card1: #355C7D; /* Deep blue */
+    --card2: #6C5B7B; /* Muted purple */
+    --btn1: #FF6F61; /* Coral */
+    --btn2: #6B8E23; /* Olive green */
+    --btn3: #FFD700; /* Gold */
+    --btn4: #98FB98; /* Pale green */
+}
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg1);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+h1{
+    margin-left: auto;
+    margin-right: auto;
+}
+.header{
+    display:flex;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    align-items: center;
+    text-align: center;
+    background-color: var(--bg2 );
+    border-radius: 15px;
+    width: 33vw;
+    padding: 5px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2vh;
+    margin-top: 2vh;
+
+}
+
+.menu {
+    align-items: center;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    margin-bottom: 5vw;
+    /*card like background*/
+    background-color: var(--bg1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease-in-out;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.menu button {
+    font-size: 18px;
+    background-color: var(--btn3);
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-bottom-style: solid;
+    border-bottom-color: #a88f02; /* darker gold*/
+}
+
+.menu button:hover {
+    background-color: var(--btn4);
+    border-bottom: none;
+
+}
+
+
+.menu button, .button-list button {
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+.card {
+    background-color: var(--bg1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease-in-out;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.card:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card img {
+    width: 100%;
+    height: auto;
+}
+
+.card-content {
+    padding: 20px;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: bolder;
+    margin-bottom: 10px;
+}
+
+.card-description {
+    font-size: 16px;
+    font-weight: bold;
+    color: #666;
+}
+
+.install-button {
+    background-color: var(--btn2);
+    border-radius: 15px;
+    border-color: var(--btn2);
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 2px solid rgb(24, 139, 24);
+    padding: 5%;
+    margin: 5px;
+    width: 30%;
+}
+
+.install-button:hover{
+    border-bottom: none;
+    background-color: var(--btn4);
+}
+
+@media (min-width: 768px) {
+    .section {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .card {
+        width: calc(50% - 20px);
+    }
+}
+
+/* Styles for the loading animation popup overlay */
+.loading-animation-popup {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 999; /* Sits on top of other content */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
+}
+
+/* Styles for the popup content */
+.popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+/* Loader animation */
+.loader {
+    border: 8px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 8px solid var(--btn2);
+    width: 60px;
+    height: 60px;
+    animation: spin 2s linear infinite;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
