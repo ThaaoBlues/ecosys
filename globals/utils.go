@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-08-19 22:19:05
+ * @lastModified    2024-08-26 17:15:48
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -11,10 +11,10 @@ package globals
 
 import (
 	"archive/tar"
-	"archive/zip"
 	"bytes"
 	"crypto/rand"
 	"ecosys/delta_binaire"
+	"ecosys/separators"
 	"fmt"
 	"io"
 	"log"
@@ -46,36 +46,46 @@ func SerializeQevent(event QEvent) string {
 	for i, instruction := range event.Delta.Instructions {
 
 		instructions[i].WriteString(instruction.InstructionType)
-		instructions[i].WriteString(",")
-		for _, data := range instruction.Data {
-			instructions[i].WriteString(strconv.Itoa(int(data)))
-			instructions[i].WriteString(",")
+		instructions[i].WriteString(separators.BytesToHex(separators.VALUE_SEPARATOR))
+
+		// attention, we write bytes bc it is not always text
+		for _, octet := range instruction.Data {
+			instructions[i].WriteByte(byte(octet))
 		}
+
+		instructions[i].WriteString(separators.BytesToHex(separators.VALUE_SEPARATOR))
 		instructions[i].WriteString(strconv.FormatInt(instruction.ByteIndex, 10))
 
 		instructions_joiner.WriteString(instructions[i].String())
 
 		// so it does not append a commas at the end of the string
 		if i < (len(event.Delta.Instructions) - 1) {
-			instructions_joiner.WriteString("|")
+			instructions_joiner.WriteString(separators.BytesToHex(separators.INSTRUCTION_SEPARATOR))
 		}
 	}
-
-	return fmt.Sprintf("%s;%s;%s;%s;%s;%s;%d;%s",
+	sep := separators.BytesToHex(separators.FIELD_SEPARATOR)
+	return fmt.Sprintf("%s%s%s%s%s%s%s%s%s%s%s%s%d%s%s",
 		event.Flag,
+		sep,
 		event.FileType,
+		sep,
 		instructions_joiner.String(),
+		sep,
 		event.Delta.FilePath,
+		sep,
 		event.FilePath,
+		sep,
 		event.NewFilePath,
+		sep,
 		event.VersionToPatch,
+		sep,
 		event.SecureId,
 	)
 }
 
 func DeSerializeQevent(data string, secure_id string) QEvent {
 	log.Println("splitting serialized event")
-	parts := bytes.Split(bytes.NewBufferString(data).Bytes(), []byte(";"))
+	parts := strings.Split(data, separators.BytesToHex(separators.FIELD_SEPARATOR))
 	log.Println("Event split")
 
 	file_version, err := strconv.ParseInt(string(parts[6]), 10, 64)
@@ -112,77 +122,6 @@ func DeSerializeQevent(data string, secure_id string) QEvent {
 
 	}
 
-}
-
-func ZipFolder(source, target string) error {
-	zipFile, err := os.Create(target)
-	if err != nil {
-		return err
-	}
-	defer zipFile.Close()
-
-	zipWriter := zip.NewWriter(zipFile)
-
-	err = filepath.WalkDir(source, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Create the correct zip file header
-		info, err := d.Info()
-
-		if err != nil {
-			return err
-		}
-
-		header, err := zip.FileInfoHeader(info)
-		if err != nil {
-			return err
-		}
-
-		// Set the header name to be the relative path
-		header.Name, err = filepath.Rel(source, path)
-		if err != nil {
-			return err
-		}
-
-		// If it's a directory, add a trailing slash to the header name
-		if d.IsDir() {
-			header.Name += "/"
-		} else {
-			header.Method = zip.Deflate
-		}
-
-		writer, err := zipWriter.CreateHeader(header)
-		if err != nil {
-			return err
-		}
-
-		// If it's not a directory, write the file content to the zip file
-		if !d.IsDir() {
-			file, err := os.Open(path)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-
-			_, err = io.Copy(writer, file)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-
-	// Ensure the zipWriter is closed only after filepath.WalkDir is done
-	if err != nil {
-		zipWriter.Close()
-		return err
-	}
-
-	log.Println("Closing ZipWriter")
-
-	return zipWriter.Close()
 }
 
 func TarFolder(source, target string) error {

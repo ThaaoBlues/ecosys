@@ -281,9 +281,11 @@ As example, here is a program that shows a bit how it is working :
 TOUDOU : 
 - trouver un moyen de faire démarrer Ecosys au démarrage du telephone/pc
 - trouver un nouveau nom pour QAgenda
+- trouver pourquoi l'écriture des gros fichiers sur pc est super lente
+
 
 POUR PC :
-- mettre une animation de téléchargement d'app
+- utiliser la méthode des fichiers temporaires pour l'envoi ici aussi
 - verifier pourquoi l'installateur de l'app n'est pas supprimé
 - Finir et tester le launcher/setup
 - tester la suppression des applications
@@ -293,7 +295,6 @@ POUR L'APP :
 - ne pas afficher les evenements passés dans l'agenda
 - voir pourquoi le boot event ne fonctionne pas !!!
 - Fix le fichier qui s'ouvre mal avec la popup
-- Tester intensivement la synchronisation
 - mettre un texte quand la liste d'appareils est vide
 
 

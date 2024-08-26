@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-19 22:37:55
+ * @lastModified    2024-08-26 17:01:09
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -118,6 +118,7 @@ func ConnectToDevice(conn net.Conn) {
 	// append the first char of the event flag as the header shift got it erased
 	// OUI C'EST DU BRICOLAGE OKAY
 	init := []byte("[")
+
 	body_buff := bytes.NewBuffer(init)
 
 	_, err = body_buff.ReadFrom(reader)
@@ -128,12 +129,10 @@ func ConnectToDevice(conn net.Conn) {
 		//break
 	}
 
-	//log.Println("Request body : ", string(body_buff))
-
 	var data globals.QEvent = globals.DeSerializeQevent(body_buff.String(), secure_id)
 
 	// check if this is a regular file event of a special request
-	log.Println("EVENT : ", data)
+	//log.Println("EVENT : ", data)
 	switch string(data.Flag) {
 
 	case "[MODIFICATION_DONE]":

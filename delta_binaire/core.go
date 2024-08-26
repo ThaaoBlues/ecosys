@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-07-22 21:33:12
+ * @lastModified    2024-08-26 16:03:57
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -12,6 +12,7 @@ package delta_binaire
 import (
 	"bufio"
 	"bytes"
+	"ecosys/separators"
 	"errors"
 	"io"
 	"log"
@@ -56,6 +57,17 @@ func byteBufferToInt8Slice(buff []byte) []int8 {
 
 	for i := 0; i < size; i++ {
 		ret[i] = int8(buff[i])
+	}
+
+	return ret
+}
+
+func Int8SliceToByteBuffer(slice []int8) []byte {
+	size := len(slice)
+	ret := make([]byte, size)
+
+	for i := 0; i < size; i++ {
+		ret[i] = byte(slice[i])
 	}
 
 	return ret
@@ -270,12 +282,11 @@ func (delta Delta) PatchFile() {
 			// convert int8 to byte
 			// all this shit is needed as a byte is unsigned in go
 			// and signed in java
-			for _, v := range delta.Instructions[i].Data {
-				//log.Println(v, byte(v))
-				_, err = file_writer.Write([]byte{byte(v)})
-				if err != nil {
-					log.Fatal(err)
-				}
+			block := Int8SliceToByteBuffer(delta.Instructions[i].Data)
+			_, err = file_writer.Write(block)
+
+			if err != nil {
+				log.Fatal(err)
 			}
 
 		case "t":
@@ -293,63 +304,52 @@ func (delta Delta) Serialize() string {
 	for i, instruction := range delta.Instructions {
 
 		instructions[i].WriteString(instruction.InstructionType)
-		instructions[i].WriteString(",")
+		instructions[i].WriteString(separators.BytesToHex(separators.VALUE_SEPARATOR))
 		for _, data := range instruction.Data {
 			instructions[i].WriteString(strconv.Itoa(int(data)))
-			instructions[i].WriteString(",")
+
 		}
+		instructions[i].WriteString(separators.BytesToHex(separators.VALUE_SEPARATOR))
 		instructions[i].WriteString(strconv.FormatInt(instruction.ByteIndex, 10))
 
 		instructions_joiner.WriteString(instructions[i].String())
 
 		// so it does not append a commas at the end of the string
 		if i < (len(delta.Instructions) - 1) {
-			instructions_joiner.WriteString("|")
+			instructions_joiner.WriteString(separators.BytesToHex(separators.INSTRUCTION_SEPARATOR))
 		}
 	}
 
 	return instructions_joiner.String()
 }
 
-func (delta *Delta) DeSerialize(instructions_string []byte) {
+func (delta *Delta) DeSerialize(instructions_string string) {
 	delta.Instructions = make([]Delta_instruction, 0)
-	var block_index int = 0
-	var i int = 0
-	for i < len(instructions_string) {
 
-		var block_builder strings.Builder
+	blocks := strings.Split(instructions_string, separators.BytesToHex(separators.INSTRUCTION_SEPARATOR))
 
-		for block_index < len(instructions_string) && instructions_string[block_index] != '|' {
-			block_builder.WriteByte(instructions_string[block_index])
-			block_index += 1
-		}
-		if block_builder.Len() == 0 {
-			break
-		}
-		// to skip the final "|" for the next block
-		block_index += 1
+	for i := 0; i < len(blocks); i++ {
 
-		instructionData := bytes.Split(bytes.NewBufferString(block_builder.String()).Bytes(), []byte(","))
-		//instructionData := block_builder.String()
+		instructionData := strings.Split(blocks[i], separators.BytesToHex(separators.VALUE_SEPARATOR))
 
-		dataInts := make([]int8, len(instructionData)-2)
+		// index 0 will be instruction type
+		// index 1 is the payload
+		// index 2 is the byte index
+		//instructionData := strings.Split(block_builder.String(), ",")
 
-		for j := 1; j < len(instructionData)-1; j++ {
+		dataInts := make([]int8, len(instructionData[1]))
 
-			tmp, _ := strconv.Atoi(string(instructionData[j]))
-			dataInts[j-1] = int8(tmp)
+		for j := 0; j < len(instructionData[1]); j++ {
+			dataInts[j] = int8(instructionData[1][j])
 		}
 
-		byteIndex, _ := strconv.ParseInt(string(instructionData[len(instructionData)-1]), 10, 64)
+		byteIndex, _ := strconv.ParseInt(instructionData[2], 10, 64)
 
 		delta.Instructions = append(delta.Instructions,
 			Delta_instruction{
-				InstructionType: string(instructionData[0]),
+				InstructionType: instructionData[0],
 				Data:            dataInts,
 				ByteIndex:       byteIndex,
 			})
-
-		i += 1
 	}
-
 }

@@ -3,7 +3,7 @@
  * @description     
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-08-23 15:40:22
- * @lastModified    2024-08-23 17:50:06
+ * @lastModified    2024-08-26 17:09:54
  * Copyright ©Théo Mougnibas All rights reserved
 */
 
@@ -143,6 +143,8 @@ h1 {
     position: relative;
     width: fit-content;
     text-align: center;
+    max-width : 50vw;
+    max-height : 70vh;
 }
 
 .popup button {
@@ -181,6 +183,8 @@ h1 {
 .grow-wrap {
   /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
   display: grid;
+  max-height: 70vh;
+  max-width: 50vw;
 }
 .grow-wrap::after {
   /* Note the weird space! Needed to preventy jumpy behavior */
@@ -191,6 +195,7 @@ h1 {
 
   /* Hidden from view, clicks, and screen readers */
   visibility: hidden;
+
 }
 .grow-wrap > textarea {
   /* You could leave this, but after a user resizes, then it ruins the auto sizing */

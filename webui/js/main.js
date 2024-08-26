@@ -147,17 +147,26 @@ async function sendText(device) {
 function openSendTextOverlay(device){
     const popup = document.getElementById('popupContent');
 
+
+
     let title = document.createElement("h1");
     title.innerText = translations[currentLang].sendTextTitle;
     popup.appendChild(title);
     let wrapper = document.createElement("wrapper");
     wrapper.className = "grow-wrap";
 
+
+
     let textarea = document.createElement("textarea");
-    textarea.setAttribute("id","custom-text");
+    textarea.setAttribute("id", "custom-text");
+    textarea.style.maxHeight = "50vh"; // Set the maximum height
+    textarea.style.maxWidth = "50vw";
+    textarea.style.overflowY = "auto"; // Make the textarea scrollable when content exceeds the max height
+        
     textarea.oninput = function () {
         textarea.parentNode.dataset.replicatedValue = textarea.value;
     };
+    
     wrapper.appendChild(textarea);
 
     popup.appendChild(wrapper);

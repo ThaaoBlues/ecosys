@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-19 15:52:31
+ * @lastModified    2024-08-26 13:12:59
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1331,7 +1331,7 @@ func (acces *AccesBdd) BuildEventQueueFromRetard(device_id string) map[string]*g
 
 		event.Flag = MODTYPES_REVERSE[mod_type]
 
-		delta.DeSerialize(delta_bytes)
+		delta.DeSerialize(string(delta_bytes))
 
 		event.SecureId = secure_id
 		event.FileType = file_type
