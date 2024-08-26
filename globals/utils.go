@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-08-26 17:15:48
+ * @lastModified    2024-08-26 22:24:43
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -81,6 +81,81 @@ func SerializeQevent(event QEvent) string {
 		sep,
 		event.SecureId,
 	)
+}
+
+func SerializeQeventToFile(event QEvent) (*os.File, error) {
+	// Create a temporary file
+	tmpfile, err := os.CreateTemp(".", "event_serialized_*.tmp")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary file: %w", err)
+	}
+
+	// Ensure the file gets closed if an error occurs
+	defer func() {
+		if err != nil {
+			tmpfile.Close()
+			os.Remove(tmpfile.Name()) // Clean up in case of error
+		}
+	}()
+
+	// Write data incrementally to the temporary file
+	sep := separators.BytesToHex(separators.FIELD_SEPARATOR)
+	_, err = tmpfile.WriteString(event.Flag + sep)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write flag to file: %w", err)
+	}
+
+	_, err = tmpfile.WriteString(event.FileType + sep)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write file type to file: %w", err)
+	}
+
+	for i, instruction := range event.Delta.Instructions {
+		_, err := tmpfile.WriteString(instruction.InstructionType + separators.BytesToHex(separators.VALUE_SEPARATOR))
+		if err != nil {
+			return nil, fmt.Errorf("failed to write instruction type to file %w", err)
+		}
+
+		data_buff := bytes.Buffer{}
+		for _, octet := range instruction.Data {
+			err = data_buff.WriteByte(byte(octet))
+			if err != nil {
+				return nil, fmt.Errorf("failed to write instruction data to byte_buffer : %w", err)
+			}
+		}
+
+		_, err = tmpfile.Write(data_buff.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("failed to write instruction data to file %w", err)
+		}
+
+		_, err = tmpfile.WriteString(separators.BytesToHex(separators.VALUE_SEPARATOR) + strconv.FormatInt(instruction.ByteIndex, 10))
+		if err != nil {
+			return nil, fmt.Errorf("failed to write byte index to file: %w", err)
+		}
+
+		// Add instruction separator if not the last instruction
+		if i < len(event.Delta.Instructions)-1 {
+			_, err = tmpfile.WriteString(separators.BytesToHex(separators.INSTRUCTION_SEPARATOR))
+			if err != nil {
+				return nil, fmt.Errorf("failed to write instruction separator to file: %w", err)
+			}
+		}
+	}
+
+	// Write remaining fields to the file
+	_, err = tmpfile.WriteString(sep + event.Delta.FilePath + sep + event.FilePath + sep + event.NewFilePath + sep)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write file paths to file: %w", err)
+	}
+
+	_, err = tmpfile.WriteString(fmt.Sprintf("%d%s%s", event.VersionToPatch, sep, event.SecureId))
+	if err != nil {
+		return nil, fmt.Errorf("failed to write version to patch and secure ID to file: %w", err)
+	}
+
+	// Return the file descriptor
+	return tmpfile, nil
 }
 
 func DeSerializeQevent(data string, secure_id string) QEvent {

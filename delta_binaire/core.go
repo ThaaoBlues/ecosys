@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-19 14:18:54
- * @lastModified    2024-08-26 16:03:57
+ * @lastModified    2024-08-26 22:36:03
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -252,7 +252,7 @@ func BuilDelta(relative_path string, absolute_path string, old_file_size int64, 
 
 	}
 
-	log.Println("built this delta : ", file_delta)
+	//log.Println("built this delta : ", file_delta)
 
 	return Delta{Instructions: file_delta, FilePath: relative_path}
 }

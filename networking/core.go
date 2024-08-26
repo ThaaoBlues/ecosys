@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-26 17:01:09
+ * @lastModified    2024-08-26 22:42:25
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -117,7 +117,7 @@ func ConnectToDevice(conn net.Conn) {
 
 	// append the first char of the event flag as the header shift got it erased
 	// OUI C'EST DU BRICOLAGE OKAY
-	init := []byte("[")
+	init := []byte("")
 
 	body_buff := bytes.NewBuffer(init)
 
@@ -130,6 +130,7 @@ func ConnectToDevice(conn net.Conn) {
 	}
 
 	var data globals.QEvent = globals.DeSerializeQevent(body_buff.String(), secure_id)
+	log.Println("EVENT FLAG : " + data.Flag)
 
 	// check if this is a regular file event of a special request
 	//log.Println("EVENT : ", data)
@@ -281,6 +282,8 @@ func ConnectToDevice(conn net.Conn) {
 		go HandleMultipleLargageAerien(data, conn.RemoteAddr().String())
 
 	default:
+
+		log.Println("DEFAULT")
 
 		// check if update has already been made or not
 		// as multiple devices may send the same patch
@@ -539,15 +542,12 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 
 			SetEventNetworkLockForDevice(device_id, true)
 
-			formatted_event := globals.SerializeQevent(event)
-
 			acces.SecureId = secure_id
 
 			// we let the possibility to specify the address in the function arguments
 			// as in the case of a [LINK_DEVICE] request, we don't have the IP address registered in the db
 
 			// /!\ the device_id we send is our own so the other end can identify ourselves
-			write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id + string(formatted_event))
 
 			d := net.Dialer{Timeout: 1 * time.Second}
 			conn, err := d.Dial("tcp", ip_addr[0]+":8274")
@@ -574,9 +574,46 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 
 				return
 			}
-			_, err = conn.Write(write_buff)
 
+			formatted_event_file, err := globals.SerializeQeventToFile(event)
 			if err != nil {
+				log.Fatal("Error while serializing qevent to temporary file : ", err)
+			}
+
+			write_buff := []byte(acces.GetMyDeviceId() + ";" + secure_id)
+
+			_, err = conn.Write(write_buff)
+			if err != nil {
+				log.Fatal("Error while sending request headers :", err)
+			}
+
+			n := 0
+			size, err := formatted_event_file.Seek(0, io.SeekEnd)
+			if err != nil {
+				log.Fatal("Error while checking qevent temporary file size : ", err)
+			}
+
+			formatted_event_file.Seek(0, io.SeekStart)
+
+			write_buff = make([]byte, delta_binaire.CalculateBufferSize(size))
+			for n != -1 {
+				n, err = formatted_event_file.Read(write_buff)
+				if err != nil && err != io.EOF {
+					log.Fatal("Error while reading qevent temporary file : ", err)
+				}
+
+				if err == io.EOF {
+					err = nil
+					break
+				}
+
+				_, err = conn.Write(write_buff)
+				if err != nil {
+					log.Fatal("Error while sending request body :", err)
+				}
+			}
+
+			if err != nil && !IsEventFilesystemRelated(event.Flag) {
 				log.Println("Error while writing to "+ip_addr[0]+" from SendDeviceEventQueueOverNetwork() : ", err)
 
 				acces.SetDeviceConnectionState(device_id, false)
@@ -600,6 +637,13 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			// wait for the network lock to be released for this device
 			for GetEventNetworkLockForDevice(device_id) {
 				time.Sleep(1 * time.Second)
+			}
+
+			// finally, remove temporary file
+			formatted_event_file.Close()
+			err = os.Remove(formatted_event_file.Name())
+			if err != nil {
+				log.Fatal("Error while removing temporary event file : ", err)
 			}
 
 		}
