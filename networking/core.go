@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-26 22:42:25
+ * @lastModified    2024-08-29 14:37:08
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -130,6 +130,12 @@ func ConnectToDevice(conn net.Conn) {
 	}
 
 	var data globals.QEvent = globals.DeSerializeQevent(body_buff.String(), secure_id)
+
+	// take care of eaten first char
+	if !strings.HasPrefix(data.Flag, "[") {
+		data.Flag = "[" + data.Flag
+	}
+
 	log.Println("EVENT FLAG : " + data.Flag)
 
 	// check if this is a regular file event of a special request

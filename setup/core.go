@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/emersion/go-autostart"
 )
 
 var VERSION = "0.0.4-Beta"
@@ -210,6 +212,33 @@ func Setup() {
 	if !globals.ExistsInFilesystem(filepath.Join(globals.EcosysWriteableDirectory, "webui")) {
 		DownloadWebuiFiles()
 	}
+
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	app := &autostart.App{
+		Name:        "Ecosys",
+		DisplayName: "Ecosys synchronization app",
+		Exec:        []string{ex},
+	}
+
+	if !app.IsEnabled() {
+
+		log.Println("Enabling app autostart...")
+
+		if err := app.Enable(); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// tp disable autostart :
+	/*
+		if err := app.Disable(); err != nil {
+			log.Fatal(err)
+		}
+	*/
 
 }
 
