@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-06-24 18:47:41
- * @lastModified    2024-08-23 16:56:06
+ * @lastModified    2024-08-29 17:14:57
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -501,7 +501,7 @@ func sendText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f_path := filepath.Join(globals.EcosysWriteableDirectory, "text.txt")
+	f_path := filepath.Join(globals.EcosysWriteableDirectory, globals.GetCurrentTimestampString()+"_text.txt")
 
 	f, err := os.OpenFile(f_path, os.O_CREATE|os.O_RDWR, 0750)
 

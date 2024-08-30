@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-04-28 16:50:11
- * @lastModified    2024-08-26 22:24:43
+ * @lastModified    2024-08-29 17:14:43
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // exists returns whether the given file or directory exists
@@ -389,4 +390,13 @@ func IsExecutable(filePath string) bool {
 	}
 
 	return ret
+}
+
+// GetCurrentTimestampString returns the current Unix timestamp as a string
+func GetCurrentTimestampString() string {
+	// Get the current Unix timestamp
+	timestamp := time.Now().Unix()
+
+	// Convert the timestamp to a string
+	return strconv.FormatInt(timestamp, 10)
 }
