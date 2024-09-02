@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-29 14:37:08
+ * @lastModified    2024-09-02 23:04:15
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -204,11 +204,7 @@ func ConnectToDevice(conn net.Conn) {
 
 			}
 
-			remote_task_creation_date, err := strconv.ParseInt(data.NewFilePath, 10, 64)
-
-			if err != nil {
-				log.Fatal("Error while parsing task creation date from request : ", err)
-			}
+			remote_task_creation_date := data.VersionToPatch
 
 			local_task_creation_date := acces.GetSyncCreationDateFromPathMatch(path)
 
@@ -228,8 +224,9 @@ func ConnectToDevice(conn net.Conn) {
 				var event globals.QEvent
 				event.Flag = "[LINK_DEVICE]"
 				event.SecureId = acces.SecureId
-				event.FilePath = "[APPLICATION]"
-				event.NewFilePath = strconv.FormatInt(local_task_creation_date, 10)
+				event.FileType = "[APPLICATION]"
+				event.FilePath = data.FilePath
+				event.VersionToPatch = local_task_creation_date
 
 				var queue globals.GenArray[globals.QEvent]
 				queue.Add(event)

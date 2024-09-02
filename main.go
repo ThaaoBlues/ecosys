@@ -3,22 +3,22 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-07-23 14:20:13
+ * @lastModified    2024-09-01 22:13:24
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
 package main
 
 import (
-	"log"
-	"os"
-	"path/filepath"
 	"ecosys/bdd"
 	"ecosys/filesystem"
 	"ecosys/globals"
 	"ecosys/networking"
 	"ecosys/setup"
 	"ecosys/webui"
+	"log"
+	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -31,6 +31,9 @@ func main() {
 	}
 	exPath := filepath.Dir(ex)
 	globals.SetecosysWriteableDirectory(exPath)
+
+	// make sure we are working at the root of the ecosys executable
+	os.Chdir(exPath)
 
 	setup.CleanupTempFiles()
 	if networking.IsNetworkAvailable() {
@@ -69,7 +72,7 @@ func main() {
 		go filesystem.StartWatcher(tasks.Get(i).Path)
 	}
 
-	for {
+	// just wait the end of times
 
-	}
+	select {}
 }

@@ -49,8 +49,10 @@ github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af h1:6yITBqGTE2lEeTPG0
 github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af/go.mod h1:4F09kP5F+am0jAwlQLddpoMDM+iewkxxt6nxUQ5nq5o=
 github.com/webui-dev/go-webui/v2 v2.4.2 h1:tFhvRXe+RMC9Q3byA3eIuLvpLuf56Rs0SxoPkJl67vE=
 github.com/webui-dev/go-webui/v2 v2.4.2/go.mod h1:wAuoPsuZW60krM633fOFAQFtnRgzFD1dGDRHQd6lfPY=
-github.com/webui-dev/go-webui/v2 v2.4.3-0.20240629201620-557316fffb68 h1:uFYtCQRZS1L63Xxo4w3NPCX0UF+MpLE7G4lPIo0QMdI=
-github.com/webui-dev/go-webui/v2 v2.4.3-0.20240629201620-557316fffb68/go.mod h1:wAuoPsuZW60krM633fOFAQFtnRgzFD1dGDRHQd6lfPY=
+github.com/webui-dev/go-webui/v2 v2.4.3-0.20240711195955-8001a5e84f7d h1:bm0mu4rWUEZWv8dEBLUwxQdGURP7pf5bgFIM3YVDiQ4=
+github.com/webui-dev/go-webui/v2 v2.4.3-0.20240711195955-8001a5e84f7d/go.mod h1:wAuoPsuZW60krM633fOFAQFtnRgzFD1dGDRHQd6lfPY=
+github.com/webui-dev/webui v0.0.0-20240823070203-ead99700e99d h1:LFQFrXxOhMqtx9mkWjMr0+r1NXBJ0QRWW0ZfckfutSg=
+github.com/webui-dev/webui v0.0.0-20240823070203-ead99700e99d/go.mod h1:/jtfG9N1lGg8McUx/rsPD0okOSNGUhuHinbAbmjtwTc=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 golang.org/x/image v0.17.0 h1:nTRVVdajgB8zCMZVsViyzhnMKPwYeroEERRC64JuLco=
