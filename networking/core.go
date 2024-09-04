@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-09-02 23:04:15
+ * @lastModified    2024-09-04 23:01:40
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -590,7 +590,6 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 				log.Fatal("Error while sending request headers :", err)
 			}
 
-			n := 0
 			size, err := formatted_event_file.Seek(0, io.SeekEnd)
 			if err != nil {
 				log.Fatal("Error while checking qevent temporary file size : ", err)
@@ -599,7 +598,9 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 			formatted_event_file.Seek(0, io.SeekStart)
 
 			write_buff = make([]byte, delta_binaire.CalculateBufferSize(size))
-			for n != -1 {
+
+			n := 707
+			for n > 0 {
 				n, err = formatted_event_file.Read(write_buff)
 				if err != nil && err != io.EOF {
 					log.Fatal("Error while reading qevent temporary file : ", err)
@@ -609,8 +610,8 @@ func SendDeviceEventQueueOverNetwork(connected_devices globals.GenArray[string],
 					err = nil
 					break
 				}
-
-				_, err = conn.Write(write_buff)
+				log.Printf("lecture du buffer juqu'à : %d\n", n)
+				_, err = conn.Write(write_buff[:n])
 				if err != nil {
 					log.Fatal("Error while sending request body :", err)
 				}
