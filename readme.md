@@ -285,15 +285,13 @@ TOUDOU :
 
 
 POUR PC :
-- utiliser la méthode des fichiers temporaires pour l'envoi ici aussi
+- finir d'implémenter les mêmes menus et requètes web dans la tui
+- finir d'implémenter le magasin en tui
 - verifier pourquoi l'installateur de l'app n'est pas supprimé
-- Finir et tester le launcher/setup
 - tester la suppression des applications
 - tester pourquoi sur windows le build ne fonctionne pas
 
 POUR L'APP :
-- ne pas afficher les evenements passés dans l'agenda
-- voir pourquoi le boot event ne fonctionne pas !!!
 - Fix le fichier qui s'ouvre mal avec la popup
 - mettre un texte quand la liste d'appareils est vide
 

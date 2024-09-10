@@ -3,7 +3,7 @@
  * @description     
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2024-08-23 16:56:16
- * @lastModified    2024-08-23 17:30:47
+ * @lastModified    2024-09-10 22:02:09
  * Copyright ©Théo Mougnibas All rights reserved
 */
 
@@ -161,3 +161,4 @@ document.getElementById('loading-animation-popup').style.display = 'block';
 function hideLoadingPopup() {
 document.getElementById('loading-animation-popup').style.display = 'none';
 }
+

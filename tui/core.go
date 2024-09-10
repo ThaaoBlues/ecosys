@@ -1,354 +1,681 @@
-/*
- * @file            tui/core.go
- * @description
- * @author          thaaoblues <thaaoblues81@gmail.com>
- * @createTime      2023-09-11 18:22:28
- * @lastModified    2024-06-27 17:24:29
- * Copyright ©Théo Mougnibas All rights reserved
- */
-
 package tui
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
-	"ecosys/backend_api"
-	"ecosys/bdd"
-	"ecosys/filesystem"
-	"ecosys/globals"
-	"ecosys/networking"
-	"strconv"
+	"net/http"
+	"strings"
 	"time"
 
-	"github.com/sqweek/dialog"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
 
-var LOGO string = `
-________/\\\___________/\\\\\\\\\\\_____________________________________________        
-_____/\\\\/\\\\______/\\\/////////\\\___________________________________________       
- ___/\\\//\////\\\___\//\\\______\///_____/\\\__/\\\_____________________________      
-  __/\\\______\//\\\___\////\\\___________\//\\\/\\\___/\\/\\\\\\_______/\\\\\\\\_     
-   _\//\\\______/\\\_______\////\\\_________\//\\\\\___\/\\\////\\\____/\\\//////__    
-    __\///\\\\/\\\\/___________\////\\\_______\//\\\____\/\\\__\//\\\__/\\\_________   
-     ____\////\\\//______/\\\______\//\\\___/\\_/\\\_____\/\\\___\/\\\_\//\\\________  
-      _______\///\\\\\\__\///\\\\\\\\\\\/___\//\\\\/______\/\\\___\/\\\__\///\\\\\\\\_ 
-       _________\//////_____\///////////______\////________\///____\///_____\////////__`
-
-var MENU string = `
-
-[0] - Start ecosys
-[1] - Create a sync task
-[2] - Link another machine to a sync task on yours
-[3] - List current sync task and their id
-[4] - List devices using ecosys on your network
-[5] - Open ecosys Magasin
-[6] - Send something to another device : "Largage Aérien"
-[7] - Send a whole folder to another device : "Multi Largage Aérien"
-[8] - Allow/Disallow people to send you Largage Aerien
-`
-
-var PROMPT string = "\n>> "
-
-var PROCESSING_EVENT bool
-var CURRENT_EVENT_FLAG string
-
-func Prompt() string {
-
-	// if we are here, no backend events have been detected
-	// we can safely display the regular menu's prompt
-	fmt.Print(PROMPT)
-	var query string
-	_, err := fmt.Scanln(&query)
-
-	if err != nil && err.Error() != "unexpected newline" {
-		log.Fatal("Error while reading user query in Prompt() : ", err)
-	}
-
-	if PROCESSING_EVENT {
-		backend_api.GiveInput(CURRENT_EVENT_FLAG, query)
-		query = "[BACKEND_OVERRIDE]"
-		PROCESSING_EVENT = false
-	}
-	return query
+var currentLang = "en" // Default language
+var translations = map[string]map[string]string{
+	"en": {
+		"devicesTitle":      "Devices on your network",
+		"tasksTitle":        "Active tasks on your device",
+		"taskActions":       "Task Actions",
+		"deviceActions":     "Device Actions",
+		"sendFile":          "Send File",
+		"sendFolder":        "Send Folder",
+		"sendText":          "Send Text",
+		"removeTask":        "Remove Task",
+		"openApp":           "Open App",
+		"syncAnotherDevice": "Sync Another Device",
+		"enableBackupMode":  "Enable Backup Mode",
+		"disableBackupMode": "Disable Backup Mode",
+		"alertTaskCreated":  "Task Created at ",
+	},
+	"fr": {
+		"devicesTitle":      "Appareils sur votre réseau",
+		"tasksTitle":        "Tâches actives sur votre appareil",
+		"taskActions":       "Actions de tâche",
+		"deviceActions":     "Actions de l'appareil",
+		"sendFile":          "Envoyer un fichier",
+		"sendFolder":        "Envoyer un dossier",
+		"sendText":          "Envoyer un texte",
+		"removeTask":        "Supprimer la tâche",
+		"openApp":           "Ouvrir l'application",
+		"syncAnotherDevice": "Synchroniser un autre appareil",
+		"enableBackupMode":  "Activer le mode de sauvegarde",
+		"disableBackupMode": "Désactiver le mode de sauvegarde",
+		"alertTaskCreated":  "Tâche créée à ",
+	},
 }
 
-func AskConfirmation(msg string, validation string) bool {
-	fmt.Println(msg)
-	return Prompt() == validation
+type Config struct {
+	AppName            string   `json:"AppName"`
+	AppDescription     string   `json:"AppDescription"`
+	AppIconURL         string   `json:"AppIconURL"`
+	SupportedPlatforms []string `json:"SupportedPlatforms"`
 }
 
-func ClearTerm() {
-	fmt.Print("\033[H\033[2J")
+type Data struct {
+	ToutEnUnConfigs []Config `json:"tout_en_un_configs"`
+	GrapinConfigs   []Config `json:"grapin_configs"`
 }
 
-func HandleMenuQuery(query string) {
+func updateLanguage(lang string) {
+	currentLang = lang
+}
 
-	var acces bdd.AccesBdd
-
-	acces.InitConnection()
-
-	defer acces.CloseConnection()
-
-	switch query {
-
-	case "0":
-
-		fmt.Println(("Starting watcher ..."))
-		tasks := acces.ListSyncAllTasks()
-		for i := 0; i < tasks.Size(); i++ {
-			filesystem.StartWatcher(tasks.Get(i).Path)
-		}
-
-	case "1":
-
-		path, err := dialog.Directory().Title("Select Folder").Browse()
-		if err != nil {
-			fmt.Println("Folder selection cancelled.")
-			return
-		}
-
-		acces.CreateSync(path)
-
-		fmt.Println("Sync task created. It can be started with the others from the menu.")
-
-	case "2":
-
-		fmt.Println("Select below the sync task you want to provide for another device :")
-		tasks := acces.ListSyncAllTasks()
-		for i := 0; i < tasks.Size(); i++ {
-			task := tasks.Get(i)
-			fmt.Println("{")
-			fmt.Println("Path : ", task.Path)
-			fmt.Println("Secure id : ", task.SecureId)
-			fmt.Println("}")
-		}
-
-		index, err := strconv.Atoi(Prompt())
-
-		if err != nil {
-			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
-		}
-
-		if index > tasks.Size() {
-			log.Fatal("The number you provied was not corresponding to any task.")
-		}
-
-		acces.GetSecureIdFromRootPath(tasks.Get(index).Path)
-
-		fmt.Println("Mapping available devices on your local network...")
-
-		// list ecosys devices across the network
-		devices := acces.GetNetworkMap()
-		for i := 0; i < devices.Size(); i++ {
-			fmt.Printf("[%d] ", i)
-			fmt.Println(devices.Get(i)["hostname"])
-		}
-
-		// send a link device request to the one the user choose
-
-		index, err = strconv.Atoi(Prompt())
-
-		if err != nil {
-			log.Fatal("An error occured while scanning for a integer in HandleMenuQuery() : ", err)
-		}
-
-		device_id := devices.Get(index)["device_id"]
-
-		var event globals.QEvent
-		event.Flag = "[LINK_DEVICE]"
-		event.SecureId = acces.SecureId
-		event.FilePath = ""
-
-		var queue globals.GenArray[globals.QEvent]
-		queue.Add(event)
-		var device_ids globals.GenArray[string]
-		device_ids.Add(device_id)
-
-		networking.SendDeviceEventQueueOverNetwork(device_ids, acces.SecureId, queue, devices.Get(index)["ip_addr"])
-
-		// link the device into this db
-		acces.LinkDevice(device_id, devices.Get(index)["ip_addr"])
-		log.Println("device linked")
-
-		/*log.Println("Press any key once you have put the destination path on your other machine.")
-		Prompt()
-		// build a custom queue so this device can download all the data contained in your folder
-		networking.BuildSetupQueue(acces.SecureId, device_id)*/
-
-		fmt.Println("The selected device has successfully been linked to a sync task.")
-
-	case "3":
-		tasks := acces.ListSyncAllTasks()
-		for i := 0; i < tasks.Size(); i++ {
-			task := tasks.Get(i)
-			fmt.Println("{")
-			fmt.Println("Path : ", task.Path)
-			fmt.Println("Secure id : ", task.SecureId)
-			fmt.Println("}")
-		}
-
-	case "4":
-		// list ecosys devices across the network
-
-		devices := acces.GetNetworkMap()
-		for i := 0; i < devices.Size(); i++ {
-			fmt.Printf("[%d] ", i)
-			fmt.Println(devices.Get(i)["hostname"])
-		}
-
-	case "5":
-		time.Sleep(1 * time.Second)
-		globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
-
-	case "6":
-
-		filepath, err := dialog.File().Title("Select Folder").Load()
-		if err != nil {
-			fmt.Println("Folder selection cancelled.")
-			return
-		}
-		fmt.Println("Select a device on the network : ")
-		devices := acces.GetNetworkMap()
-		for i := 0; i < devices.Size(); i++ {
-			fmt.Printf("[%d] ", i)
-			fmt.Println(devices.Get(i)["hostname"])
-		}
-		index, err := strconv.Atoi(Prompt())
-		if err != nil || index > devices.Size() {
-			log.Fatal("Vous n'avez pas saisi un nombre valide !")
-		}
-
-		fmt.Println("Sending " + filepath + " to " + devices.Get(index)["hostname"])
-		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"], false)
-
-	case "7":
-		folder_path, err := dialog.Directory().Title("Select Folder").Browse()
-		if err != nil {
-			fmt.Println("Folder selection cancelled.")
-			return
-		}
-		fmt.Println("Select a device on the network : ")
-		devices := acces.GetNetworkMap()
-		for i := 0; i < devices.Size(); i++ {
-			fmt.Printf("[%d] ", i)
-			fmt.Println(devices.Get(i)["hostname"])
-		}
-		index, err := strconv.Atoi(Prompt())
-		if err != nil || index > devices.Size() {
-			log.Fatal("Vous n'avez pas saisi un nombre valide !")
-		}
-
-		// zipping folder content to send it via largage aerien
-		filepath := "multilargage.tar"
-		err = globals.TarFolder(folder_path, filepath)
-
-		if err != nil {
-			log.Fatal("Error while zipping folder ", err)
-		} else {
-			log.Printf("Successfully zipped folder %s into %s\n", folder_path, filepath)
-		}
-
-		fmt.Println("Sending " + filepath + " to " + devices.Get(index)["hostname"])
-		networking.SendLargageAerien(filepath, devices.Get(index)["ip_addr"], true)
-
-		// now, the zip file is not useful anymore
-		//os.Remove(filepath)
-
-	case "8":
-		var is_allowing bool
-
-		is_allowing = acces.AreLargageAerienAllowed()
-
-		if is_allowing {
-			fmt.Println("You are currently allowing people to send you Largages Aerien.\n\n Changing this to disallow it")
-			acces.SwitchLargageAerienAllowingState()
-			fmt.Println("Setting changed, you are now disallowing people to send you Largages Aerien.")
-
-		} else {
-			fmt.Println("You are currently prohibitng people to send you Largages Aerien.\n\n Changing this to allow it")
-			acces.SwitchLargageAerienAllowingState()
-			fmt.Println("Setting changed, you are now allowing people to send you Largages Aerien.")
-
-		}
-
-	case "[BACKEND_OVERRIDE]":
-		break
-
-	default:
-		fmt.Println("This option does not exists :/")
-		HandleMenuQuery(Prompt())
+func fetchTasks() []map[string]string {
+	resp, err := http.Get("http://127.0.0.1:8275/list-tasks")
+	if err != nil {
+		log.Println("Error fetching tasks:", err)
+		return []map[string]string{}
 	}
+	defer resp.Body.Close()
+
+	var tasks []map[string]string
+	json.NewDecoder(resp.Body).Decode(&tasks)
+	return tasks
+}
+
+func fetchDevices() []map[string]string {
+	resp, err := http.Get("http://127.0.0.1:8275/list-devices")
+	if err != nil {
+		log.Println("Error fetching devices:", err)
+		return []map[string]string{}
+	}
+	defer resp.Body.Close()
+
+	var devices []map[string]string
+	json.NewDecoder(resp.Body).Decode(&devices)
+	return devices
+}
+
+func CreateUI(app *tview.Application) tview.Primitive {
+
+	updateLanguage("fr")
+
+	// Header and Titles
+	header := tview.NewTextView().
+		SetText("Ecosys Terminal GUI").
+		SetTextColor(tcell.ColorGreen).
+		SetTextAlign(tview.AlignCenter)
+
+	devicesTitle := tview.NewTextView().
+		SetText(translations[currentLang]["devicesTitle"]).
+		SetTextColor(tcell.ColorYellow).
+		SetDynamicColors(true)
+
+	tasksTitle := tview.NewTextView().
+		SetText(translations[currentLang]["tasksTitle"]).
+		SetTextColor(tcell.ColorYellow).
+		SetDynamicColors(true)
+
+	// Menu buttons (navigable)
+	createTaskBtn := tview.NewButton("Create a Sync Task").SetSelectedFunc(func() {
+		createSyncTask()
+	})
+	openMagasinBtn := tview.NewButton("Open Magasin").SetSelectedFunc(func() {
+		openMagasin(app)
+	})
+	toggleLargageBtn := tview.NewButton("Toggle Largage Aerien").SetSelectedFunc(func() {
+		toggleLargageAerien()
+	})
+	openLargagesFolderBtn := tview.NewButton("Open Largage Aerien Folder").SetSelectedFunc(func() {
+		openLargagesFolder()
+	})
+
+	// Button list
+	buttons := []*tview.Button{createTaskBtn, openMagasinBtn, toggleLargageBtn, openLargagesFolderBtn}
+	menu := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(createTaskBtn, 2, 1, true).
+		AddItem(openMagasinBtn, 2, 1, true).
+		AddItem(toggleLargageBtn, 2, 1, true).
+		AddItem(openLargagesFolderBtn, 2, 1, true)
+
+	// Device List
+	devicesList := tview.NewList()
+
+	// Task List
+	tasksList := tview.NewList()
+
+	// Set up focus navigation between buttons
+	for i, btn := range buttons {
+		buttonIndex := i
+		btn.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			switch event.Key() {
+			case tcell.KeyDown:
+				app.SetFocus(buttons[(buttonIndex+1)%len(buttons)])
+				return nil
+			case tcell.KeyUp:
+				app.SetFocus(buttons[(buttonIndex+len(buttons)-1)%len(buttons)])
+				return nil
+			}
+			return event
+		})
+	}
+
+	// Layout for devices and tasks
+	devicesListLayout := tview.NewFlex().
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(devicesTitle, 1, 1, false).
+			AddItem(devicesList, 0, 1, true), 0, 1, true)
+
+	tasksListLayout := tview.NewFlex().AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(tasksTitle, 1, 1, false).
+		AddItem(tasksList, 0, 1, true), 0, 1, true)
+
+	terminalParts := []*tview.Flex{menu, devicesListLayout, tasksListLayout}
+
+	// Main layout
+	mainLayout := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(header, 3, 1, false)
+
+	// Add keyboard navigation between menu and content
+	for i, layout := range terminalParts {
+		layoutIndex := i
+		layout.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			log.Println("Setting focus to another terminal part")
+
+			switch event.Key() {
+			case tcell.KeyTab:
+				app.SetFocus(terminalParts[(layoutIndex+1)%len(terminalParts)])
+				// remove highlight on previous focus zone
+				terminalParts[layoutIndex].
+					SetBorder(false)
+
+				// highlight focus zone
+				terminalParts[(layoutIndex+1)%len(terminalParts)].
+					SetBorder(true).
+					SetBorderStyle(tcell.StyleDefault).
+					SetBorderColor(tcell.ColorGhostWhite)
+			}
+			return event
+		})
+
+		mainLayout = mainLayout.AddItem(layout, 0, 1, true)
+	}
+
+	app.SetFocus(menu)
+
+	// filling up lists
+
+	go func() {
+		for {
+			app.QueueUpdateDraw(func() {
+				devicesList.Clear()
+				for _, device := range fetchDevices() {
+					devicesList.AddItem(device["hostname"], device["ip_addr"], 0, func() {
+						openDeviceActionsMenu(app, device, mainLayout)
+					})
+				}
+			})
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	go func() {
+		for {
+			app.QueueUpdateDraw(func() {
+				tasksList.Clear()
+				for _, task := range fetchTasks() {
+					label := task["Path"]
+					if task["IsApp"] == "true" {
+						label = "( application ) " + task["Name"]
+					}
+					tasksList.AddItem(label, "", 0, func() {
+						openTaskActionsMenu(app, task, mainLayout)
+					})
+				}
+			})
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	return mainLayout
+}
+
+// Popup menus for task and device actions
+func openTaskActionsMenu(app *tview.Application, task map[string]string, appRoot *tview.Flex) {
+	var backupModeText string
+	if task["BackupMode"] == "true" {
+		backupModeText = translations[currentLang]["disableBackupMode"]
+	} else {
+		backupModeText = translations[currentLang]["enableBackupMode"]
+
+	}
+
+	modal := tview.NewModal().
+		SetText(translations[currentLang]["taskActions"]).
+		AddButtons([]string{
+			translations[currentLang]["openApp"],
+			translations[currentLang]["syncAnotherDevice"],
+			translations[currentLang]["removeTask"],
+			backupModeText,
+		}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			switch buttonLabel {
+			case translations[currentLang]["openApp"]:
+				openApp(task)
+			case translations[currentLang]["syncAnotherDevice"]:
+				chooseDeviceAndLinkIt(app, task, appRoot)
+			case translations[currentLang]["removeTask"]:
+				removeTask(task)
+			case translations[currentLang]["enableBackupMode"], translations[currentLang]["disableBackupMode"]:
+				toggleBackupMode(task)
+			}
+			app.SetRoot(CreateUI(app), true)
+		})
+	app.SetRoot(modal, true).SetFocus(modal)
+}
+
+func openDeviceActionsMenu(app *tview.Application, device map[string]string, appRoot *tview.Flex) {
+	modal := tview.NewModal().
+		SetText(translations[currentLang]["deviceActions"]).
+		AddButtons([]string{
+			translations[currentLang]["sendFile"],
+			translations[currentLang]["sendFolder"],
+			translations[currentLang]["sendText"],
+		}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			switch buttonLabel {
+			case translations[currentLang]["sendFile"]:
+				sendLargage(device, false)
+				app.SetRoot(appRoot, true)
+
+			case translations[currentLang]["sendFolder"]:
+				sendLargage(device, true)
+				app.SetRoot(appRoot, true)
+			case translations[currentLang]["sendText"]:
+				log.Println("IN SEND TEXT")
+				sendText(app, device, appRoot)
+				// not setting root as sendText needs another form
+			}
+		})
+	modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		log.Println("Setting focus to another terminal part")
+
+		switch event.Key() {
+		case tcell.KeyEscape:
+			log.Println("Hiding modal")
+			app.SetRoot(appRoot, false)
+		}
+		return event
+	})
+
+	app.SetRoot(modal, true).SetFocus(modal)
+}
+
+func createSyncTask() {
+	_, err := http.Get("http://127.0.0.1:8275/create-task")
+	if err != nil {
+		fmt.Println("Error creating sync task:", err)
+	}
+}
+
+func openMagasin(app *tview.Application) {
+	app.SetRoot(prepareMagasin(app), false)
+}
+
+func toggleLargageAerien() {
+	_, err := http.Get("http://127.0.0.1:8275/toggle-largage")
+	if err != nil {
+		fmt.Println("Error toggling Largage Aerien:", err)
+	}
+}
+
+func openLargagesFolder() {
+	_, err := http.Get("http://127.0.0.1:8275/open-largages-folder")
+	if err != nil {
+		fmt.Println("Error opening Largages Folder:", err)
+	}
+}
+
+func sendLargage(device map[string]string, folder bool) {
+
+	// Request the file path from the user
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:8275/ask-file-path?is_folder=%t", folder))
+	if err != nil {
+		log.Println("Error fetching file path:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	var response map[string]string
+	json.NewDecoder(resp.Body).Decode(&response)
+
+	if response["Path"] != "[CANCELLED]" {
+
+		data := map[string]interface{}{
+			"filepath":  response["Path"],
+			"device_id": device["device_id"],
+			"ip_addr":   device["ip_addr"],
+			"is_folder": folder,
+		}
+
+		log.Println("Sending request to trigger largage aerien.", data)
+
+		// Send the largage
+		jsonData, _ := json.Marshal(data)
+		resp, err := http.Post("http://127.0.0.1:8275/send-largage", "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			log.Println("Error sending largage:", err)
+		}
+
+		//json.NewDecoder(resp.Body).Decode(&response)
+		log.Println(resp.Body)
+		defer resp.Body.Close()
+	}
+}
+
+func sendText(app *tview.Application, device map[string]string, appRoot *tview.Flex) {
+	form := tview.NewForm().
+		AddTextArea("Text", "", 0, 20, 3000, nil)
+
+	form.
+		AddButton("Send", func() {
+			text := form.GetFormItemByLabel("Text").(*tview.TextArea).GetText()
+			// Send text
+			data := map[string]interface{}{
+				"device": device,
+				"text":   text,
+			}
+			jsonData, _ := json.Marshal(data)
+			resp, err := http.Post("http://127.0.0.1:8275/send-text", "application/json", bytes.NewBuffer(jsonData))
+			if err != nil {
+				log.Println("Error sending text:", err)
+			}
+			defer resp.Body.Close()
+
+			// Return to main layout after sending
+			app.SetRoot(appRoot, true)
+		}).
+		AddButton("Cancel", func() {
+			app.SetRoot(appRoot, true)
+		})
+
+	app.SetRoot(form, true).SetFocus(form)
 
 }
 
-func DisplayMenu() {
+func chooseDeviceAndLinkIt(app *tview.Application, task map[string]string, appRoot *tview.Flex) {
+	// Fetch devices to display
+	resp, err := http.Get("http://127.0.0.1:8275/list-devices")
+	if err != nil {
+		log.Println("Error fetching devices:", err)
+		return
+	}
+	defer resp.Body.Close()
 
-	fmt.Print(LOGO)
-	fmt.Print(MENU)
+	var devices []map[string]string
+	json.NewDecoder(resp.Body).Decode(&devices)
 
-	// interactive events callbacks
-	callbacks := make(map[string]func(string))
+	list := tview.NewList()
+	for _, device := range devices {
+		d := device // Capture loop variable
+		list.AddItem(device["hostname"], "", 0, func() {
+			// Link the device with the task
+			linkDevice(task, d)
+			app.SetRoot(appRoot, true)
+		})
+	}
 
-	callbacks["[CHOOSELINKPATH]"] = func(context string) {
-		// simulate new prompt as the real one is displayed before the text
-		fmt.Print("\n" + context + "\n\n>> ")
+	// Set up modal for choosing device
+	modal := tview.NewModal().
+		SetText("Choose a device to synchronize").
+		AddButtons(
+			[]string{"Cancel"},
+		).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			app.SetRoot(appRoot, true)
+		})
 
-		// here we do not need to override regular tui prompt as we open file explorer
+	// Create a layout with the device list and the modal
+	layout := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(list, 0, 1, true).
+		AddItem(modal, 3, 1, false)
 
-		CURRENT_EVENT_FLAG = "[CHOOSELINKPATH]"
+	app.SetRoot(layout, true).SetFocus(list)
+}
 
-		path, err := dialog.Directory().Title("Select Folder").Browse()
-		if err != nil {
-			fmt.Println("Folder selection cancelled.")
-			return
+func linkDevice(task map[string]string, device map[string]string) {
+	data := map[string]string{
+		"SecureId": task["SecureId"],
+		"IpAddr":   device["ip_addr"],
+		"DeviceId": device["device_id"],
+	}
+
+	// Send the request to link the device
+	jsonData, _ := json.Marshal(data)
+	resp, err := http.Post("http://127.0.0.1:8275/link", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Println("Error linking device:", err)
+	}
+	defer resp.Body.Close()
+}
+
+func removeTask(task map[string]string) {
+	_, err := http.Get(fmt.Sprintf("http://127.0.0.1:8275/remove-task?secure_id=%s", task["SecureId"]))
+	if err != nil {
+		log.Println("Error removing task:", err)
+	}
+}
+
+func toggleBackupMode(task map[string]string) {
+	_, err := http.Get(fmt.Sprintf("http://127.0.0.1:8275/toggle-backup-mode?secure_id=%s", task["SecureId"]))
+	if err != nil {
+		log.Println("Error toggling backup mode:", err)
+	}
+}
+
+func openApp(task map[string]string) {
+	_, err := http.Get(fmt.Sprintf("http://127.0.0.1:8275/launch-app?AppId=%s", task["SecureId"]))
+	if err != nil {
+		log.Println("Error launching app:", err)
+	}
+}
+
+func prepareMagasin(app *tview.Application) *tview.Pages {
+	pages := tview.NewPages()
+
+	// Sections (ToutEnUn and Grapins)
+	toutEnUnSection := tview.NewFlex().SetDirection(tview.FlexRow)
+	grapinsSection := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	// Loading popup
+	loadingPopup := tview.NewModal().
+		SetText("Loading...").
+		AddButtons([]string{"Cancel"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			pages.SwitchToPage("Main")
+		})
+
+	// Add sections to Pages
+	pages.AddPage("ToutEnUn", toutEnUnSection, true, true)
+	pages.AddPage("Grapins", grapinsSection, true, false)
+	pages.AddPage("Loading", loadingPopup, false, false)
+
+	// Fetch and process data
+	go fetchMagasinData(app, pages, toutEnUnSection, grapinsSection)
+
+	// Main menu to switch sections
+	menu := tview.NewList().
+		AddItem("Tout en un", "View Tout en un apps", 't', func() {
+			pages.SwitchToPage("ToutEnUn")
+		}).
+		AddItem("Grapins", "View Grapins", 'g', func() {
+			pages.SwitchToPage("Grapins")
+		}).
+		AddItem("Quit", "Quit the application", 'q', func() {
+			app.Stop()
+		})
+
+	// Set menu as root of the pages
+	pages.AddPage("Main", menu, true, true)
+
+	return pages
+
+}
+
+// fetchData fetches the app configurations from the provided URL
+func fetchMagasinData(app *tview.Application, pages *tview.Pages, toutEnUnSection *tview.Flex, grapinsSection *tview.Flex) {
+
+	os := findOsName()
+
+	// Show loading popup
+	app.QueueUpdateDraw(func() {
+		pages.SwitchToPage("Loading")
+	})
+
+	// Fetch data
+	url := "https://raw.githubusercontent.com/ThaaoBlues/ecosys/master/magasin_database.json"
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatalf("Error fetching config: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error reading response body: %v", err)
+	}
+
+	var data Data
+	if err := json.Unmarshal(body, &data); err != nil {
+		log.Fatalf("Error parsing JSON: %v", err)
+	}
+
+	// Process Tout en un apps
+	for _, config := range data.ToutEnUnConfigs {
+		if contains(config.SupportedPlatforms, os) {
+			app.QueueUpdateDraw(func() {
+				toutEnUnSection.AddItem(generateCard(config, "Install Tout en un", func() {
+					showLoading(app, pages)
+					go installApp(config, "/install-tout-en-un", app, pages)
+				}), 0, 1, true)
+			})
 		}
-
-		backend_api.GiveInput(CURRENT_EVENT_FLAG, path)
-
-		// let the backend process and suppress the event file
-
-		time.Sleep(1 * time.Second)
 	}
 
-	// air dropping something
-	callbacks["[OTDL]"] = func(context string) {
-		// simulate new prompt as the real one is displayed before the text
-		fmt.Print("\n" + context + "\n\n>> ")
-
-		// don't give back response, as it is handled by the regular prompt-loop
-		PROCESSING_EVENT = true
-		CURRENT_EVENT_FLAG = "[OTDL]"
-
-		// wait user input in regular prompt system
-		for PROCESSING_EVENT {
-			time.Sleep(time.Millisecond * 500)
+	// Process Grapin apps
+	for _, config := range data.GrapinConfigs {
+		if contains(config.SupportedPlatforms, os) {
+			app.QueueUpdateDraw(func() {
+				grapinsSection.AddItem(generateCard(config, "Install Grapin", func() {
+					showLoading(app, pages)
+					go installApp(config, "/install-grapin", app, pages)
+				}), 0, 1, true)
+			})
 		}
-
-		// let the backend process and suppress the event file
-		time.Sleep(1 * time.Second)
 	}
 
-	callbacks["[MOTDL]"] = func(context string) {
-		// simulate new prompt as the real one is displayed before the text
-		fmt.Print("\n" + context + "\n\n>> ")
+	// Hide loading popup after processing
+	app.QueueUpdateDraw(func() {
+		pages.SwitchToPage("Main")
+	})
+}
 
-		// don't give back response, as it is handled by the regular prompt-loop
-		PROCESSING_EVENT = true
-		CURRENT_EVENT_FLAG = "[MOTDL]"
+// generateCard creates a card UI component for the app configuration
+func generateCard(config Config, buttonText string, onClick func()) *tview.Flex {
+	// Card layout
+	card := tview.NewFlex().SetDirection(tview.FlexRow)
 
-		// wait user input in regular prompt system
-		for PROCESSING_EVENT {
-			time.Sleep(time.Millisecond * 500)
+	// App title
+	title := tview.NewTextView().SetText(config.AppName).SetDynamicColors(true)
+
+	// App description
+	description := tview.NewTextView().SetText(config.AppDescription).SetDynamicColors(true)
+
+	// Install button
+	button := tview.NewButton(buttonText).SetSelectedFunc(onClick)
+
+	// Add components to the card
+	card.AddItem(title, 1, 0, false).
+		AddItem(description, 1, 0, false).
+		AddItem(button, 1, 0, false)
+
+	return card
+}
+
+// installApp performs an HTTP POST request to install the app
+func installApp(config Config, endpoint string, app *tview.Application, pages *tview.Pages) {
+	url := fmt.Sprintf("http://localhost%s", endpoint) // Adjust the URL as necessary
+
+	// Marshal the app config into JSON
+	jsonData, err := json.Marshal(config)
+	if err != nil {
+		log.Fatalf("Error marshalling JSON: %v", err)
+	}
+
+	// Make the POST request
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Printf("Error installing app %s: %v", config.AppName, err)
+		showError(app, pages, fmt.Sprintf("Error installing %s: %v", config.AppName, err))
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response for app %s: %v", config.AppName, err)
+		showError(app, pages, fmt.Sprintf("Error reading response for %s: %v", config.AppName, err))
+		return
+	}
+
+	// Handle success
+	log.Printf("Successfully installed app %s: %s", config.AppName, string(body))
+	showSuccess(app, pages, fmt.Sprintf("Successfully installed %s!", config.AppName))
+}
+
+// showLoading shows the loading modal
+func showLoading(app *tview.Application, pages *tview.Pages) {
+	app.QueueUpdateDraw(func() {
+		pages.SwitchToPage("Loading")
+	})
+}
+
+// showError shows an error message in a modal
+func showError(app *tview.Application, pages *tview.Pages, message string) {
+	errorModal := tview.NewModal().
+		SetText(message).
+		AddButtons([]string{"Ok"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			pages.SwitchToPage("Main")
+		})
+
+	app.QueueUpdateDraw(func() {
+		pages.AddPage("Error", errorModal, true, true)
+		pages.SwitchToPage("Error")
+	})
+}
+
+// showSuccess shows a success message in a modal
+func showSuccess(app *tview.Application, pages *tview.Pages, message string) {
+	successModal := tview.NewModal().
+		SetText(message).
+		AddButtons([]string{"Ok"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			pages.SwitchToPage("Main")
+		})
+
+	app.QueueUpdateDraw(func() {
+		pages.AddPage("Success", successModal, true, true)
+		pages.SwitchToPage("Success")
+	})
+}
+
+// contains checks if a slice contains a specific item
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if strings.ToLower(s) == strings.ToLower(item) {
+			return true
 		}
-
-		// let the backend process and suppress the event file
-		time.Sleep(1 * time.Second)
 	}
+	return false
+}
 
-	go backend_api.WaitEventLoop(callbacks)
-
-	for {
-		HandleMenuQuery(Prompt())
-	}
-
+func findOsName() string {
+	return "Linux"
 }
