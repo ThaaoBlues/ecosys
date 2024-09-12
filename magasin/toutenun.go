@@ -93,6 +93,15 @@ func InstallApp(data io.ReadCloser) error {
 
 	ex = globals.ExistsInFilesystem(new_app_root_path)
 
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	defer acces.CloseConnection()
+
+	if acces.CheckAppExistenceFromName(sanitized_app_name) {
+		backend_api.ShowAlert("Application " + sanitized_app_name + " was already installed !")
+		return nil
+	}
+
 	if !ex {
 		os.Mkdir(new_app_root_path, fs.ModePerm)
 	}
@@ -148,10 +157,6 @@ func InstallApp(data io.ReadCloser) error {
 	json_data.AppUninstallerPath = filepath.Join(new_app_root_path, json_data.AppUninstallerPath)
 
 	// now its time to register in the database the new little app
-	var acces bdd.AccesBdd
-
-	acces.InitConnection()
-	defer acces.CloseConnection()
 
 	acces.CreateSync(app_sync_folder)
 
@@ -162,7 +167,7 @@ func InstallApp(data io.ReadCloser) error {
 	// start watching the app's derectory
 	go filesystem.StartWatcher(app_sync_folder)
 
-	backend_api.ShowAlert("Application " + json_data.AppName + " installed !")
+	backend_api.ShowAlert("Application " + sanitized_app_name + " installed !")
 
 	return nil
 

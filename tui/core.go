@@ -17,34 +17,48 @@ import (
 var currentLang = "en" // Default language
 var translations = map[string]map[string]string{
 	"en": {
-		"devicesTitle":      "Devices on your network",
-		"tasksTitle":        "Active tasks on your device",
-		"taskActions":       "Task Actions",
-		"deviceActions":     "Device Actions",
-		"sendFile":          "Send File",
-		"sendFolder":        "Send Folder",
-		"sendText":          "Send Text",
-		"removeTask":        "Remove Task",
-		"openApp":           "Open App",
-		"syncAnotherDevice": "Sync Another Device",
-		"enableBackupMode":  "Enable Backup Mode",
-		"disableBackupMode": "Disable Backup Mode",
-		"alertTaskCreated":  "Task Created at ",
+		"devicesTitle":        "Devices on your network",
+		"tasksTitle":          "Active tasks on your device",
+		"taskActions":         "Task Actions",
+		"deviceActions":       "Device Actions",
+		"sendFile":            "Send File",
+		"sendFolder":          "Send Folder",
+		"sendText":            "Send Text",
+		"removeTask":          "Remove Task",
+		"openApp":             "Open App",
+		"syncAnotherDevice":   "Sync Another Device",
+		"enableBackupMode":    "Enable Backup Mode",
+		"disableBackupMode":   "Disable Backup Mode",
+		"alertTaskCreated":    "Task Created at ",
+		"navigationHelp":      "To navigate in Ecosys use the tab (\u2B7E) key to change section and the arrow up/down keys to select an option in the section. The enter key (\u23CE) is used to validate your selection.",
+		"loading":             "Loading...",
+		"createSyncTask":      "Create a new sync task",
+		"openMagasin":         "Open the app marketplace",
+		"toggleLargageAerien": "Allow/Refuse to receive Largages Aeriens",
+		"openLargagesFolder":  "Open the folder where are stored received Largages Aeriens",
+		"qToQuit":             "Press 'q' to get out of this section.",
 	},
 	"fr": {
-		"devicesTitle":      "Appareils sur votre réseau",
-		"tasksTitle":        "Tâches actives sur votre appareil",
-		"taskActions":       "Actions de tâche",
-		"deviceActions":     "Actions de l'appareil",
-		"sendFile":          "Envoyer un fichier",
-		"sendFolder":        "Envoyer un dossier",
-		"sendText":          "Envoyer un texte",
-		"removeTask":        "Supprimer la tâche",
-		"openApp":           "Ouvrir l'application",
-		"syncAnotherDevice": "Synchroniser un autre appareil",
-		"enableBackupMode":  "Activer le mode de sauvegarde",
-		"disableBackupMode": "Désactiver le mode de sauvegarde",
-		"alertTaskCreated":  "Tâche créée à ",
+		"devicesTitle":        "Appareils sur votre réseau",
+		"tasksTitle":          "Tâches actives sur votre appareil",
+		"taskActions":         "Actions de tâche",
+		"deviceActions":       "Actions de l'appareil",
+		"sendFile":            "Envoyer un fichier",
+		"sendFolder":          "Envoyer un dossier",
+		"sendText":            "Envoyer un texte",
+		"removeTask":          "Supprimer la tâche",
+		"openApp":             "Ouvrir l'application",
+		"syncAnotherDevice":   "Synchroniser un autre appareil",
+		"enableBackupMode":    "Activer le mode de sauvegarde",
+		"disableBackupMode":   "Désactiver le mode de sauvegarde",
+		"alertTaskCreated":    "Tâche créée à ",
+		"navigationHelp":      "La navigation dans Ecosys se fait via la touche tab (\u2B7E) pour changer de section et les flèches haut/bas pour selectionner une option de la section. La touche entrée (\u23CE) est là pour valider.",
+		"loading":             "Chargement...",
+		"createSyncTask":      "Créer une tâche de synchronisation",
+		"openMagasin":         "Ouvrir le magasin d'applications",
+		"toggleLargageAerien": "Autoriser/Refuser les largages aerien",
+		"openLargagesFolder":  "Ouvrir le dossier contenant les largages aerien",
+		"qToQuit":             "Appuyez sur la touche 'q' pour sortir d'ici.",
 	},
 }
 
@@ -96,7 +110,12 @@ func CreateUI(app *tview.Application) tview.Primitive {
 
 	// Header and Titles
 	header := tview.NewTextView().
-		SetText("Ecosys Terminal GUI").
+		SetText(`		
+ ____  ___  __   ____  _  _  ____ 
+(  __)/ __)/  \ / ___)( \/ )/ ___)
+ ) _)( (__(  O )\___ \ )  / \___ \
+(____)\___)\__/ (____/(__/  (____/
+		`).
 		SetTextColor(tcell.ColorGreen).
 		SetTextAlign(tview.AlignCenter)
 
@@ -110,23 +129,27 @@ func CreateUI(app *tview.Application) tview.Primitive {
 		SetTextColor(tcell.ColorYellow).
 		SetDynamicColors(true)
 
+	menu := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	mainLayout := tview.NewFlex()
+
 	// Menu buttons (navigable)
-	createTaskBtn := tview.NewButton("Create a Sync Task").SetSelectedFunc(func() {
+	createTaskBtn := tview.NewButton(translations[currentLang]["createSyncTask"]).SetSelectedFunc(func() {
 		createSyncTask()
 	})
-	openMagasinBtn := tview.NewButton("Open Magasin").SetSelectedFunc(func() {
-		openMagasin(app)
+	openMagasinBtn := tview.NewButton(translations[currentLang]["openMagasin"]).SetSelectedFunc(func() {
+		openMagasin(app, mainLayout)
 	})
-	toggleLargageBtn := tview.NewButton("Toggle Largage Aerien").SetSelectedFunc(func() {
+	toggleLargageBtn := tview.NewButton(translations[currentLang]["toggleLargageAerien"]).SetSelectedFunc(func() {
 		toggleLargageAerien()
 	})
-	openLargagesFolderBtn := tview.NewButton("Open Largage Aerien Folder").SetSelectedFunc(func() {
+	openLargagesFolderBtn := tview.NewButton(translations[currentLang]["openLargagesFolder"]).SetSelectedFunc(func() {
 		openLargagesFolder()
 	})
 
 	// Button list
 	buttons := []*tview.Button{createTaskBtn, openMagasinBtn, toggleLargageBtn, openLargagesFolderBtn}
-	menu := tview.NewFlex().SetDirection(tview.FlexRow).
+	menu = menu.
 		AddItem(createTaskBtn, 2, 1, true).
 		AddItem(openMagasinBtn, 2, 1, true).
 		AddItem(toggleLargageBtn, 2, 1, true).
@@ -167,9 +190,9 @@ func CreateUI(app *tview.Application) tview.Primitive {
 	terminalParts := []*tview.Flex{menu, devicesListLayout, tasksListLayout}
 
 	// Main layout
-	mainLayout := tview.NewFlex().
+	mainLayout = mainLayout.
 		SetDirection(tview.FlexRow).
-		AddItem(header, 3, 1, false)
+		AddItem(header, 5, 1, false)
 
 	// Add keyboard navigation between menu and content
 	for i, layout := range terminalParts {
@@ -195,8 +218,6 @@ func CreateUI(app *tview.Application) tview.Primitive {
 
 		mainLayout = mainLayout.AddItem(layout, 0, 1, true)
 	}
-
-	app.SetFocus(menu)
 
 	// filling up lists
 
@@ -230,6 +251,13 @@ func CreateUI(app *tview.Application) tview.Primitive {
 			})
 			time.Sleep(5 * time.Second)
 		}
+	}()
+
+	// affichage du panneau d'aide à l'utilisation de l'interface
+	go func() {
+		app.QueueUpdateDraw(func() {
+			showNavigationHelp(app, mainLayout, translations[currentLang]["navigationHelp"])
+		})
 	}()
 
 	return mainLayout
@@ -287,18 +315,16 @@ func openDeviceActionsMenu(app *tview.Application, device map[string]string, app
 				sendLargage(device, true)
 				app.SetRoot(appRoot, true)
 			case translations[currentLang]["sendText"]:
-				log.Println("IN SEND TEXT")
 				sendText(app, device, appRoot)
 				// not setting root as sendText needs another form
 			}
 		})
 	modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		log.Println("Setting focus to another terminal part")
-
 		switch event.Key() {
 		case tcell.KeyEscape:
 			log.Println("Hiding modal")
-			app.SetRoot(appRoot, false)
+			modal.Blur()
+			app.SetRoot(appRoot, true)
 		}
 		return event
 	})
@@ -313,8 +339,9 @@ func createSyncTask() {
 	}
 }
 
-func openMagasin(app *tview.Application) {
-	app.SetRoot(prepareMagasin(app), false)
+func openMagasin(app *tview.Application, appRoot *tview.Flex) {
+	pages := prepareMagasin(app, appRoot)
+	app.SetRoot(pages, true)
 }
 
 func toggleLargageAerien() {
@@ -352,8 +379,6 @@ func sendLargage(device map[string]string, folder bool) {
 			"ip_addr":   device["ip_addr"],
 			"is_folder": folder,
 		}
-
-		log.Println("Sending request to trigger largage aerien.", data)
 
 		// Send the largage
 		jsonData, _ := json.Marshal(data)
@@ -475,43 +500,42 @@ func openApp(task map[string]string) {
 	}
 }
 
-func prepareMagasin(app *tview.Application) *tview.Pages {
+func prepareMagasin(app *tview.Application, appRoot *tview.Flex) *tview.Pages {
 	pages := tview.NewPages()
 
 	// Sections (ToutEnUn and Grapins)
 	toutEnUnSection := tview.NewFlex().SetDirection(tview.FlexRow)
 	grapinsSection := tview.NewFlex().SetDirection(tview.FlexRow)
 
-	// Loading popup
-	loadingPopup := tview.NewModal().
-		SetText("Loading...").
-		AddButtons([]string{"Cancel"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			pages.SwitchToPage("Main")
-		})
+	// indication pour sortir de la section
+	toutEnUnSection.AddItem(tview.NewTextView().SetText(translations[currentLang]["qToQuit"]), 1, 0, false)
+	grapinsSection.AddItem(tview.NewTextView().SetText(translations[currentLang]["qToQuit"]), 1, 0, false)
 
 	// Add sections to Pages
 	pages.AddPage("ToutEnUn", toutEnUnSection, true, true)
-	pages.AddPage("Grapins", grapinsSection, true, false)
-	pages.AddPage("Loading", loadingPopup, false, false)
+	pages.AddPage("Grapins", grapinsSection, true, true)
+
+	menu := tview.NewList()
 
 	// Fetch and process data
 	go fetchMagasinData(app, pages, toutEnUnSection, grapinsSection)
 
 	// Main menu to switch sections
-	menu := tview.NewList().
+	menu = menu.
 		AddItem("Tout en un", "View Tout en un apps", 't', func() {
 			pages.SwitchToPage("ToutEnUn")
 		}).
 		AddItem("Grapins", "View Grapins", 'g', func() {
 			pages.SwitchToPage("Grapins")
 		}).
-		AddItem("Quit", "Quit the application", 'q', func() {
-			app.Stop()
+		AddItem("Quit", translations[currentLang]["qToQuit"], 'q', func() {
+			app.SetRoot(appRoot, true)
 		})
 
 	// Set menu as root of the pages
 	pages.AddPage("Main", menu, true, true)
+	// for some reason, without it the focus is on a non visible page
+	pages.SendToBack("Main")
 
 	return pages
 
@@ -520,20 +544,20 @@ func prepareMagasin(app *tview.Application) *tview.Pages {
 // fetchData fetches the app configurations from the provided URL
 func fetchMagasinData(app *tview.Application, pages *tview.Pages, toutEnUnSection *tview.Flex, grapinsSection *tview.Flex) {
 
-	os := findOsName()
+	osName := findOsName()
 
-	// Show loading popup
-	app.QueueUpdateDraw(func() {
-		pages.SwitchToPage("Loading")
-	})
+	go showLoading(app, pages)
 
 	// Fetch data
 	url := "https://raw.githubusercontent.com/ThaaoBlues/ecosys/master/magasin_database.json"
+
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Fatalf("Error fetching config: %v", err)
 	}
 	defer resp.Body.Close()
+
+	//test, err := os.Open("test_mag.json")
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -545,34 +569,52 @@ func fetchMagasinData(app *tview.Application, pages *tview.Pages, toutEnUnSectio
 		log.Fatalf("Error parsing JSON: %v", err)
 	}
 
+	// List of cards for navigation
+	var toutEnUnCards []*tview.Flex
+	var grapinCards []*tview.Flex
+
 	// Process Tout en un apps
 	for _, config := range data.ToutEnUnConfigs {
-		if contains(config.SupportedPlatforms, os) {
-			app.QueueUpdateDraw(func() {
-				toutEnUnSection.AddItem(generateCard(config, "Install Tout en un", func() {
-					showLoading(app, pages)
-					go installApp(config, "/install-tout-en-un", app, pages)
-				}), 0, 1, true)
+		if contains(config.SupportedPlatforms, osName) {
+			card := generateCard(config, "Install this app", func() {
+				log.Println("Bouton installation cliqué")
+				go showLoading(app, pages)
+				go installApp(config, "/install-tout-en-un", app, pages)
 			})
+			app.QueueUpdateDraw(func() {
+				toutEnUnSection = toutEnUnSection.AddItem(card, 15, 0, true)
+			})
+
+			toutEnUnCards = append(toutEnUnCards, card)
+
 		}
 	}
 
 	// Process Grapin apps
 	for _, config := range data.GrapinConfigs {
-		if contains(config.SupportedPlatforms, os) {
-			app.QueueUpdateDraw(func() {
-				grapinsSection.AddItem(generateCard(config, "Install Grapin", func() {
-					showLoading(app, pages)
-					go installApp(config, "/install-grapin", app, pages)
-				}), 0, 1, true)
+		if contains(config.SupportedPlatforms, osName) {
+			card := generateCard(config, "Install this Grapin", func() {
+				log.Println("Bouton installation cliqué")
+				go showLoading(app, pages)
+				go installApp(config, "/install-grapin", app, pages)
 			})
+			app.QueueUpdateDraw(func() {
+				grapinsSection = grapinsSection.AddItem(card, 15, 0, true)
+			})
+			grapinCards = append(grapinCards, card)
+
 		}
 	}
+
+	setupNavigation(app, pages, toutEnUnSection, toutEnUnCards)
+	setupNavigation(app, pages, grapinsSection, grapinCards)
 
 	// Hide loading popup after processing
 	app.QueueUpdateDraw(func() {
 		pages.SwitchToPage("Main")
+		pages.RemovePage("Loading")
 	})
+
 }
 
 // generateCard creates a card UI component for the app configuration
@@ -581,7 +623,7 @@ func generateCard(config Config, buttonText string, onClick func()) *tview.Flex 
 	card := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	// App title
-	title := tview.NewTextView().SetText(config.AppName).SetDynamicColors(true)
+	title := tview.NewTextView().SetText(config.AppName).SetDynamicColors(true).SetTextColor(tcell.ColorBlue)
 
 	// App description
 	description := tview.NewTextView().SetText(config.AppDescription).SetDynamicColors(true)
@@ -589,17 +631,42 @@ func generateCard(config Config, buttonText string, onClick func()) *tview.Flex 
 	// Install button
 	button := tview.NewButton(buttonText).SetSelectedFunc(onClick)
 
+	button.SetFocusFunc(func() {
+
+		card.SetBorderStyle(tcell.StyleDefault)
+		card.SetBorderColor(tcell.ColorGhostWhite)
+		card.SetBorder(true)
+	})
+
+	button.SetBlurFunc(func() {
+		card.SetBorder(false)
+	})
+
 	// Add components to the card
-	card.AddItem(title, 1, 0, false).
-		AddItem(description, 1, 0, false).
-		AddItem(button, 1, 0, false)
+	card.AddItem(title, 3, 1, false).
+		AddItem(button, 3, 1, true).
+		AddItem(description, 4, 1, false)
+
+	/*card.Focus(func(p tview.Primitive) {
+
+		card.SetBorderStyle(tcell.StyleDefault)
+		card.SetBorderColor(tcell.ColorGhostWhite)
+		card.SetBorder(true)
+	})
+
+	card.SetBlurFunc(func() {
+		card.SetBorder(false)
+
+	})*/
 
 	return card
 }
 
 // installApp performs an HTTP POST request to install the app
 func installApp(config Config, endpoint string, app *tview.Application, pages *tview.Pages) {
-	url := fmt.Sprintf("http://localhost%s", endpoint) // Adjust the URL as necessary
+
+	log.Println("Requète de l'installation de l'application au serveur web")
+	url := fmt.Sprintf("http://127.0.0.1:8275%s", endpoint) // Adjust the URL as necessary
 
 	// Marshal the app config into JSON
 	jsonData, err := json.Marshal(config)
@@ -626,12 +693,21 @@ func installApp(config Config, endpoint string, app *tview.Application, pages *t
 
 	// Handle success
 	log.Printf("Successfully installed app %s: %s", config.AppName, string(body))
-	showSuccess(app, pages, fmt.Sprintf("Successfully installed %s!", config.AppName))
+	//showSuccess(app, pages, fmt.Sprintf("Successfully installed %s!", config.AppName))
 }
 
 // showLoading shows the loading modal
 func showLoading(app *tview.Application, pages *tview.Pages) {
+	loadingModal := tview.NewModal().
+		SetText(translations[currentLang]["loading"]).
+		AddButtons([]string{"Ok"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			pages.SwitchToPage("Main")
+			pages.RemovePage("Loading")
+		})
+
 	app.QueueUpdateDraw(func() {
+		pages.AddPage("Loading", loadingModal, true, true)
 		pages.SwitchToPage("Loading")
 	})
 }
@@ -643,6 +719,7 @@ func showError(app *tview.Application, pages *tview.Pages, message string) {
 		AddButtons([]string{"Ok"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			pages.SwitchToPage("Main")
+			pages.RemovePage("Error")
 		})
 
 	app.QueueUpdateDraw(func() {
@@ -653,11 +730,15 @@ func showError(app *tview.Application, pages *tview.Pages, message string) {
 
 // showSuccess shows a success message in a modal
 func showSuccess(app *tview.Application, pages *tview.Pages, message string) {
-	successModal := tview.NewModal().
+	successModal := tview.NewModal()
+
+	successModal.
 		SetText(message).
 		AddButtons([]string{"Ok"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			pages.SwitchToPage("Main")
+			successModal.Blur()
+			pages.RemovePage("Success")
 		})
 
 	app.QueueUpdateDraw(func() {
@@ -666,10 +747,26 @@ func showSuccess(app *tview.Application, pages *tview.Pages, message string) {
 	})
 }
 
+// showNavigationHelp shows a help message to teach how to navigate in Ecosys in a modal
+func showNavigationHelp(app *tview.Application, appRoot *tview.Flex, message string) {
+	navigationHelpModal := tview.NewModal()
+
+	navigationHelpModal.
+		SetText(message).
+		AddButtons([]string{"Ok"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			navigationHelpModal.Blur()
+			app.SetRoot(appRoot, true)
+		})
+
+	app.SetRoot(navigationHelpModal, true).SetFocus(navigationHelpModal)
+	navigationHelpModal.SetFocus(0)
+}
+
 // contains checks if a slice contains a specific item
 func contains(slice []string, item string) bool {
 	for _, s := range slice {
-		if strings.ToLower(s) == strings.ToLower(item) {
+		if strings.EqualFold(s, item) {
 			return true
 		}
 	}
@@ -678,4 +775,31 @@ func contains(slice []string, item string) bool {
 
 func findOsName() string {
 	return "Linux"
+}
+
+// setupNavigation enables arrow key navigation between cards
+func setupNavigation(app *tview.Application, pages *tview.Pages, section *tview.Flex, cards []*tview.Flex) {
+
+	l := len(cards)
+
+	currentIndex := 0
+
+	// Input capture for navigating between cards
+	section.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyUp: // Navigate to the previous card
+			currentIndex = (currentIndex + l - 1) % l
+			app.SetFocus(cards[currentIndex].GetItem(1))
+		case tcell.KeyDown: // Navigate to the next card
+			currentIndex = (currentIndex + 1) % l
+			app.SetFocus(cards[currentIndex].GetItem(1))
+
+		}
+
+		switch event.Rune() {
+		case 'q':
+			pages.SwitchToPage("Main")
+		}
+		return event
+	})
 }

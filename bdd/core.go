@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-08-26 13:12:59
+ * @lastModified    2024-09-11 14:41:59
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -2000,4 +2000,27 @@ func (acces *AccesBdd) StoreReceivedEventForOthersDevices(event globals.QEvent) 
 		}
 
 	}
+}
+
+func (acces *AccesBdd) CheckAppExistenceFromName(appName string) bool {
+
+	// used to determine if a gived secure_id is associated with a sync task used by an application
+
+	rows, err := acces.db_handler.Query("SELECT * FROM apps WHERE name=?", appName)
+	if err != nil {
+		// Handle the error properly
+		log.Fatal("Error in bdd.CheckAppExistenceFromName()", err)
+		return false
+	}
+	defer rows.Close()
+
+	// Check if any rows were returned
+	if rows.Next() {
+		// At least one row was returned
+		return true
+	} else {
+		// No rows were returned
+		return false
+	}
+
 }
