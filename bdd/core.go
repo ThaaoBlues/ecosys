@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-09-11 14:41:59
+ * @lastModified    2024-09-12 21:21:08
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -768,6 +768,30 @@ func (acces *AccesBdd) RmSync() {
 	if err != nil {
 		log.Fatal("Error while deleting from database ", err)
 	}
+	_, err = acces.db_handler.Exec("DELETE FROM filesystem WHERE secure_id=?", acces.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while deleting from database ", err)
+	}
+
+	_, err = acces.db_handler.Exec("DELETE FROM delta WHERE secure_id=?", acces.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while deleting from database ", err)
+	}
+
+	_, err = acces.db_handler.Exec("DELETE FROM retard WHERE secure_id=?", acces.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while deleting from database ", err)
+	}
+
+	_, err = acces.db_handler.Exec("DELETE FROM apps WHERE secure_id=?", acces.SecureId)
+
+	if err != nil {
+		log.Fatal("Error while deleting from database ", err)
+	}
+
 }
 
 // LinkDevice links a device to the synchronization entry.

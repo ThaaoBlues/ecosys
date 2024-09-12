@@ -285,9 +285,6 @@ TOUDOU :
 
 
 POUR PC :
-- mettre une sortie des sections du magasin dans la tui
-- verifier que tout le reste fonctionne bien dans la tui
-- mettre un joli titre au menu principal
 - verifier pourquoi l'installateur de l'app n'est pas supprimé
 - tester la suppression des applications
 - tester pourquoi sur windows le build ne fonctionne pas
