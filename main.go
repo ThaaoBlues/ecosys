@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-09-08 22:01:08
+ * @lastModified    2024-09-15 13:36:59
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -79,7 +79,7 @@ func main() {
 
 	ui := tui.CreateUI(app)
 
-	if err := app.SetRoot(ui, true).Run(); err != nil {
+	if err := app.SetRoot(ui, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
 }

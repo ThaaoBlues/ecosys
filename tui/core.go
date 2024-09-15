@@ -19,7 +19,7 @@ var translations = map[string]map[string]string{
 	"en": {
 		"devicesTitle":        "Devices on your network",
 		"tasksTitle":          "Active tasks on your device",
-		"taskActions":         "Task Actions",
+		"taskActionMenuTitle": "What do you wanna do about this task ?",
 		"deviceActions":       "Device Actions",
 		"sendFile":            "Send File",
 		"sendFolder":          "Send Folder",
@@ -30,7 +30,7 @@ var translations = map[string]map[string]string{
 		"enableBackupMode":    "Enable Backup Mode",
 		"disableBackupMode":   "Disable Backup Mode",
 		"alertTaskCreated":    "Task Created at ",
-		"navigationHelp":      "To navigate in Ecosys use the tab (\u2B7E) key to change section and the arrow up/down keys to select an option in the section. The enter key (\u23CE) is used to validate your selection.",
+		"navigationHelp":      "To navigate in Ecosys you can use the mouse.\n But if you are someone cool (⌐■_■), use the tab (\u2B7E) key to change section and the arrow up/down keys to select an option in the section. The enter key (\u23CE) is used to validate your selection.",
 		"loading":             "Loading...",
 		"createSyncTask":      "Create a new sync task",
 		"openMagasin":         "Open the app marketplace",
@@ -41,7 +41,7 @@ var translations = map[string]map[string]string{
 	"fr": {
 		"devicesTitle":        "Appareils sur votre réseau",
 		"tasksTitle":          "Tâches actives sur votre appareil",
-		"taskActions":         "Actions de tâche",
+		"taskActionMenuTitle": "Que veux-tu faire en rapprot avec cette tache ?",
 		"deviceActions":       "Actions de l'appareil",
 		"sendFile":            "Envoyer un fichier",
 		"sendFolder":          "Envoyer un dossier",
@@ -52,7 +52,7 @@ var translations = map[string]map[string]string{
 		"enableBackupMode":    "Activer le mode de sauvegarde",
 		"disableBackupMode":   "Désactiver le mode de sauvegarde",
 		"alertTaskCreated":    "Tâche créée à ",
-		"navigationHelp":      "La navigation dans Ecosys se fait via la touche tab (\u2B7E) pour changer de section et les flèches haut/bas pour selectionner une option de la section. La touche entrée (\u23CE) est là pour valider.",
+		"navigationHelp":      "La navigation dans Ecosys se fait via la souris.\n Mais si vous êtes quelqu'un de cool (⌐■_■), vous pouvez utiliser la touche tab (\u2B7E) pour changer de section et les flèches haut/bas pour selectionner une option de la section. La touche entrée (\u23CE) est là pour valider.",
 		"loading":             "Chargement...",
 		"createSyncTask":      "Créer une tâche de synchronisation",
 		"openMagasin":         "Ouvrir le magasin d'applications",
@@ -263,38 +263,101 @@ func CreateUI(app *tview.Application) tview.Primitive {
 	return mainLayout
 }
 
-// Popup menus for task and device actions
 func openTaskActionsMenu(app *tview.Application, task map[string]string, appRoot *tview.Flex) {
 	var backupModeText string
 	if task["BackupMode"] == "true" {
 		backupModeText = translations[currentLang]["disableBackupMode"]
 	} else {
 		backupModeText = translations[currentLang]["enableBackupMode"]
-
 	}
 
-	modal := tview.NewModal().
-		SetText(translations[currentLang]["taskActions"]).
-		AddButtons([]string{
-			translations[currentLang]["openApp"],
-			translations[currentLang]["syncAnotherDevice"],
-			translations[currentLang]["removeTask"],
-			backupModeText,
-		}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			switch buttonLabel {
-			case translations[currentLang]["openApp"]:
-				openApp(task)
-			case translations[currentLang]["syncAnotherDevice"]:
-				chooseDeviceAndLinkIt(app, task, appRoot)
-			case translations[currentLang]["removeTask"]:
-				removeTask(task)
-			case translations[currentLang]["enableBackupMode"], translations[currentLang]["disableBackupMode"]:
-				toggleBackupMode(task)
+	// Create buttons
+	btnOpenApp := tview.NewButton(translations[currentLang]["openApp"]).SetSelectedFunc(func() {
+		openApp(task)
+		app.SetRoot(appRoot, true)
+	})
+	btnSyncDevice := tview.NewButton(translations[currentLang]["syncAnotherDevice"]).SetSelectedFunc(func() {
+		chooseDeviceAndLinkIt(app, task, appRoot)
+	})
+	btnRemoveTask := tview.NewButton(translations[currentLang]["removeTask"]).SetSelectedFunc(func() {
+		removeTask(task)
+		app.SetRoot(appRoot, true)
+	})
+	btnBackupMode := tview.NewButton(backupModeText).SetSelectedFunc(func() {
+		toggleBackupMode(task)
+		app.SetRoot(appRoot, true)
+	})
+
+	// Create first row of buttons
+	row1 := tview.NewFlex().
+		AddItem(btnOpenApp, 0, 1, true).
+		AddItem(btnSyncDevice, 0, 1, true)
+
+	// Create second row of buttons
+	row2 := tview.NewFlex().
+		AddItem(btnRemoveTask, 0, 1, true).
+		AddItem(btnBackupMode, 0, 1, true)
+
+	// Create a main Flex layout
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(row1, 0, 1, true).
+		AddItem(row2, 0, 1, true)
+
+	flex.
+		SetBorder(true).
+		SetTitle(translations[currentLang]["taskActionMenuTitle"])
+
+	// Define a list of buttons to navigate through
+	buttons := []*tview.Button{btnOpenApp, btnSyncDevice, btnRemoveTask, btnBackupMode}
+
+	// Set initial focus on the first button
+	app.SetFocus(btnOpenApp)
+
+	// Handle input (Tab or Arrow keys) for navigation
+	flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// Get currently focused button index
+		var focusedIndex int
+		for i, button := range buttons {
+			if app.GetFocus() == button {
+				focusedIndex = i
+				break
 			}
-			app.SetRoot(CreateUI(app), true)
-		})
-	app.SetRoot(modal, true).SetFocus(modal)
+		}
+
+		switch event.Key() {
+		case tcell.KeyTab: // Tab key for forward navigation
+			nextIndex := (focusedIndex + 1) % len(buttons)
+			app.SetFocus(buttons[nextIndex])
+			return nil
+		case tcell.KeyBacktab: // Shift+Tab for backward navigation
+			prevIndex := (focusedIndex - 1 + len(buttons)) % len(buttons)
+			app.SetFocus(buttons[prevIndex])
+			return nil
+		case tcell.KeyRight: // Right arrow key for forward navigation
+			nextIndex := (focusedIndex + 1) % len(buttons)
+			app.SetFocus(buttons[nextIndex])
+			return nil
+		case tcell.KeyLeft: // Left arrow key for backward navigation
+			prevIndex := (focusedIndex - 1 + len(buttons)) % len(buttons)
+			app.SetFocus(buttons[prevIndex])
+			return nil
+		case tcell.KeyUp: // Up arrow key for backward navigation
+			if focusedIndex >= 2 {
+				app.SetFocus(buttons[focusedIndex-2])
+			}
+			return nil
+		case tcell.KeyDown: // Down arrow key for forward navigation
+			if focusedIndex < 2 {
+				app.SetFocus(buttons[focusedIndex+2])
+			}
+			return nil
+		}
+
+		return event
+	})
+
+	// Set the flex as the root and set focus
+	app.SetRoot(flex, true).SetFocus(flex)
 }
 
 func openDeviceActionsMenu(app *tview.Application, device map[string]string, appRoot *tview.Flex) {
@@ -436,6 +499,8 @@ func chooseDeviceAndLinkIt(app *tview.Application, task map[string]string, appRo
 	json.NewDecoder(resp.Body).Decode(&devices)
 
 	list := tview.NewList()
+	list.SetBorderColor(tcell.ColorGreen)
+	list.SetSelectedTextColor(tcell.ColorGreen)
 	for _, device := range devices {
 		d := device // Capture loop variable
 		list.AddItem(device["hostname"], "", 0, func() {
@@ -446,21 +511,30 @@ func chooseDeviceAndLinkIt(app *tview.Application, task map[string]string, appRo
 	}
 
 	// Set up modal for choosing device
-	modal := tview.NewModal().
+	modal := tview.NewModal()
+
+	modal = modal.
 		SetText("Choose a device to synchronize").
 		AddButtons(
-			[]string{"Cancel"},
+			[]string{"OK", "Cancel"},
 		).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			app.SetRoot(appRoot, true)
+
+			switch buttonIndex {
+			case 0:
+				app.SetFocus(list)
+				modal.Blur()
+			case 1:
+				app.SetRoot(appRoot, true)
+			}
 		})
 
 	// Create a layout with the device list and the modal
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(list, 0, 1, true).
-		AddItem(modal, 3, 1, false)
+		AddItem(modal, 3, 1, true)
 
-	app.SetRoot(layout, true).SetFocus(list)
+	app.SetRoot(layout, true).SetFocus(modal)
 }
 
 func linkDevice(task map[string]string, device map[string]string) {
