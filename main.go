@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-09-15 13:36:59
+ * @lastModified    2024-09-15 16:39:28
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jeandeaual/go-locale"
 	"github.com/rivo/tview"
 )
 
@@ -74,6 +75,12 @@ func main() {
 		acces.SecureId = tasks.Get(i).SecureId
 		go filesystem.StartWatcher(tasks.Get(i).Path)
 	}
+
+	lang, err := locale.GetLanguage()
+	if err != nil {
+		lang = "en"
+	}
+	globals.SetCurrentLangIfAvailable(lang)
 
 	app := tview.NewApplication()
 

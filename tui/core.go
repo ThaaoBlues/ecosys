@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bytes"
+	"ecosys/globals"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,54 +15,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-var currentLang = "en" // Default language
-var translations = map[string]map[string]string{
-	"en": {
-		"devicesTitle":        "Devices on your network",
-		"tasksTitle":          "Active tasks on your device",
-		"taskActionMenuTitle": "What do you wanna do about this task ?",
-		"deviceActions":       "Device Actions",
-		"sendFile":            "Send File",
-		"sendFolder":          "Send Folder",
-		"sendText":            "Send Text",
-		"removeTask":          "Remove Task",
-		"openApp":             "Open App",
-		"syncAnotherDevice":   "Sync Another Device",
-		"enableBackupMode":    "Enable Backup Mode",
-		"disableBackupMode":   "Disable Backup Mode",
-		"alertTaskCreated":    "Task Created at ",
-		"navigationHelp":      "To navigate in Ecosys you can use the mouse.\n But if you are someone cool (⌐■_■), use the tab (\u2B7E) key to change section and the arrow up/down keys to select an option in the section. The enter key (\u23CE) is used to validate your selection.",
-		"loading":             "Loading...",
-		"createSyncTask":      "Create a new sync task",
-		"openMagasin":         "Open the app marketplace",
-		"toggleLargageAerien": "Allow/Refuse to receive Largages Aeriens",
-		"openLargagesFolder":  "Open the folder where are stored received Largages Aeriens",
-		"qToQuit":             "Press 'q' to get out of this section.",
-	},
-	"fr": {
-		"devicesTitle":        "Appareils sur votre réseau",
-		"tasksTitle":          "Tâches actives sur votre appareil",
-		"taskActionMenuTitle": "Que veux-tu faire en rapprot avec cette tache ?",
-		"deviceActions":       "Actions de l'appareil",
-		"sendFile":            "Envoyer un fichier",
-		"sendFolder":          "Envoyer un dossier",
-		"sendText":            "Envoyer un texte",
-		"removeTask":          "Supprimer la tâche",
-		"openApp":             "Ouvrir l'application",
-		"syncAnotherDevice":   "Synchroniser un autre appareil",
-		"enableBackupMode":    "Activer le mode de sauvegarde",
-		"disableBackupMode":   "Désactiver le mode de sauvegarde",
-		"alertTaskCreated":    "Tâche créée à ",
-		"navigationHelp":      "La navigation dans Ecosys se fait via la souris.\n Mais si vous êtes quelqu'un de cool (⌐■_■), vous pouvez utiliser la touche tab (\u2B7E) pour changer de section et les flèches haut/bas pour selectionner une option de la section. La touche entrée (\u23CE) est là pour valider.",
-		"loading":             "Chargement...",
-		"createSyncTask":      "Créer une tâche de synchronisation",
-		"openMagasin":         "Ouvrir le magasin d'applications",
-		"toggleLargageAerien": "Autoriser/Refuser les largages aerien",
-		"openLargagesFolder":  "Ouvrir le dossier contenant les largages aerien",
-		"qToQuit":             "Appuyez sur la touche 'q' pour sortir d'ici.",
-	},
-}
-
 type Config struct {
 	AppName            string   `json:"AppName"`
 	AppDescription     string   `json:"AppDescription"`
@@ -72,10 +25,6 @@ type Config struct {
 type Data struct {
 	ToutEnUnConfigs []Config `json:"tout_en_un_configs"`
 	GrapinConfigs   []Config `json:"grapin_configs"`
-}
-
-func updateLanguage(lang string) {
-	currentLang = lang
 }
 
 func fetchTasks() []map[string]string {
@@ -106,8 +55,6 @@ func fetchDevices() []map[string]string {
 
 func CreateUI(app *tview.Application) tview.Primitive {
 
-	updateLanguage("fr")
-
 	// Header and Titles
 	header := tview.NewTextView().
 		SetText(`		
@@ -120,12 +67,12 @@ func CreateUI(app *tview.Application) tview.Primitive {
 		SetTextAlign(tview.AlignCenter)
 
 	devicesTitle := tview.NewTextView().
-		SetText(translations[currentLang]["devicesTitle"]).
+		SetText(globals.Translations[globals.CurrentLang]["devicesTitle"]).
 		SetTextColor(tcell.ColorYellow).
 		SetDynamicColors(true)
 
 	tasksTitle := tview.NewTextView().
-		SetText(translations[currentLang]["tasksTitle"]).
+		SetText(globals.Translations[globals.CurrentLang]["tasksTitle"]).
 		SetTextColor(tcell.ColorYellow).
 		SetDynamicColors(true)
 
@@ -134,16 +81,16 @@ func CreateUI(app *tview.Application) tview.Primitive {
 	mainLayout := tview.NewFlex()
 
 	// Menu buttons (navigable)
-	createTaskBtn := tview.NewButton(translations[currentLang]["createSyncTask"]).SetSelectedFunc(func() {
+	createTaskBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["createSyncTask"]).SetSelectedFunc(func() {
 		createSyncTask()
 	})
-	openMagasinBtn := tview.NewButton(translations[currentLang]["openMagasin"]).SetSelectedFunc(func() {
+	openMagasinBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["openMagasin"]).SetSelectedFunc(func() {
 		openMagasin(app, mainLayout)
 	})
-	toggleLargageBtn := tview.NewButton(translations[currentLang]["toggleLargageAerien"]).SetSelectedFunc(func() {
+	toggleLargageBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["toggleLargageAerien"]).SetSelectedFunc(func() {
 		toggleLargageAerien()
 	})
-	openLargagesFolderBtn := tview.NewButton(translations[currentLang]["openLargagesFolder"]).SetSelectedFunc(func() {
+	openLargagesFolderBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["openLargagesFolder"]).SetSelectedFunc(func() {
 		openLargagesFolder()
 	})
 
@@ -256,7 +203,7 @@ func CreateUI(app *tview.Application) tview.Primitive {
 	// affichage du panneau d'aide à l'utilisation de l'interface
 	go func() {
 		app.QueueUpdateDraw(func() {
-			showNavigationHelp(app, mainLayout, translations[currentLang]["navigationHelp"])
+			showNavigationHelp(app, mainLayout, globals.Translations[globals.CurrentLang]["navigationHelp"])
 		})
 	}()
 
@@ -266,20 +213,20 @@ func CreateUI(app *tview.Application) tview.Primitive {
 func openTaskActionsMenu(app *tview.Application, task map[string]string, appRoot *tview.Flex) {
 	var backupModeText string
 	if task["BackupMode"] == "true" {
-		backupModeText = translations[currentLang]["disableBackupMode"]
+		backupModeText = globals.Translations[globals.CurrentLang]["disableBackupMode"]
 	} else {
-		backupModeText = translations[currentLang]["enableBackupMode"]
+		backupModeText = globals.Translations[globals.CurrentLang]["enableBackupMode"]
 	}
 
 	// Create buttons
-	btnOpenApp := tview.NewButton(translations[currentLang]["openApp"]).SetSelectedFunc(func() {
+	btnOpenApp := tview.NewButton(globals.Translations[globals.CurrentLang]["openApp"]).SetSelectedFunc(func() {
 		openApp(task)
 		app.SetRoot(appRoot, true)
 	})
-	btnSyncDevice := tview.NewButton(translations[currentLang]["syncAnotherDevice"]).SetSelectedFunc(func() {
+	btnSyncDevice := tview.NewButton(globals.Translations[globals.CurrentLang]["syncAnotherDevice"]).SetSelectedFunc(func() {
 		chooseDeviceAndLinkIt(app, task, appRoot)
 	})
-	btnRemoveTask := tview.NewButton(translations[currentLang]["removeTask"]).SetSelectedFunc(func() {
+	btnRemoveTask := tview.NewButton(globals.Translations[globals.CurrentLang]["removeTask"]).SetSelectedFunc(func() {
 		removeTask(task)
 		app.SetRoot(appRoot, true)
 	})
@@ -305,7 +252,7 @@ func openTaskActionsMenu(app *tview.Application, task map[string]string, appRoot
 
 	flex.
 		SetBorder(true).
-		SetTitle(translations[currentLang]["taskActionMenuTitle"])
+		SetTitle(globals.Translations[globals.CurrentLang]["taskActionMenuTitle"])
 
 	// Define a list of buttons to navigate through
 	buttons := []*tview.Button{btnOpenApp, btnSyncDevice, btnRemoveTask, btnBackupMode}
@@ -362,22 +309,22 @@ func openTaskActionsMenu(app *tview.Application, task map[string]string, appRoot
 
 func openDeviceActionsMenu(app *tview.Application, device map[string]string, appRoot *tview.Flex) {
 	modal := tview.NewModal().
-		SetText(translations[currentLang]["deviceActions"]).
+		SetText(globals.Translations[globals.CurrentLang]["deviceActions"]).
 		AddButtons([]string{
-			translations[currentLang]["sendFile"],
-			translations[currentLang]["sendFolder"],
-			translations[currentLang]["sendText"],
+			globals.Translations[globals.CurrentLang]["sendFile"],
+			globals.Translations[globals.CurrentLang]["sendFolder"],
+			globals.Translations[globals.CurrentLang]["sendText"],
 		}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			switch buttonLabel {
-			case translations[currentLang]["sendFile"]:
+			case globals.Translations[globals.CurrentLang]["sendFile"]:
 				sendLargage(device, false)
 				app.SetRoot(appRoot, true)
 
-			case translations[currentLang]["sendFolder"]:
+			case globals.Translations[globals.CurrentLang]["sendFolder"]:
 				sendLargage(device, true)
 				app.SetRoot(appRoot, true)
-			case translations[currentLang]["sendText"]:
+			case globals.Translations[globals.CurrentLang]["sendText"]:
 				sendText(app, device, appRoot)
 				// not setting root as sendText needs another form
 			}
@@ -582,8 +529,8 @@ func prepareMagasin(app *tview.Application, appRoot *tview.Flex) *tview.Pages {
 	grapinsSection := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	// indication pour sortir de la section
-	toutEnUnSection.AddItem(tview.NewTextView().SetText(translations[currentLang]["qToQuit"]), 1, 0, false)
-	grapinsSection.AddItem(tview.NewTextView().SetText(translations[currentLang]["qToQuit"]), 1, 0, false)
+	toutEnUnSection.AddItem(tview.NewTextView().SetText(globals.Translations[globals.CurrentLang]["qToQuit"]), 1, 0, false)
+	grapinsSection.AddItem(tview.NewTextView().SetText(globals.Translations[globals.CurrentLang]["qToQuit"]), 1, 0, false)
 
 	// Add sections to Pages
 	pages.AddPage("ToutEnUn", toutEnUnSection, true, true)
@@ -602,7 +549,7 @@ func prepareMagasin(app *tview.Application, appRoot *tview.Flex) *tview.Pages {
 		AddItem("Grapins", "View Grapins", 'g', func() {
 			pages.SwitchToPage("Grapins")
 		}).
-		AddItem("Quit", translations[currentLang]["qToQuit"], 'q', func() {
+		AddItem("Quit", globals.Translations[globals.CurrentLang]["qToQuit"], 'q', func() {
 			app.SetRoot(appRoot, true)
 		})
 
@@ -773,7 +720,7 @@ func installApp(config Config, endpoint string, app *tview.Application, pages *t
 // showLoading shows the loading modal
 func showLoading(app *tview.Application, pages *tview.Pages) {
 	loadingModal := tview.NewModal().
-		SetText(translations[currentLang]["loading"]).
+		SetText(globals.Translations[globals.CurrentLang]["loading"]).
 		AddButtons([]string{"Ok"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			pages.SwitchToPage("Main")

@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-09-04 23:01:40
+ * @lastModified    2024-09-15 16:52:35
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -239,7 +239,7 @@ func ConnectToDevice(conn net.Conn) {
 			}
 
 		} else {
-			path = backend_api.AskInput("[CHOOSELINKPATH]", "Choose a path where new sync files will be stored.")
+			path = backend_api.AskInput("[CHOOSELINKPATH]", globals.Translations[globals.CurrentLang]["selectSyncFolderPrompt"])
 
 			if path != "[CANCELLED]" {
 				log.Println("Future sync will be stored at : ", path)
@@ -268,7 +268,7 @@ func ConnectToDevice(conn net.Conn) {
 
 		if data.FileType == "[APPLICATION]" {
 			_ = backend_api.AskInput("[ALERT_USER]",
-				"Applications successfully linked to each others ! Please restart ecosys before changing anything",
+				globals.Translations[globals.CurrentLang]["appLinkingSuccess"],
 			)
 		}
 	case "[UNLINK_DEVICE]":
@@ -839,8 +839,8 @@ func HandleLargageAerien(data globals.QEvent, ip_addr string) {
 	// makes sure we are not given a path for some reasons
 	file_name := filepath.Base(data.Delta.FilePath)
 
-	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
-	user_response := backend_api.AskInput("[OTDL]", "Accept the largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien\n\n"))
+	backend_api.NotifyDesktop(globals.Translations[globals.CurrentLang]["largageDesktopNotification"] + file_name)
+	user_response := backend_api.AskInput("[OTDL]", globals.Translations[globals.CurrentLang]["largageAcceptationPrompt"]+file_name)
 	if user_response == "true" {
 		// make sure we have the right directory set-up
 		ex := globals.ExistsInFilesystem(filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien"))
@@ -871,8 +871,8 @@ func HandleMultipleLargageAerien(data globals.QEvent, ip_addr string) {
 	// makes sure we are not given a path for some reasons
 	file_name := filepath.Base(data.Delta.FilePath)
 
-	backend_api.NotifyDesktop("Incoming Largage Aérien !! " + "(coming from " + ip_addr + ") \n File name : " + file_name)
-	user_response := backend_api.AskInput("[MOTDL]", "Accept the MULTIPLE largage aérien ? (coming from "+ip_addr+") \n File name : "+file_name+"\nFile would be saved to the folder : "+filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien\n\n"))
+	backend_api.NotifyDesktop(globals.Translations[globals.CurrentLang]["largageDesktopNotification"] + file_name)
+	user_response := backend_api.AskInput("[MOTDL]", globals.Translations[globals.CurrentLang]["multiLargageAcceptationPrompt"]+filepath.Join(globals.EcosysWriteableDirectory, "largage_aerien\n\n"))
 
 	// veryfiy user response AND that we are not tricked to untar something random
 	if user_response == "true" && file_name == "multilargage.tar" {
