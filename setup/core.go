@@ -15,7 +15,7 @@ import (
 	"github.com/emersion/go-autostart"
 )
 
-var VERSION = "0.0.5-Beta"
+var VERSION = "0.0.6-Beta"
 
 func MakeDirectories() {
 	err := os.Mkdir("largages_aeriens", 0755)
