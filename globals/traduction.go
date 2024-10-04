@@ -38,6 +38,8 @@ var Translations = map[string]map[string]string{
 		"multiLargageAcceptationPrompt": "Accept the MULTI largage aérien ?  \n It will be stored at : ",
 		"appLinkingSuccess":             "Applications successfully linked to each others ! Please restart ecosys before changing anything",
 		"selectSyncFolderPrompt":        "Choose a path where new sync files will be stored.",
+		"openSettings":                  "Open Ecosys settings",
+		"success":                       "Operation successfully done !",
 	},
 	"fr": {
 		"devicesTitle":                  "Appareils sur votre réseau",
@@ -65,5 +67,7 @@ var Translations = map[string]map[string]string{
 		"multiLargageAcceptationPrompt": "Accepter le MULTI largage aérien ?  \n Il sera téléchargé dans le dossier suivant : ",
 		"appLinkingSuccess":             "Applications liées avec succés ! Il maintenant est préférable de relancer ecosys avant de modifier des choses dessus.",
 		"selectSyncFolderPrompt":        "Selectionnez le dossier vers lequel vous voulez établir la synchronisation.",
+		"openSettings":                  "Ouvrir les paramètres d'Ecosys",
+		"success":                       "Opération effectuée avec success !",
 	},
 }

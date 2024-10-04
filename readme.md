@@ -287,7 +287,6 @@ TOUDOU :
 POUR PC :
 - verifier pourquoi l'installateur de l'app n'est pas supprimé
 - tester la suppression des applications
-- tester pourquoi sur windows le build ne fonctionne pas
 
 POUR L'APP :
 - Fix le fichier qui s'ouvre mal avec la popup

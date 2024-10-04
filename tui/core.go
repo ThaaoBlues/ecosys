@@ -2,12 +2,14 @@ package tui
 
 import (
 	"bytes"
+	"ecosys/bdd"
 	"ecosys/globals"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -94,22 +96,17 @@ func CreateUI(app *tview.Application) tview.Primitive {
 		openLargagesFolder()
 	})
 
+	openSettingsBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["openSettings"]).SetSelectedFunc(func() {
+		showSettingsPage(app, mainLayout)
+	})
+
 	// Button list
-	buttons := []*tview.Button{createTaskBtn, openMagasinBtn, toggleLargageBtn, openLargagesFolderBtn}
-	menu = menu.
-		AddItem(createTaskBtn, 2, 1, true).
-		AddItem(openMagasinBtn, 2, 1, true).
-		AddItem(toggleLargageBtn, 2, 1, true).
-		AddItem(openLargagesFolderBtn, 2, 1, true)
-
-	// Device List
-	devicesList := tview.NewList()
-
-	// Task List
-	tasksList := tview.NewList()
+	buttons := []*tview.Button{createTaskBtn, openMagasinBtn, toggleLargageBtn, openLargagesFolderBtn, openSettingsBtn}
 
 	// Set up focus navigation between buttons
 	for i, btn := range buttons {
+		menu = menu.
+			AddItem(btn, 2, 1, true)
 		buttonIndex := i
 		btn.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 			switch event.Key() {
@@ -123,6 +120,12 @@ func CreateUI(app *tview.Application) tview.Primitive {
 			return event
 		})
 	}
+
+	// Device List
+	devicesList := tview.NewList()
+
+	// Task List
+	tasksList := tview.NewList()
 
 	// Layout for devices and tasks
 	devicesListLayout := tview.NewFlex().
@@ -345,7 +348,7 @@ func openDeviceActionsMenu(app *tview.Application, device map[string]string, app
 func createSyncTask() {
 	_, err := http.Get("http://127.0.0.1:8275/create-task")
 	if err != nil {
-		fmt.Println("Error creating sync task:", err)
+		log.Println("Error creating sync task:", err)
 	}
 }
 
@@ -357,14 +360,14 @@ func openMagasin(app *tview.Application, appRoot *tview.Flex) {
 func toggleLargageAerien() {
 	_, err := http.Get("http://127.0.0.1:8275/toggle-largage")
 	if err != nil {
-		fmt.Println("Error toggling Largage Aerien:", err)
+		log.Println("Error toggling Largage Aerien:", err)
 	}
 }
 
 func openLargagesFolder() {
 	_, err := http.Get("http://127.0.0.1:8275/open-largages-folder")
 	if err != nil {
-		fmt.Println("Error opening Largages Folder:", err)
+		log.Println("Error opening Largages Folder:", err)
 	}
 }
 
@@ -714,7 +717,7 @@ func installApp(config Config, endpoint string, app *tview.Application, pages *t
 
 	// Handle success
 	log.Printf("Successfully installed app %s: %s", config.AppName, string(body))
-	//showSuccess(app, pages, fmt.Sprintf("Successfully installed %s!", config.AppName))
+	//showSuccess(app, pages, log.Sprintf("Successfully installed %s!", config.AppName))
 }
 
 // showLoading shows the loading modal
@@ -763,8 +766,10 @@ func showSuccess(app *tview.Application, pages *tview.Pages, message string) {
 		})
 
 	app.QueueUpdateDraw(func() {
+		log.Println("Drawing success modal")
 		pages.AddPage("Success", successModal, true, true)
 		pages.SwitchToPage("Success")
+		pages.SendToBack("Success")
 	})
 }
 
@@ -795,7 +800,7 @@ func contains(slice []string, item string) bool {
 }
 
 func findOsName() string {
-	return "Linux"
+	return runtime.GOOS
 }
 
 // setupNavigation enables arrow key navigation between cards
@@ -823,4 +828,83 @@ func setupNavigation(app *tview.Application, pages *tview.Pages, section *tview.
 		}
 		return event
 	})
+}
+
+func showSettingsPage(app *tview.Application, appRoot *tview.Flex) {
+	pages := tview.NewPages()
+
+	generalSection := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	generalSection.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
+		if event.Rune() == 'q' {
+			app.SetRoot(appRoot, true)
+
+		}
+
+		return event
+	})
+	// indication pour sortir de la section
+	generalSection.AddItem(tview.NewTextView().SetText(globals.Translations[globals.CurrentLang]["qToQuit"]), 1, 0, false)
+
+	// Add sections to Pages
+	pages.AddPage("GeneralSection", generalSection, true, true)
+	var status string
+	var acces bdd.AccesBdd
+	acces.InitConnection()
+	defer acces.CloseConnection()
+
+	bl := acces.AreLargageAerienAllowed()
+
+	if bl {
+		status = " ( ON )"
+	} else {
+		status = " ( OFF )"
+	}
+
+	largagesButton := tview.NewButton(globals.Translations[globals.CurrentLang]["toggleLargageAerien"] + status)
+	largagesButton.SetSelectedFunc(func() {
+		toggleLargageAerien()
+		go showSuccess(app, pages, globals.Translations[globals.CurrentLang]["success"])
+
+		// update button text with new status
+		bl = !bl
+		if bl {
+			status = " ( ON )"
+		} else {
+			status = " ( OFF )"
+		}
+
+		go app.QueueUpdateDraw(func() {
+			largagesButton.SetLabel(globals.Translations[globals.CurrentLang]["toggleLargageAerien"] + status)
+
+		})
+	})
+
+	generalSection.AddItem(
+
+		largagesButton,
+		1,
+		1,
+		true,
+	)
+
+	menu := tview.NewList()
+
+	// Main menu to switch sections
+	menu = menu.
+		AddItem("General", "Generic settings to tweak ecosys", 'g', func() {
+			pages.SwitchToPage("GeneralSection")
+		}).
+		AddItem("Quit", globals.Translations[globals.CurrentLang]["qToQuit"], 'q', func() {
+			app.SetRoot(appRoot, true)
+		})
+
+	// Set menu as root of the pages
+	pages.AddPage("Main", menu, true, true)
+	// for some reason, without it the focus is on a non visible page
+	//pages.SendToBack("Main")
+
+	app.SetRoot(pages, true)
+
 }
