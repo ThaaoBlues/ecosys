@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-09-12 21:21:08
+ * @lastModified    2024-10-30 22:16:25
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -1272,7 +1272,6 @@ func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 	if err != nil {
 		log.Fatal("Error while querying database from ListSyncAllTasks() : ", err)
 	}
-	defer rows.Close()
 
 	var list globals.GenArray[SyncInfos]
 
@@ -1281,11 +1280,17 @@ func (acces *AccesBdd) ListSyncAllTasks() globals.GenArray[SyncInfos] {
 		rows.Scan(&info.SecureId, &info.Path, &info.BackupMode)
 
 		if acces.IsApp(info.SecureId) {
-			config := acces.GetAppConfig(info.SecureId)
-			info.Name = config.AppName
 			info.IsApp = true
 		}
 		list.Add(info)
+	}
+
+	// unlock database
+	rows.Close()
+
+	for i := 0; i < list.Size(); i++ {
+		info := list.Get(i)
+		info.Name = acces.GetAppConfig(info.SecureId).AppName
 	}
 
 	return list

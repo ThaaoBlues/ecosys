@@ -40,6 +40,7 @@ var Translations = map[string]map[string]string{
 		"selectSyncFolderPrompt":        "Choose a path where new sync files will be stored.",
 		"openSettings":                  "Open Ecosys settings",
 		"success":                       "Operation successfully done !",
+		"toggleAutostart":               "Allow Ecosys to start automatically",
 	},
 	"fr": {
 		"devicesTitle":                  "Appareils sur votre réseau",
@@ -69,5 +70,6 @@ var Translations = map[string]map[string]string{
 		"selectSyncFolderPrompt":        "Selectionnez le dossier vers lequel vous voulez établir la synchronisation.",
 		"openSettings":                  "Ouvrir les paramètres d'Ecosys",
 		"success":                       "Opération effectuée avec success !",
+		"toggleAutostart":               "Autoriser Ecosys à démarrer automatiquement",
 	},
 }

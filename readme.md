@@ -285,6 +285,7 @@ TOUDOU :
 
 
 POUR PC :
+- Faire le téléchargement et maj de l'executable principal
 - verifier pourquoi l'installateur de l'app n'est pas supprimé
 - tester la suppression des applications
 

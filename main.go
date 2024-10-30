@@ -3,7 +3,7 @@
  * @description
  * @author          thaaoblues <thaaoblues81@gmail.com>
  * @createTime      2023-09-11 14:08:11
- * @lastModified    2024-09-15 16:39:28
+ * @lastModified    2024-10-30 22:44:16
  * Copyright ©Théo Mougnibas All rights reserved
  */
 
@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/jeandeaual/go-locale"
 	"github.com/rivo/tview"
@@ -36,6 +37,11 @@ func main() {
 	exPath := filepath.Dir(ex)
 	globals.SetecosysWriteableDirectory(exPath)
 
+	log_file, _ := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0777)
+	defer log_file.Close()
+
+	log.SetOutput(log_file)
+
 	// make sure we are working at the root of the ecosys executable
 	os.Chdir(exPath)
 
@@ -43,24 +49,28 @@ func main() {
 	if networking.IsNetworkAvailable() {
 		setup.Setup()
 		setup.CheckUpdates()
+
+		// wait for potential internet connection
+		go func() {
+			for !networking.IsNetworkAvailable() {
+				// 5 second timer before each try
+				time.Sleep(5 * time.Second)
+			}
+			var zc networking.ZeroConfService
+			// register this device
+			go zc.Register()
+			// keep an up to date list ofmtf linked devices that are on our network
+			go zc.UpdateDevicesConnectionStateLoop()
+			// loop accepting and treating requests from other devices
+			go networking.NetWorkLoop()
+
+		}()
+
 	}
 
-	var zc networking.ZeroConfService
-	log_file, _ := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0777)
-	defer log_file.Close()
-
-	log.SetOutput(log_file)
-
-	// register this device
-	go zc.Register()
-	// keep an up to date list ofmtf linked devices that are on our network
-	go zc.UpdateDevicesConnectionStateLoop()
-	// loop accepting and treating requests from other devices
-	go networking.NetWorkLoop()
-
-	//tui.DisplayMenu()
-
+	// web ui still used as an api
 	go webui.StartWebUI()
+
 	//globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
 	//start ecosys

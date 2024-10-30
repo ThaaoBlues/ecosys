@@ -9,10 +9,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/emersion/go-autostart"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -849,34 +851,82 @@ func showSettingsPage(app *tview.Application, appRoot *tview.Flex) {
 
 	// Add sections to Pages
 	pages.AddPage("GeneralSection", generalSection, true, true)
-	var status string
+	var largageAerienStatus string
 	var acces bdd.AccesBdd
 	acces.InitConnection()
 	defer acces.CloseConnection()
 
-	bl := acces.AreLargageAerienAllowed()
-
-	if bl {
-		status = " ( ON )"
+	if acces.AreLargageAerienAllowed() {
+		largageAerienStatus = " ( ON )"
 	} else {
-		status = " ( OFF )"
+		largageAerienStatus = " ( OFF )"
 	}
 
-	largagesButton := tview.NewButton(globals.Translations[globals.CurrentLang]["toggleLargageAerien"] + status)
+	largagesButton := tview.NewButton(globals.Translations[globals.CurrentLang]["toggleLargageAerien"] + largageAerienStatus)
 	largagesButton.SetSelectedFunc(func() {
 		toggleLargageAerien()
 		go showSuccess(app, pages, globals.Translations[globals.CurrentLang]["success"])
 
+		var acces bdd.AccesBdd
+		acces.InitConnection()
+		defer acces.CloseConnection()
+
 		// update button text with new status
-		bl = !bl
-		if bl {
-			status = " ( ON )"
+		if acces.AreLargageAerienAllowed() {
+			largageAerienStatus = " ( ON )"
 		} else {
-			status = " ( OFF )"
+			largageAerienStatus = " ( OFF )"
 		}
 
 		go app.QueueUpdateDraw(func() {
-			largagesButton.SetLabel(globals.Translations[globals.CurrentLang]["toggleLargageAerien"] + status)
+			largagesButton.SetLabel(globals.Translations[globals.CurrentLang]["toggleLargageAerien"] + largageAerienStatus)
+
+		})
+	})
+
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	appConfig := &autostart.App{
+		Name:        "Ecosys",
+		DisplayName: "Ecosys synchronization app",
+		Exec:        []string{ex},
+	}
+
+	var autoStartStatus string
+
+	if appConfig.IsEnabled() {
+		autoStartStatus = " ( ON )"
+	} else {
+		autoStartStatus = " ( OFF )"
+	}
+
+	autostartButton := tview.NewButton(globals.Translations[globals.CurrentLang]["toggleAutostart"] + autoStartStatus)
+	autostartButton.SetSelectedFunc(func() {
+
+		if !appConfig.IsEnabled() {
+			if err := appConfig.Enable(); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			if err := appConfig.Disable(); err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		go showSuccess(app, pages, globals.Translations[globals.CurrentLang]["success"])
+
+		// update button text with new status
+		if appConfig.IsEnabled() {
+			autoStartStatus = " ( ON )"
+		} else {
+			autoStartStatus = " ( OFF )"
+		}
+
+		go app.QueueUpdateDraw(func() {
+			autostartButton.SetLabel(globals.Translations[globals.CurrentLang]["toggleLargageAerien"] + autoStartStatus)
 
 		})
 	})
@@ -888,6 +938,37 @@ func showSettingsPage(app *tview.Application, appRoot *tview.Flex) {
 		1,
 		true,
 	)
+
+	generalSection.AddItem(
+
+		autostartButton,
+		1,
+		1,
+		true,
+	)
+
+	currentIndex := 1
+	l := 2
+
+	buttons := []*tview.Button{largagesButton, autostartButton}
+
+	// Input capture for navigating between cards
+	generalSection.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyUp: // Navigate to the previous card
+			currentIndex = (currentIndex + l - 1) % l
+			app.SetFocus(buttons[currentIndex])
+		case tcell.KeyDown: // Navigate to the next card
+			currentIndex = (currentIndex + 1) % l
+			app.SetFocus(buttons[currentIndex])
+		}
+
+		switch event.Rune() {
+		case 'q':
+			pages.SwitchToPage("Main")
+		}
+		return event
+	})
 
 	menu := tview.NewList()
 

@@ -9,13 +9,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/emersion/go-autostart"
 )
 
 var VERSION = "0.0.6-Beta"
+var REPO_OWNER = "thaaoblues"
+var REPO_NAME = "ecosys"
+var REPO_URL = fmt.Sprintf("https://github.com/%s/%s", REPO_OWNER, REPO_NAME)
 
 func MakeDirectories() {
 	err := os.Mkdir("largages_aeriens", 0755)
@@ -98,11 +103,11 @@ func DownloadWebuiFiles() {
 
 	// downloading all the web gui files
 
-	// URL of the ZIP file to download
-	zipURL := "https://github.com/ThaaoBlues/ecosys/raw/master/webui.zip"
-
-	// Local path to save the downloaded ZIP file
 	zipFilePath := "webui.zip"
+
+	// URL of the ZIP file to download
+	zipURL := fmt.Sprintf("%s/raw/master/%s", REPO_URL, zipFilePath)
+
 	// Folder to extract the ZIP contents
 	folderName := strings.TrimSuffix(zipFilePath, filepath.Ext(zipFilePath))
 
@@ -130,8 +135,8 @@ func DownloadWebuiFiles() {
 }
 
 // Function to get the latest release tag from GitHub
-func getLatestReleaseTag(owner, repo string) (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
+func getLatestReleaseTag() (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", REPO_OWNER, REPO_NAME)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -162,8 +167,8 @@ func readLocalVersionFile(filePath string) (string, error) {
 }
 
 // Main function to check versions and take action if they do not match
-func checkAndCompareVersion(owner, repo, versionFilePath string) error {
-	latestTag, err := getLatestReleaseTag(owner, repo)
+func checkAndCompareVersion(versionFilePath string) error {
+	latestTag, err := getLatestReleaseTag()
 	if err != nil {
 		return fmt.Errorf("error getting latest release tag: %v", err)
 	}
@@ -174,7 +179,7 @@ func checkAndCompareVersion(owner, repo, versionFilePath string) error {
 	}
 
 	if latestTag != localVersion {
-		updateecosys()
+		updateEcosys()
 	} else {
 		fmt.Println("Versions match. No action needed.")
 	}
@@ -182,17 +187,71 @@ func checkAndCompareVersion(owner, repo, versionFilePath string) error {
 	return nil
 }
 
-func updateecosys() {
+func updateEcosys() {
 	// download ecosys main exe and restart it
+	// ecosys_linux_x64 for linux
+	// ecosys_windows_x64 for windows
+	// in the latest release of the ecosys github repo
+	// after download, just start newer ecosys in another process and stop this program
 
+	// Determine system-specific executable name
+	var binaryName string
+	switch runtime.GOOS {
+	case "linux":
+		binaryName = "ecosys_linux_x64"
+	case "windows":
+		binaryName = "ecosys_windows_x64.exe"
+	default:
+		log.Fatalf("Unsupported OS: %s", runtime.GOOS)
+		return
+	}
+
+	// Define URL for the latest release binary file
+	latestBinaryURL := fmt.Sprintf("%s/releases/latest/download/%s", REPO_URL, binaryName)
+	binaryFilePath := filepath.Join(globals.EcosysWriteableDirectory, binaryName)
+
+	// Download the latest binary
+	fmt.Println("Downloading latest ecosys binary...")
+	if err := DownloadFile(latestBinaryURL, binaryFilePath); err != nil {
+		log.Fatalf("Failed to download latest ecosys binary: %v", err)
+		return
+	}
+
+	// Make the binary executable (Linux/Mac only)
+	if runtime.GOOS != "windows" {
+		if err := os.Chmod(binaryFilePath, 0755); err != nil {
+			log.Fatalf("Failed to set binary permissions: %v", err)
+			return
+		}
+	}
+
+	// Start the new binary in a separate process
+	// and set up self-deletion based on OS
+	fmt.Println("Starting the latest version of ecosys...")
+	var cmd *exec.Cmd
+
+	exPath, _ := os.Executable()
+	if runtime.GOOS == "windows" {
+		// Windows: Use a PowerShell command to delete the old binary after starting the new one
+		cmd = exec.Command("cmd", "/C", "start", "/B", binaryFilePath, "&", "timeout", "/T", "2", "&", "del", "/Q", exPath)
+	} else {
+		// Linux/macOS: Use a shell command to delete the old binary after starting the new one
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("sleep 2 && rm -f %s &", exPath), "&", binaryFilePath)
+	}
+
+	if err := cmd.Start(); err != nil {
+		log.Fatalf("Failed to start new ecosys process: %v", err)
+		return
+	}
+
+	// Terminate the current program
+	os.Exit(0)
 }
 
 func CheckUpdates() {
-	owner := "thaaoblues"
-	repo := "ecosys"
 	versionFilePath := filepath.Join(globals.EcosysWriteableDirectory, "version")
 
-	err := checkAndCompareVersion(owner, repo, versionFilePath)
+	err := checkAndCompareVersion(versionFilePath)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
@@ -233,7 +292,7 @@ func Setup() {
 		}
 	}
 
-	// tp disable autostart :
+	// to disable autostart :
 	/*
 		if err := app.Disable(); err != nil {
 			log.Fatal(err)
