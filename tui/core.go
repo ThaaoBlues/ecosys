@@ -91,9 +91,6 @@ func CreateUI(app *tview.Application) tview.Primitive {
 	openMagasinBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["openMagasin"]).SetSelectedFunc(func() {
 		openMagasin(app, mainLayout)
 	})
-	toggleLargageBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["toggleLargageAerien"]).SetSelectedFunc(func() {
-		toggleLargageAerien()
-	})
 	openLargagesFolderBtn := tview.NewButton(globals.Translations[globals.CurrentLang]["openLargagesFolder"]).SetSelectedFunc(func() {
 		openLargagesFolder()
 	})
@@ -103,7 +100,7 @@ func CreateUI(app *tview.Application) tview.Primitive {
 	})
 
 	// Button list
-	buttons := []*tview.Button{createTaskBtn, openMagasinBtn, toggleLargageBtn, openLargagesFolderBtn, openSettingsBtn}
+	buttons := []*tview.Button{createTaskBtn, openMagasinBtn, openLargagesFolderBtn, openSettingsBtn}
 
 	// Set up focus navigation between buttons
 	for i, btn := range buttons {
@@ -259,6 +256,8 @@ func openTaskActionsMenu(app *tview.Application, task map[string]string, appRoot
 		SetBorder(true).
 		SetTitle(globals.Translations[globals.CurrentLang]["taskActionMenuTitle"])
 
+	flex.AddItem(tview.NewTextView().SetText(globals.Translations[globals.CurrentLang]["qToQuit"]), 1, 0, false)
+
 	// Define a list of buttons to navigate through
 	buttons := []*tview.Button{btnOpenApp, btnSyncDevice, btnRemoveTask, btnBackupMode}
 
@@ -303,6 +302,11 @@ func openTaskActionsMenu(app *tview.Application, task map[string]string, appRoot
 				app.SetFocus(buttons[focusedIndex+2])
 			}
 			return nil
+
+		}
+
+		if event.Rune() == 'q' {
+			app.SetRoot(appRoot, true)
 		}
 
 		return event
