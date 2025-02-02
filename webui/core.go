@@ -69,6 +69,7 @@ func StartWebUI() {
 	router.HandleFunc("/toggle-backup-mode", toggleBackupMode).Methods("GET")
 	router.HandleFunc("/js/{file_name}", serveJsFile).Methods("GET")
 	router.HandleFunc("/css/{file_name}", serveCssFile).Methods("GET")
+	router.HandleFunc("/img/{file_name}", serveImgFile).Methods("GET")
 	router.HandleFunc("/install-tout-en-un", installAppHandler).Methods("POST")
 	router.HandleFunc("/install-grapin", installGrapinHandler).Methods("POST")
 	router.HandleFunc("/launch-app", launchAppHandler).Methods("GET")
@@ -592,6 +593,11 @@ func serveJsFile(w http.ResponseWriter, r *http.Request) {
 }
 func serveCssFile(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(globals.EcosysWriteableDirectory, "webui/css/"+mux.Vars(r)["file_name"])
+
+	http.ServeFile(w, r, path)
+}
+func serveImgFile(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join(globals.EcosysWriteableDirectory, "webui/img/"+mux.Vars(r)["file_name"])
 
 	http.ServeFile(w, r, path)
 }

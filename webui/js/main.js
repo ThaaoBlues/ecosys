@@ -354,7 +354,7 @@ async function createSyncTask(){
 
 
 addEventListener("DOMContentLoaded", (event) => {
-    updateLanguage(navigator.language);
+    updateLanguage(navigator.language.split("-")[0]);
 
     // first call to not wait 5s at launch
     listDevices();

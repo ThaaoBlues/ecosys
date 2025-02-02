@@ -15,7 +15,6 @@ import (
 	"ecosys/globals"
 	"ecosys/networking"
 	"ecosys/setup"
-	"ecosys/tui"
 	"ecosys/webui"
 	"log"
 	"os"
@@ -23,7 +22,6 @@ import (
 	"time"
 
 	"github.com/jeandeaual/go-locale"
-	"github.com/rivo/tview"
 )
 
 func main() {
@@ -71,7 +69,7 @@ func main() {
 	// web ui still used as an api
 	go webui.StartWebUI()
 
-	//globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
+	globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
 	//start ecosys
 	var acces bdd.AccesBdd
@@ -92,13 +90,16 @@ func main() {
 	}
 	globals.SetCurrentLangIfAvailable(lang)
 
-	app := tview.NewApplication()
-
-	setup.CreateDesktopShortcutLinux()
+	/*app := tview.NewApplication()
 
 	ui := tui.CreateUI(app)
 
 	if err := app.SetRoot(ui, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
+	}*/
+
+	for true {
+
 	}
+
 }
