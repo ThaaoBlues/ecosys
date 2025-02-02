@@ -270,6 +270,18 @@ func Setup() {
 
 	if !globals.ExistsInFilesystem(filepath.Join(globals.EcosysWriteableDirectory, "webui")) {
 		DownloadWebuiFiles()
+
+		// assume shortcuts are not created if web ui files are not
+		switch runtime.GOOS {
+		case "linux":
+			CreateDesktopShortcutLinux()
+		case "windows":
+			CreateDesktopShortcutWindows()
+		default:
+			log.Fatalf("Unsupported OS: %s", runtime.GOOS)
+			return
+		}
+
 	}
 
 	ex, err := os.Executable()
@@ -332,4 +344,51 @@ func CleanupTempFiles() {
 			}
 		}
 	}
+}
+
+func CreateDesktopShortcutLinux() {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	shortcutConfig := `[Desktop Entry]
+Name=Ecosys
+Exec=` + ex + `
+Terminal=true
+Icon=` + filepath.Join(globals.EcosysWriteableDirectory, "webui", "icon.svg") + `
+Type=Application
+Comment=Ecosys synchronization and airdrop app`
+	//file := os.OpenFile("ecosys.desktop", os.O_CREATE|os.O_RDWR)
+
+	homeDir, err := os.UserHomeDir()
+
+	if err != nil {
+		panic(err)
+	}
+
+	f, err := os.Create(filepath.Join(homeDir, ".local/share/applications/ecosys.desktop"))
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = f.Write([]byte(shortcutConfig))
+
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+func CreateDesktopShortcutWindows() {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	// Create a shortcut on desktop
+	CreateDesktopShortcut("Ecosys",
+		ex,
+		filepath.Join(globals.EcosysWriteableDirectory, "webui", "icon.ico"),
+	)
+
 }

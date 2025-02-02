@@ -94,6 +94,8 @@ func main() {
 
 	app := tview.NewApplication()
 
+	setup.CreateDesktopShortcutLinux()
+
 	ui := tui.CreateUI(app)
 
 	if err := app.SetRoot(ui, true).EnableMouse(true).Run(); err != nil {
