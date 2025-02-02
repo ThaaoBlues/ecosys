@@ -17,7 +17,7 @@ import (
 	"github.com/emersion/go-autostart"
 )
 
-var VERSION = "0.0.7-Beta"
+var VERSION = "0.0.8-Beta"
 var REPO_OWNER = "thaaoblues"
 var REPO_NAME = "ecosys"
 var REPO_URL = fmt.Sprintf("https://github.com/%s/%s", REPO_OWNER, REPO_NAME)
