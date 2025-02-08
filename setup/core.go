@@ -17,7 +17,7 @@ import (
 	"github.com/emersion/go-autostart"
 )
 
-var VERSION = "0.0.8-Beta"
+var VERSION = "0.0.9-Beta"
 var REPO_OWNER = "thaaoblues"
 var REPO_NAME = "ecosys"
 var REPO_URL = fmt.Sprintf("https://github.com/%s/%s", REPO_OWNER, REPO_NAME)
@@ -355,7 +355,7 @@ func CreateDesktopShortcutLinux() {
 	shortcutConfig := `[Desktop Entry]
 Name=Ecosys
 Exec=` + ex + `
-Terminal=true
+Terminal=false
 Icon=` + filepath.Join(globals.EcosysWriteableDirectory, "webui", "icon.svg") + `
 Type=Application
 Comment=Ecosys synchronization and airdrop app`

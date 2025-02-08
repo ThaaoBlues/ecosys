@@ -41,6 +41,8 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/webui-dev/webui v0.0.0-20240823070203-ead99700e99d // indirect
+	github.com/webview/webview v0.0.0-20250202210359-9a358d9453d2 // indirect
+	github.com/webview/webview_go v0.0.0-20240831120633-6173450d4dd6 // indirect
 	golang.org/x/image v0.17.0 // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.26.0 // indirect

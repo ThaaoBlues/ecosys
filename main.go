@@ -15,15 +15,15 @@ import (
 	"ecosys/globals"
 	"ecosys/networking"
 	"ecosys/setup"
-	"ecosys/tui"
+	//"ecosys/tui"
 	"ecosys/webui"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
-
+	webview "github.com/webview/webview_go"
 	"github.com/jeandeaual/go-locale"
-	"github.com/rivo/tview"
+	//"github.com/rivo/tview"
 )
 
 func main() {
@@ -73,6 +73,12 @@ func main() {
 
 	//globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
 
+	w := webview.New(true)
+	defer w.Destroy()
+	w.SetTitle("Ecosys")
+	w.Navigate("http://127.0.0.1:8275")
+	w.SetSize(1920,1080, webview.HintNone)
+
 	//start ecosys
 	var acces bdd.AccesBdd
 	acces.InitConnection()
@@ -92,16 +98,14 @@ func main() {
 	}
 	globals.SetCurrentLangIfAvailable(lang)
 
-	app := tview.NewApplication()
+	/*app := tview.NewApplication()
 
 	ui := tui.CreateUI(app)
 
 	if err := app.SetRoot(ui, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
-	}
+	}*/
 
-	for true {
-
-	}
+	w.Run()
 
 }
