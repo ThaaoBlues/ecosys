@@ -15,14 +15,17 @@ import (
 	"ecosys/globals"
 	"ecosys/networking"
 	"ecosys/setup"
+	"net/http"
+
 	//"ecosys/tui"
 	"ecosys/webui"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
-	webview "github.com/webview/webview_go"
+
 	"github.com/jeandeaual/go-locale"
+	webview "github.com/webview/webview_go"
 	//"github.com/rivo/tview"
 )
 
@@ -68,35 +71,44 @@ func main() {
 
 	}
 
-	// web ui still used as an api
-	go webui.StartWebUI()
+	// first, check if ecosys is already running or not, if yes, just open a webview
+	// the api has an endpoint to check internet connection, so if we get a response
+	// it means that the internal web server of ecosys is already running
+	_, err = http.Get("http://127.0.0.1:8275/check-internet")
 
-	//globals.OpenUrlInWebBrowser("http://127.0.0.1:8275")
+	// probably timeout error, means we have to start all ecosys internals
+	if err != nil {
+		log.Println("Network check failed, nothing unusual as it is to check if ecosys server was already running")
+		// web ui still used as an api even if we use tui
+		go webui.StartWebUI()
+
+		//start ecosys
+		var acces bdd.AccesBdd
+		acces.InitConnection()
+		defer acces.CloseConnection()
+
+		acces.ClearAllFileSystemLockInDb()
+
+		tasks := acces.ListSyncAllTasks()
+		for i := 0; i < tasks.Size(); i++ {
+			acces.SecureId = tasks.Get(i).SecureId
+			go filesystem.StartWatcher(tasks.Get(i).Path)
+		}
+
+		lang, err := locale.GetLanguage()
+		if err != nil {
+			lang = "en"
+		}
+		globals.SetCurrentLangIfAvailable(lang)
+	} else {
+		log.Println("Ecosys was already running, we will only open a new webview instance.")
+	}
 
 	w := webview.New(true)
 	defer w.Destroy()
 	w.SetTitle("Ecosys")
 	w.Navigate("http://127.0.0.1:8275")
-	w.SetSize(1920,1080, webview.HintNone)
-
-	//start ecosys
-	var acces bdd.AccesBdd
-	acces.InitConnection()
-	defer acces.CloseConnection()
-
-	acces.ClearAllFileSystemLockInDb()
-
-	tasks := acces.ListSyncAllTasks()
-	for i := 0; i < tasks.Size(); i++ {
-		acces.SecureId = tasks.Get(i).SecureId
-		go filesystem.StartWatcher(tasks.Get(i).Path)
-	}
-
-	lang, err := locale.GetLanguage()
-	if err != nil {
-		lang = "en"
-	}
-	globals.SetCurrentLangIfAvailable(lang)
+	w.SetSize(1920, 1080, webview.HintNone)
 
 	/*app := tview.NewApplication()
 

@@ -112,7 +112,7 @@ async function listDevices() {
 }
 
 async function openMagasin() {
-    const response = await sendRequest('/open-magasin');
+    window.location.pathname = "/magasin";
 }
 
 

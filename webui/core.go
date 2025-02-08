@@ -58,7 +58,6 @@ func StartWebUI() {
 	router.HandleFunc("/link", linkDevice).Methods("POST")
 	router.HandleFunc("/list-tasks", listTasks).Methods("GET")
 	router.HandleFunc("/list-devices", listDevices).Methods("GET")
-	router.HandleFunc("/open-magasin", openMagasin).Methods("GET")
 	router.HandleFunc("/toggle-largage", toggleLargageAerien).Methods("GET")
 	router.HandleFunc("/send-largage", sendLargage).Methods("POST")
 	router.HandleFunc("/send-text", sendText).Methods("POST")
@@ -438,11 +437,6 @@ func listDevices(w http.ResponseWriter, r *http.Request) {
 	devices := acces.GetNetworkMap()
 
 	json.NewEncoder(w).Encode(devices.ToSlice())
-}
-
-func openMagasin(w http.ResponseWriter, r *http.Request) {
-	globals.OpenUrlInWebBrowser("http://127.0.0.1:8275/magasin")
-	json.NewEncoder(w).Encode(MenuResponse{Message: "Magasin opened"})
 }
 
 func toggleLargageAerien(w http.ResponseWriter, r *http.Request) {
