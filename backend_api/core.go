@@ -200,3 +200,95 @@ func RunDPKGAsRoot(deb_path string) {
 	}
 
 }
+
+/*
+returns (string) the absolute path of the selected file/directory,
+the "[CANCELLED]" flag is returned if anything happened
+like the user closing the window, an error etc...
+*/
+func AskFilePath() string {
+	var ret string
+
+	file, err := zenity.SelectFile(zenity.Title("Select a file !"))
+
+	if err != nil {
+		log.Println("File selection cancelled.")
+		ret = "[CANCELLED]"
+	} else {
+		ret = file
+	}
+
+	return ret
+}
+
+/*
+returns (string) the absolute path of the selected file/directory,
+the "[CANCELLED]" flag is returned if anything happened
+like the user closing the window, an error etc...
+*/
+func AskDirectoryPath() string {
+
+	var ret string
+
+	dir, err := zenity.SelectFile(
+		zenity.Directory(),
+		zenity.Title("Select a directory !"),
+	)
+
+	if err != nil {
+		log.Println("directory selection cancelled.")
+		ret = "[CANCELLED"
+	} else {
+		ret = dir
+	}
+
+	return ret
+}
+
+/*
+returns ([]string) the absolute path of the selected files/directories,
+the "[CANCELLED]" flag is returned if anything happened
+like the user closing the window, an error etc...
+*/
+func AskMultipleFilePath() []string {
+	var ret []string
+
+	files, err := zenity.SelectFileMultiple(
+		zenity.Directory(),
+		zenity.Title("Select multiple files !"),
+	)
+
+	if err != nil {
+		log.Println("directory selection cancelled.")
+		ret = make([]string, 1)
+		ret[0] = "[CANCELLED]"
+	} else {
+		ret = files
+	}
+
+	return ret
+}
+
+/*
+returns ([]string) the absolute path of the selected files/directories,
+the "[CANCELLED]" flag is returned if anything happened
+like the user closing the window, an error etc...
+*/
+func AskMultipleDirectoryPath() []string {
+	var ret []string
+
+	dirs, err := zenity.SelectFileMultiple(
+		zenity.Directory(),
+		zenity.Title("Select multiple files !"),
+	)
+
+	if err != nil {
+		log.Println("directory selection cancelled.")
+		ret = make([]string, 1)
+		ret[0] = "[CANCELLED]"
+	} else {
+		ret = dirs
+	}
+
+	return ret
+}

@@ -279,7 +279,9 @@ As example, here is a program that shows a bit how it is working :
 ## /!\ we called the sync task id secure_id just because it should avoid collision and path problems, not because it is "secure"
 
 TOUDOU : 
-- trouver un moyen de faire démarrer Ecosys au démarrage du telephone/pc
+- faire un tasks scheduler qui envoie la sortie terminal sur l'appareil selectionné à la fin d'un processus
+- faire un système de chat ?
+- trouver un moyen de faire démarrer Ecosys au démarrage du telephone
 - trouver un nouveau nom pour QAgenda
 - trouver pourquoi l'écriture des gros fichiers sur pc est super lente
 

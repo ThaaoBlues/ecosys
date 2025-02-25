@@ -30,7 +30,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/skratchdot/open-golang/open"
-	"github.com/sqweek/dialog"
 )
 
 var PROCESSING_EVENT bool
@@ -92,11 +91,7 @@ func StartWebUI() {
 
 			if data {
 
-				path, err := dialog.Directory().Title("Select Folder").Browse()
-				if err != nil {
-					fmt.Println("Folder selection cancelled.")
-					return
-				}
+				path := backend_api.AskDirectoryPath()
 				backend_api.GiveInput("[CHOOSELINKPATH]", path)
 
 				// to avoid an import cycle in networking, we have to put the start of filesystem watcher here
@@ -359,9 +354,10 @@ func startecosys(w http.ResponseWriter, r *http.Request) {
 
 func createSyncTask(w http.ResponseWriter, r *http.Request) {
 
-	path, err := dialog.Directory().Title("Select Folder").Browse()
-	if err != nil {
-		fmt.Println("Folder selection cancelled.")
+	path := backend_api.AskDirectoryPath()
+
+	if path == "[CANCELLED]" {
+		log.Println("Directory selection cancelled, aborting the sync task creation.")
 		return
 	}
 
@@ -465,7 +461,7 @@ func sendLargage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(requestData)
+	log.Println(globals.EcosysWriteableDirectory)
 
 	if requestData.IsFolder {
 		tarfile_path := filepath.Join(globals.EcosysWriteableDirectory, "multilargage.tar")
@@ -479,6 +475,8 @@ func sendLargage(w http.ResponseWriter, r *http.Request) {
 		networking.SendLargageAerien(requestData.FilePath, requestData.IpAddr, requestData.IsFolder)
 
 	}
+
+	backend_api.NotifyDesktop("File sent :)")
 
 	json.NewEncoder(w).Encode(MenuResponse{Message: "File sent"})
 
@@ -530,17 +528,23 @@ func askFilePath(w http.ResponseWriter, r *http.Request) {
 	}
 
 	is_folder := r.URL.Query().Get("is_folder") == "true"
-	var err error
 	if is_folder {
-		pathResponse.Path, err = dialog.Directory().Title("Select Folder").Browse()
+
+		// for some reason, the dialog package is crashing when opening a directory dialog
+		// in Linux
+		/*if strings.ToLower(runtime.GOOS) == "linux" {
+			cmd := exec.Command("zenity", "--file-selection", "--directory")
+			var output []byte
+			output, err = cmd.Output()
+			pathResponse.Path = strings.Replace(string(output), "\n", "", 1)
+		} else {
+			pathResponse.Path, err = dialog.Directory().Title("Select Folder").Browse()
+		}*/
+
+		pathResponse.Path = backend_api.AskDirectoryPath()
 
 	} else {
-		pathResponse.Path, err = dialog.File().Title("Select Folder").Load()
-	}
-
-	if err != nil {
-		log.Println("File selection cancelled.")
-		pathResponse.Path = "[CANCELLED]"
+		pathResponse.Path = backend_api.AskFilePath()
 	}
 
 	json.NewEncoder(w).Encode(pathResponse)
